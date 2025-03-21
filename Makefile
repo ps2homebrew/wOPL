@@ -1,3 +1,6 @@
+# Add POPSTARTER to build
+POPS_OBJS = obj/popstarter.o
+
 VERSION = 1
 SUBVERSION = 2
 PATCHLEVEL = 0
