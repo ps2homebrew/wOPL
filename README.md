@@ -1,7 +1,7 @@
 # Unoffical-Open-PS2-Loader
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
-Copyright 2024-2025, KrahJohilto, Wolf3s and Ripto<br/>
+Copyright 2024-2025, KrahJohilto, Wolf3s, Ripto and ca44p<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
