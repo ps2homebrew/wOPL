@@ -6,6 +6,7 @@
 # Copyright 2011, 2012 doctorxyz, SP193 & reprep
 # Copyright 2013 Bat Rastard
 # Copyright 2014, 2015, 2016 doctorxyz
+# Copyright 2025 ca44p
 # Licenced under Academic Free License version 2.0
 # Review LICENSE file for further details.
 #
@@ -18,8 +19,61 @@
 #include "include/ioman.h"
 #include "include/renderman.h"
 #include "../ee_core/include/coreconfig.h"
-
 #include "include/pggsm.h"
+
+#define GSM_COMPAT_MEDIUM  2
+#define GSM_COMPAT_HIGH    3
+#define GSM_COMPAT_PERFECT 4
+
+static const char *errorMessages[] = {
+    "No error",                 // GSM_ERROR_NONE
+    "GSM initialization error", // GSM_ERROR_INIT
+    "Invalid parameter",        // GSM_ERROR_PARAM
+    "Unsupported display mode", // GSM_ERROR_MODE
+    "Memory allocation error",  // GSM_ERROR_MEMORY
+    "Game compatibility issue", // GSM_ERROR_COMPAT
+    "Hardware limitation",      // GSM_ERROR_HARDWARE
+    "Resource allocation error" // GSM_ERROR_RESOURCE
+};
+
+static int gEnableGSM;   // Enables GSM - 0 for Off, 1 for On
+static int gGSMVMode;    // See the related predef_vmode
+static int gGSMXOffset;  // 0 - Off, Any other positive or negative* ▋/*
+#
+# Graphics Synthesizer Mode Selector (a.k.a. GSM) - Force (set and keep) a GS Mode, then load & exec a PS2 ELF
+#-------------------------------------------------------------------------------------------------------------
+# Copyright 2009, 2010, 2011 doctorxyz & dlanor
+# Copyright 2011, 2012 doctorxyz, SP193 & reprep
+# Copyright 2013 Bat Rastard
+# Copyright 2014, 2015, 2016 doctorxyz
+# Licenced under Academic Free License version 2.0
+# Review LICENSE file for further details.
+#
+*/
+
+#include "include/opl.h"
+#include "include/config.h"
+#include "include/util.h"
+#include "include/system.h"
+#include "include/ioman.h"
+#include "include/renderman.h"
+#include "../ee_core/include/coreconfig.h"
+#include "include/pggsm.h"
+
+#define GSM_COMPAT_MEDIUM  2
+#define GSM_COMPAT_HIGH    3
+#define GSM_COMPAT_PERFECT 4
+
+static const char *errorMessages[] = {
+    "No error",                 // GSM_ERROR_NONE
+    "GSM initialization error", // GSM_ERROR_INIT
+    "Invalid parameter",        // GSM_ERROR_PARAM
+    "Unsupported display mode", // GSM_ERROR_MODE
+    "Memory allocation error",  // GSM_ERROR_MEMORY
+    "Game compatibility issue", // GSM_ERROR_COMPAT
+    "Hardware limitation",      // GSM_ERROR_HARDWARE
+    "Resource allocation error" // GSM_ERROR_RESOURCE
+};
 
 static int gEnableGSM;   // Enables GSM - 0 for Off, 1 for On
 static int gGSMVMode;    // See the related predef_vmode
