@@ -7,6 +7,9 @@ on:
   repository_dispatch:
     types: [run_build]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -273,50 +276,86 @@ jobs:
           delete-merged: true
 
   release:
-    needs: [build, build-variants, build-lang]
+    needs: [build, merge-variants, build-lang, merge-debug]
     runs-on: ubuntu-22.04
-    if: startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/master'
-    env:
-      USERNAME: ${{ secrets.USERNAME }}
-      PASSWORD: ${{ secrets.PASSWORD }}
+    # Create a NEW prerelease + NEW tag on every run (never on PRs).
+    if: github.event_name != 'pull_request'
     steps:
-      - name: git checkout
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - run: git fetch --prune --unshallow
-
-      - name: Get version
+      - name: Generate version + unique prerelease tag
+        id: meta
+        shell: bash
         run: |
-          echo "OPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
+          set -euo pipefail
+          OPL_VERSION="$(make oplversion)"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TS="$(date -u +'%Y%m%d-%H%M%S')"
+          TAG="pre-v${OPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          echo "OPL_VERSION=${OPL_VERSION}" >> "$GITHUB_ENV"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "name=Pre-release v${OPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
 
-      - name: Prepare artifacts for release
+      - name: Install packer tools (7z)
         run: |
-          echo packing release of OPL ${{ env.OPL_VERSION }}
-          cp INFO/* OPNPS2LD/
-          cp INFO/* OPNPS2LD-VARIANTS/
-          7z a -t7z OPNPS2LD-${{ env.OPL_VERSION }}.7z OPNPS2LD/*
-          7z a -t7z OPNPS2LD-VARIANTS-${{ env.OPL_VERSION }}.7z OPNPS2LD-VARIANTS/*
-          7z a -t7z OPNPS2LD-LANGS-${{ env.OPL_VERSION }}.7z OPNPS2LD-LANGS/*
-          cp -f OPNPS2LD-${{ env.OPL_VERSION }}.7z OPNPS2LD.7z
-          cp -f OPNPS2LD-VARIANTS-${{ env.OPL_VERSION }}.7z OPNPS2LD-VARIANTS.7z
-          cp -f OPNPS2LD-LANGS-${{ env.OPL_VERSION }}.7z OPNPS2LD-LANGS.7z
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
 
-      - name: Create prerelease
-        if: github.ref == 'refs/heads/master'
-        uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Preparing prerelease ${OPL_VERSION}"
+
+          # Copy INFO into folders where it exists
+          cp -v INFO/* OPNPS2LD/ || true
+          cp -v INFO/* OPNPS2LD-VARIANTS/ || true
+          cp -v INFO/* OPNPS2LD-LANGS/ || true
+
+          # Put raw main ELF on the release as OPNPS2LD.ELF
+          MAIN_ELF="$(find OPNPS2LD -maxdepth 1 -type f -name 'OPNPS2LD-*.ELF' | head -n 1)"
+          if [ -z "${MAIN_ELF}" ]; then
+            echo "ERROR: Could not find main ELF in OPNPS2LD/ (expected OPNPS2LD-*.ELF)"
+            ls -la OPNPS2LD || true
+            exit 1
+          fi
+          cp -f "${MAIN_ELF}" OPNPS2LD.ELF
+
+          # Create archives
+          7z a -t7z "OPNPS2LD-${OPL_VERSION}.7z" OPNPS2LD/*
+          7z a -t7z "OPNPS2LD-VARIANTS-${OPL_VERSION}.7z" OPNPS2LD-VARIANTS/* || true
+          7z a -t7z "OPNPS2LD-LANGS-${OPL_VERSION}.7z" OPNPS2LD-LANGS/* || true
+          7z a -t7z "OPNPS2LD-DEBUG-${OPL_VERSION}.7z" OPNPS2LD-DEBUG/* || true
+
+          # Stable filenames
+          cp -f "OPNPS2LD-${OPL_VERSION}.7z" OPNPS2LD.7z
+          cp -f "OPNPS2LD-VARIANTS-${OPL_VERSION}.7z" OPNPS2LD-VARIANTS.7z || true
+          cp -f "OPNPS2LD-LANGS-${OPL_VERSION}.7z" OPNPS2LD-LANGS.7z || true
+          cp -f "OPNPS2LD-DEBUG-${OPL_VERSION}.7z" OPNPS2LD-DEBUG.7z || true
+
+      - name: Create GitHub prerelease (new tag every run)
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.name }}
           prerelease: true
-          automatic_release_tag: "latest"
-          title: "${{ steps.version.outputs.version }}"
-
-      - name: Create release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: "${{ contains(github.ref, '-rc') }}"
-          title: "${{ env.OPL_VERSION }}"
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
+          files: |
+            OPNPS2LD.ELF
+            OPNPS2LD.7z
+            OPNPS2LD-VARIANTS.7z
+            OPNPS2LD-LANGS.7z
+            OPNPS2LD-DEBUG.7z
+            INFO/DETAILED_CHANGELOG
+            INFO/README.md
+            INFO/LICENSE
+            INFO/CREDITS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
