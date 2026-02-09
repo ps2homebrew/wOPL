@@ -1,18 +1,19 @@
 # Unoffical-Open-PS2-Loader
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
-Copyright 2024-2025, KrahJohilto, Wolf3s, Ripto and ca44p<br/>
+Copyright 2024-2026, KrahJohilto, Wolf3s, Ripto and ca44p<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://github.com/NathanNeurotic/Unofficial-Open-PS2-Loader/actions/workflows/compilation.yml/badge.svg?branch=uOPL-1)](https://github.com/NathanNeurotic/Unofficial-Open-PS2-Loader/actions/workflows/compilation.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/99032a6a180243bfa0d0e23efeb0608d)](https://www.codacy.com/gh/NathanNeurotic/Unofficial-Open-PS2-Loader/dashboard?utm_source=github.com&utm_medium=referral&utm_content=NathanNeurotic/Unofficial-Open-PS2-Loader&utm_campaign=Badge_Grade)
-[![Discord](https://img.shields.io/discord/652861436992946216?style=flat&logo=Discord)]([https://discord.gg/CVFUa9xh6B](https://discord.gg/hFRysYVReu))
+[![CI](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml/badge.svg?branch=uOPL-1-release)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
+
 
 ## Introduction
 
-U-Open PS2 Loader (u-OPL) is a 100% Open source game and application loader based on [OPL](https://github.com/ps2homebrew/Open-PS2-Loader) for
-the PS2 and PS3 units. This version uses stable features that at the moment was not merged plus unique features.
+Unofficial Open PS2 Loader (uOPL) is a 100% Open source game and application loader based on [OPL](https://github.com/ps2homebrew/Open-PS2-Loader) for
+the PS2 and PS3 units. This version uses features that at the moment are not merged upstream and unique.
 <details>
   <summary> <b> Changes in uOPL </b> </summary>
 <p>
@@ -20,15 +21,15 @@ the PS2 and PS3 units. This version uses stable features that at the moment was 
   * uOPL uses a slightly older build environment in an attempt to increase stability, more akin to OPL r2049
   * Multi USB works without issues (workaround)
   * ATA HDD support ala grimdoomers fork
-  * UDPBD support (as a build variant) ala tihmstar & el_isra forks (untested) - likely needs more work
-  * Favourites Menu
-  * Optional per-game Neutrino core loading for increased compatibility
+  * UDPBD support (as a build variant) ala tihmstar & el_isra forks (untested) - likely needs more work and testers to confirm
+  * Favourites Menu Page (R3 Toggle's Favorite Marker)
+  * Optional per-game settings for Neutrino core loading for alternative compatibility on the fly
   * Additional Mode 7 ala Neutrino (works with both Neutrino and OPL core)
   * Legacy apps paths with `mass:` work
   * Two new built in themes `<uOPL>` & `<uOPL-CF>`
   * Additional theme options
   * Debug builds have the option to send LOGs to a BDM device
-  * Disable all button for cheats selection menu
+  * Disable all button added for cheats selection menu
   * Cancel pending ART requests at launch (should stop a crash that occurs when traversing the games list quickly and suddenly launching a title)
 
 ### Neutrino Support
@@ -47,7 +48,7 @@ These are all optional and will use default values if omitted.
 | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `wsX`                       | Sets theme element posX position in widescreen (avoids the need for seperate 4:3 and 16:9 theme cfgs)                |
 | `skip`                      | If enabled will skip rendering of StaticImage types if there is no currently selected item                           |
-| `reflection`                | If enabled will render a reflection of GameImage or Coverflow types (not recommended for faked perspective images)   |
+| `reflection`                | If enabled will render a reflection of GameImage or Coverflow types (not recommended for faked perspective/3D images)   |
 | `plasma_blend_color`        | Optional secondary blend colour for plasma (now you can mix bg & blend colour, previously it was only bg & black)    |
 | `Coverflow`                 | New type will render 3 covers at a time, works with overlays and reflection etc                                      |
 | `aligned=2`                 | New value for "aligned" to right justify                                                                             |
