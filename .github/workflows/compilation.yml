@@ -56,6 +56,31 @@ jobs:
       - name: Create detailed changelog
         run: sh ./make_changelog.sh
 
+      - name: Prepend release badges to DETAILED_CHANGELOG
+        shell: sh
+        run: |
+          set -eu
+
+          # Ensure file exists even if generator didn't create it (avoid failing uploads).
+          [ -f DETAILED_CHANGELOG ] || : > DETAILED_CHANGELOG
+
+          TMP="$(mktemp)"
+          cp -f DETAILED_CHANGELOG "$TMP"
+
+          cat > DETAILED_CHANGELOG << 'EOF'
+          [![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/uOPL/compilation.yml?branch=uOPL-1-release&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
+          [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard)
+          [![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE)
+          [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/uOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/releases)
+
+          ---
+
+          EOF
+
+          # Append the original changelog content after the badges block.
+          cat "$TMP" >> DETAILED_CHANGELOG
+          rm -f "$TMP"
+
       - name: Upload release artifact ELF
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
@@ -347,6 +372,12 @@ jobs:
 #          prerelease: true
 #          generate_release_notes: true
 #          target_commitish: ${{ github.sha }}
+#          body: |
+#            [![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/uOPL/compilation.yml?branch=uOPL-1-release&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
+#            [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard)
+#            [![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE)
+#            [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/uOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/releases)
+#
 #          files: |
 #            OPNPS2LD.ELF
 #            OPNPS2LD.7z
@@ -359,4 +390,3 @@ jobs:
 #            INFO/CREDITS
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#
