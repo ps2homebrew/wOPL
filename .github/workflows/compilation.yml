@@ -339,23 +339,24 @@ jobs:
           cp -f "OPNPS2LD-LANGS-${OPL_VERSION}.7z" OPNPS2LD-LANGS.7z || true
           cp -f "OPNPS2LD-DEBUG-${OPL_VERSION}.7z" OPNPS2LD-DEBUG.7z || true
 
-      - name: Create GitHub prerelease (new tag every run)
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.meta.outputs.tag }}
-          name: ${{ steps.meta.outputs.name }}
-          prerelease: true
-          generate_release_notes: true
-          target_commitish: ${{ github.sha }}
-          files: |
-            OPNPS2LD.ELF
-            OPNPS2LD.7z
-            OPNPS2LD-VARIANTS.7z
-            OPNPS2LD-LANGS.7z
-            OPNPS2LD-DEBUG.7z
-            INFO/DETAILED_CHANGELOG
-            INFO/README.md
-            INFO/LICENSE
-            INFO/CREDITS
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Create GitHub prerelease (new tag every run)
+#        uses: softprops/action-gh-release@v2
+#        with:
+#          tag_name: ${{ steps.meta.outputs.tag }}
+#          name: ${{ steps.meta.outputs.name }}
+#          prerelease: true
+#          generate_release_notes: true
+#          target_commitish: ${{ github.sha }}
+#          files: |
+#            OPNPS2LD.ELF
+#            OPNPS2LD.7z
+#            OPNPS2LD-VARIANTS.7z
+#            OPNPS2LD-LANGS.7z
+#            OPNPS2LD-DEBUG.7z
+#            INFO/DETAILED_CHANGELOG
+#            INFO/README.md
+#            INFO/LICENSE
+#            INFO/CREDITS
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
