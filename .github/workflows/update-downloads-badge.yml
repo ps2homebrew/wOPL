@@ -24,70 +24,55 @@ jobs:
           ref: uOPL-1-release
           fetch-depth: 0
 
-      - name: Calculate total release asset downloads
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OWNER: NathanNeurotic
-          REPO: uOPL
-        run: |
-          set -euo pipefail
+      - name: Compute total downloads + write badges/downloads.svg
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
 
-          # Sum assets[].download_count across ALL releases (handles pagination)
-          total=0
-          page=1
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
 
-          while :; do
-            json="$(gh api -H 'Accept: application/vnd.github+json' "/repos/${OWNER}/${REPO}/releases?per_page=100&page=${page}")"
+            // Sum assets[].download_count across ALL releases (paginate)
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              owner,
+              repo,
+              per_page: 100
+            });
 
-            count="$(printf '%s' "$json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d))")"
-            if [ "$count" -eq 0 ]; then
-              break
-            fi
+            let total = 0;
+            for (const rel of releases) {
+              const assets = rel.assets || [];
+              for (const a of assets) {
+                total += Number(a.download_count || 0);
+              }
+            }
 
-            page_sum="$(printf '%s' "$json" | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(int(a.get('download_count',0) or 0) for r in d for a in r.get('assets',[])))")"
-            total=$(( total + page_sum ))
-            page=$(( page + 1 ))
-          done
+            core.info(`Computed total downloads: ${total}`);
 
-          echo "TOTAL_DOWNLOADS=$total" >> "$GITHUB_ENV"
-          echo "Computed total downloads: $total"
+            const label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:";
+            const msg = String(total); // FULL NUMBER
 
-      - name: Generate badges/downloads.svg
-        env:
-          TOTAL_DOWNLOADS: ${{ env.TOTAL_DOWNLOADS }}
-        run: |
-          set -euo pipefail
-          mkdir -p badges
+            // Match your scheme: light label bg + blue value bg
+            const labelBg = "#faf9f6";
+            const valueBg = "#0000ff";
+            const labelFg = "#111111";
+            const valueFg = "#ffffff";
 
-          cat > /tmp/gen_downloads_badge.py <<'PY'
-import os
+            // Simple sizing
+            const fontSize = 11;
+            const pad = 10;
+            const charW = 6;
 
-value = os.environ.get("TOTAL_DOWNLOADS", "0").strip()
-try:
-    n = int(value)
-except Exception:
-    n = 0
+            const labelW = Math.max(80, label.length * charW + pad * 2);
+            const valueW = Math.max(50, msg.length * charW + pad * 2);
+            const h = 20;
+            const w = labelW + valueW;
 
-label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:"
-msg = str(n)  # FULL NUMBER
-
-# Match your scheme: light label background, blue value background
-label_bg = "#faf9f6"
-value_bg = "#0000ff"   # pure blue (change if you prefer a different blue)
-label_fg = "#111111"
-value_fg = "#ffffff"
-
-# Basic sizing
-font_size = 11
-pad = 10
-char_w = 6
-
-label_w = max(80, len(label) * char_w + pad * 2)
-value_w = max(50, len(msg) * char_w + pad * 2)
-h = 20
-w = label_w + value_w
-
-svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" role="img" aria-label="{label} {msg}">
+            const svg =
+`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img" aria-label="${label} ${msg}">
   <linearGradient id="s" x2="0" y2="100%">
     <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
     <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>
@@ -96,30 +81,27 @@ svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" role=
   </linearGradient>
 
   <clipPath id="r">
-    <rect width="{w}" height="{h}" rx="4" fill="#fff"/>
+    <rect width="${w}" height="${h}" rx="4" fill="#fff"/>
   </clipPath>
 
   <g clip-path="url(#r)">
-    <rect width="{label_w}" height="{h}" fill="{label_bg}"/>
-    <rect x="{label_w}" width="{value_w}" height="{h}" fill="{value_bg}"/>
-    <rect width="{w}" height="{h}" fill="url(#s)"/>
+    <rect width="${labelW}" height="${h}" fill="${labelBg}"/>
+    <rect x="${labelW}" width="${valueW}" height="${h}" fill="${valueBg}"/>
+    <rect width="${w}" height="${h}" fill="url(#s)"/>
   </g>
 
-  <g fill="{label_fg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="{font_size}">
-    <text x="{label_w/2}" y="14">{label}</text>
+  <g fill="${labelFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}">
+    <text x="${labelW / 2}" y="14">${label}</text>
   </g>
 
-  <g fill="{value_fg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="{font_size}" font-weight="700">
-    <text x="{label_w + value_w/2}" y="14">{msg}</text>
+  <g fill="${valueFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}" font-weight="700">
+    <text x="${labelW + (valueW / 2)}" y="14">${msg}</text>
   </g>
 </svg>
-'''
+`;
 
-with open("badges/downloads.svg", "w", encoding="utf-8") as f:
-    f.write(svg)
-PY
-
-          python3 /tmp/gen_downloads_badge.py
+            fs.mkdirSync('badges', { recursive: true });
+            fs.writeFileSync(path.join('badges', 'downloads.svg'), svg, 'utf8');
 
       - name: Commit badge update (only if changed)
         run: |
