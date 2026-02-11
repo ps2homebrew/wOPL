@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="352" height="20" role="img" aria-label="| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS: 2972">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
+    <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>
+    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>
+    <stop offset="1" stop-color="#000" stop-opacity=".3"/>
+  </linearGradient>
+  <clipPath id="r">
+    <rect width="352" height="20" rx="4" fill="#fff"/>
+  </clipPath>
+  <g clip-path="url(#r)">
+    <rect width="302" height="20" fill="#faf9f6"/>
+    <rect x="302" width="50" height="20" fill="#0000ff"/>
+    <rect width="352" height="20" fill="url(#s)"/>
+  </g>
+  <g fill="#111111" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+    <text x="151" y="14">| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:</text>
+  </g>
+  <g fill="#ffffff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11" font-weight="700">
+    <text x="327" y="14">2972</text>
+  </g>
+</svg>
