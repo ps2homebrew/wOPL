@@ -5,10 +5,8 @@ Copyright 2024-2026, KrahJohilto, Wolf3s, Ripto and ca44p<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/uOPL/compilation.yml?branch=uOPL-1-release&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
-[![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard)
-[![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE)
-[![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/uOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/uOPL/compilation.yml?branch=uOPL-1-release&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml) [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard) [![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE) [![Downloads](https://raw.githubusercontent.com/NathanNeurotic/uOPL/uOPL-1-release/badges/downloads.svg)](https://github.com/NathanNeurotic/uOPL/releases)
+
 
 ## Introduction
 
