@@ -29,8 +29,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const fs = require('fs');
-            const path = require('path');
+            const fs = require("fs");
+            const path = require("path");
 
             const owner = context.repo.owner;
             const repo = context.repo.repo;
@@ -39,13 +39,12 @@ jobs:
             const releases = await github.paginate(github.rest.repos.listReleases, {
               owner,
               repo,
-              per_page: 100
+              per_page: 100,
             });
 
             let total = 0;
             for (const rel of releases) {
-              const assets = rel.assets || [];
-              for (const a of assets) {
+              for (const a of (rel.assets || [])) {
                 total += Number(a.download_count || 0);
               }
             }
@@ -55,13 +54,13 @@ jobs:
             const label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:";
             const msg = String(total); // FULL NUMBER
 
-            // Match your scheme: light label bg + blue value bg
+            // Colors: light label bg + blue value bg
             const labelBg = "#faf9f6";
             const valueBg = "#0000ff";
             const labelFg = "#111111";
             const valueFg = "#ffffff";
 
-            // Simple sizing
+            // Sizing (approx)
             const fontSize = 11;
             const pad = 10;
             const charW = 6;
@@ -71,41 +70,45 @@ jobs:
             const h = 20;
             const w = labelW + valueW;
 
-            const svg =
-`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img" aria-label="${label} ${msg}">
-  <linearGradient id="s" x2="0" y2="100%">
-    <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
-    <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>
-    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>
-    <stop offset="1" stop-color="#000" stop-opacity=".3"/>
-  </linearGradient>
+            // Build SVG as an array of lines and join.
+            // (No JS template-literal multi-line blocks; avoids YAML parser edge cases.)
+            const svgLines = [
+              `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img" aria-label="${label} ${msg}">`,
+              `  <linearGradient id="s" x2="0" y2="100%">`,
+              `    <stop offset="0" stop-color="#fff" stop-opacity=".7"/>`,
+              `    <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>`,
+              `    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>`,
+              `    <stop offset="1" stop-color="#000" stop-opacity=".3"/>`,
+              `  </linearGradient>`,
+              ``,
+              `  <clipPath id="r">`,
+              `    <rect width="${w}" height="${h}" rx="4" fill="#fff"/>`,
+              `  </clipPath>`,
+              ``,
+              `  <g clip-path="url(#r)">`,
+              `    <rect width="${labelW}" height="${h}" fill="${labelBg}"/>`,
+              `    <rect x="${labelW}" width="${valueW}" height="${h}" fill="${valueBg}"/>`,
+              `    <rect width="${w}" height="${h}" fill="url(#s)"/>`,
+              `  </g>`,
+              ``,
+              `  <g fill="${labelFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}">`,
+              `    <text x="${labelW / 2}" y="14">${label}</text>`,
+              `  </g>`,
+              ``,
+              `  <g fill="${valueFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}" font-weight="700">`,
+              `    <text x="${labelW + (valueW / 2)}" y="14">${msg}</text>`,
+              `  </g>`,
+              `</svg>`,
+              ``,
+            ];
 
-  <clipPath id="r">
-    <rect width="${w}" height="${h}" rx="4" fill="#fff"/>
-  </clipPath>
-
-  <g clip-path="url(#r)">
-    <rect width="${labelW}" height="${h}" fill="${labelBg}"/>
-    <rect x="${labelW}" width="${valueW}" height="${h}" fill="${valueBg}"/>
-    <rect width="${w}" height="${h}" fill="url(#s)"/>
-  </g>
-
-  <g fill="${labelFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}">
-    <text x="${labelW / 2}" y="14">${label}</text>
-  </g>
-
-  <g fill="${valueFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}" font-weight="700">
-    <text x="${labelW + (valueW / 2)}" y="14">${msg}</text>
-  </g>
-</svg>
-`;
-
-            fs.mkdirSync('badges', { recursive: true });
-            fs.writeFileSync(path.join('badges', 'downloads.svg'), svg, 'utf8');
+            fs.mkdirSync("badges", { recursive: true });
+            fs.writeFileSync(path.join("badges", "downloads.svg"), svgLines.join("\n"), "utf8");
 
       - name: Commit badge update (only if changed)
         run: |
           set -euo pipefail
+
           if git diff --quiet -- badges/downloads.svg; then
             echo "No badge changes."
             exit 0
