@@ -18,10 +18,10 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout (uOPL-1-release)
+      - name: Checkout badges branch (create if missing)
         uses: actions/checkout@v4
         with:
-          ref: uOPL-1-release
+          ref: badges
           fetch-depth: 0
 
       - name: Compute total downloads + write badges/downloads.svg
@@ -51,7 +51,7 @@ jobs:
             core.info(`Computed total downloads: ${total}`);
 
             const label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:";
-            const msg = String(total); // FULL NUMBER
+            const msg = String(total);
 
             const labelBg = "#faf9f6";
             const valueBg = "#0000ff";
@@ -96,21 +96,19 @@ jobs:
             fs.mkdirSync("badges", { recursive: true });
             fs.writeFileSync(path.join("badges", "downloads.svg"), svgLines.join("\n"), "utf8");
 
-      - name: Commit badge update (tracks new files too)
+      - name: Commit badge update (badges branch)
         run: |
           set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Stage the file FIRST so untracked/new files are detected
           git add -A badges/downloads.svg
 
-          # If nothing staged, do nothing
           if git diff --cached --quiet; then
             echo "No badge changes."
             exit 0
           fi
 
           git commit -m "chore(badges): update downloads badge"
-          git push origin uOPL-1-release
+          git push origin badges
