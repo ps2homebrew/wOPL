@@ -3,12 +3,13 @@ name: Update Downloads Badge
 on:
   workflow_dispatch:
   schedule:
-    - cron: "17 */6 * * *" # every 6 hours
+    - cron: "17 */12 * * *" # every 12 hours to reduce PR churn
   release:
     types: [published, edited, deleted]
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: downloads-badge
@@ -18,13 +19,13 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout badges branch (create if missing)
+      - name: Checkout default branch (uOPL-1-release)
         uses: actions/checkout@v4
         with:
-          ref: badges
+          ref: uOPL-1-release
           fetch-depth: 0
 
-      - name: Compute total downloads + write badges/downloads.svg
+      - name: Compute total downloads + write badges/downloads.json
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -35,6 +36,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
+            // Sum assets[].download_count across ALL releases (paginate)
             const releases = await github.paginate(github.rest.repos.listReleases, {
               owner,
               repo,
@@ -50,65 +52,33 @@ jobs:
 
             core.info(`Computed total downloads: ${total}`);
 
-            const label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:";
-            const msg = String(total);
-
-            const labelBg = "#faf9f6";
-            const valueBg = "#0000ff";
-            const labelFg = "#111111";
-            const valueFg = "#ffffff";
-
-            const fontSize = 11;
-            const pad = 10;
-            const charW = 6;
-
-            const labelW = Math.max(80, label.length * charW + pad * 2);
-            const valueW = Math.max(50, msg.length * charW + pad * 2);
-            const h = 20;
-            const w = labelW + valueW;
-
-            const svgLines = [
-              `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img" aria-label="${label} ${msg}">`,
-              `  <linearGradient id="s" x2="0" y2="100%">`,
-              `    <stop offset="0" stop-color="#fff" stop-opacity=".7"/>`,
-              `    <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>`,
-              `    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>`,
-              `    <stop offset="1" stop-color="#000" stop-opacity=".3"/>`,
-              `  </linearGradient>`,
-              `  <clipPath id="r">`,
-              `    <rect width="${w}" height="${h}" rx="4" fill="#fff"/>`,
-              `  </clipPath>`,
-              `  <g clip-path="url(#r)">`,
-              `    <rect width="${labelW}" height="${h}" fill="${labelBg}"/>`,
-              `    <rect x="${labelW}" width="${valueW}" height="${h}" fill="${valueBg}"/>`,
-              `    <rect width="${w}" height="${h}" fill="url(#s)"/>`,
-              `  </g>`,
-              `  <g fill="${labelFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}">`,
-              `    <text x="${labelW / 2}" y="14">${label}</text>`,
-              `  </g>`,
-              `  <g fill="${valueFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}" font-weight="700">`,
-              `    <text x="${labelW + (valueW / 2)}" y="14">${msg}</text>`,
-              `  </g>`,
-              `</svg>`,
-              ``,
-            ];
+            // Shields endpoint schema
+            // https://shields.io/endpoint
+            const badge = {
+              schemaVersion: 1,
+              label: "UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:",
+              message: String(total),          // FULL NUMBER
+              labelColor: "faf9f6",
+              color: "blue"
+            };
 
             fs.mkdirSync("badges", { recursive: true });
-            fs.writeFileSync(path.join("badges", "downloads.svg"), svgLines.join("\n"), "utf8");
+            fs.writeFileSync(
+              path.join("badges", "downloads.json"),
+              JSON.stringify(badge),
+              "utf8"
+            );
 
-      - name: Commit badge update (badges branch)
-        run: |
-          set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add -A badges/downloads.svg
-
-          if git diff --cached --quiet; then
-            echo "No badge changes."
-            exit 0
-          fi
-
-          git commit -m "chore(badges): update downloads badge"
-          git push origin badges
+      - name: Create or update PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: uOPL-1-release
+          branch: bot/downloads-badge
+          delete-branch: false
+          title: "chore(badges): update downloads badge"
+          commit-message: "chore(badges): update downloads badge"
+          body: |
+            Automated update of `badges/downloads.json` (Shields endpoint) based on summed GitHub release asset downloads.
+          add-paths: |
+            badges/downloads.json
