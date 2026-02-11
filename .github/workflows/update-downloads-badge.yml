@@ -35,7 +35,6 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // Sum assets[].download_count across ALL releases (paginate)
             const releases = await github.paginate(github.rest.repos.listReleases, {
               owner,
               repo,
@@ -54,13 +53,11 @@ jobs:
             const label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:";
             const msg = String(total); // FULL NUMBER
 
-            // Colors: light label bg + blue value bg
             const labelBg = "#faf9f6";
             const valueBg = "#0000ff";
             const labelFg = "#111111";
             const valueFg = "#ffffff";
 
-            // Sizing (approx)
             const fontSize = 11;
             const pad = 10;
             const charW = 6;
@@ -70,8 +67,6 @@ jobs:
             const h = 20;
             const w = labelW + valueW;
 
-            // Build SVG as an array of lines and join.
-            // (No JS template-literal multi-line blocks; avoids YAML parser edge cases.)
             const svgLines = [
               `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" role="img" aria-label="${label} ${msg}">`,
               `  <linearGradient id="s" x2="0" y2="100%">`,
@@ -80,21 +75,17 @@ jobs:
               `    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>`,
               `    <stop offset="1" stop-color="#000" stop-opacity=".3"/>`,
               `  </linearGradient>`,
-              ``,
               `  <clipPath id="r">`,
               `    <rect width="${w}" height="${h}" rx="4" fill="#fff"/>`,
               `  </clipPath>`,
-              ``,
               `  <g clip-path="url(#r)">`,
               `    <rect width="${labelW}" height="${h}" fill="${labelBg}"/>`,
               `    <rect x="${labelW}" width="${valueW}" height="${h}" fill="${valueBg}"/>`,
               `    <rect width="${w}" height="${h}" fill="url(#s)"/>`,
               `  </g>`,
-              ``,
               `  <g fill="${labelFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}">`,
               `    <text x="${labelW / 2}" y="14">${label}</text>`,
               `  </g>`,
-              ``,
               `  <g fill="${valueFg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="${fontSize}" font-weight="700">`,
               `    <text x="${labelW + (valueW / 2)}" y="14">${msg}</text>`,
               `  </g>`,
@@ -105,18 +96,21 @@ jobs:
             fs.mkdirSync("badges", { recursive: true });
             fs.writeFileSync(path.join("badges", "downloads.svg"), svgLines.join("\n"), "utf8");
 
-      - name: Commit badge update (only if changed)
+      - name: Commit badge update (tracks new files too)
         run: |
           set -euo pipefail
-
-          if git diff --quiet -- badges/downloads.svg; then
-            echo "No badge changes."
-            exit 0
-          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add badges/downloads.svg
+          # Stage the file FIRST so untracked/new files are detected
+          git add -A badges/downloads.svg
+
+          # If nothing staged, do nothing
+          if git diff --cached --quiet; then
+            echo "No badge changes."
+            exit 0
+          fi
+
           git commit -m "chore(badges): update downloads badge"
           git push origin uOPL-1-release
