@@ -1,0 +1,147 @@
+name: Update Downloads Badge
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */6 * * *" # every 6 hours
+  release:
+    types: [published, edited, deleted]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: downloads-badge
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (uOPL-1-release)
+        uses: actions/checkout@v4
+        with:
+          ref: uOPL-1-release
+          fetch-depth: 0
+
+      - name: Calculate total release asset downloads
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: NathanNeurotic
+          REPO: uOPL
+        run: |
+          set -euo pipefail
+
+          # Sum assets[].download_count across ALL releases (handles pagination)
+          total=0
+          page=1
+          while :; do
+            json="$(gh api -H "Accept: application/vnd.github+json" "/repos/${OWNER}/${REPO}/releases?per_page=100&page=${page}")"
+            count="$(printf "%s" "$json" | python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+print(len(data))
+PY
+)"
+            if [ "$count" -eq 0 ]; then
+              break
+            fi
+
+            page_sum="$(printf "%s" "$json" | python3 - <<'PY'
+import json, sys
+data = json.load(sys.stdin)
+s = 0
+for rel in data:
+    for a in rel.get("assets", []):
+        s += int(a.get("download_count", 0) or 0)
+print(s)
+PY
+)"
+            total=$(( total + page_sum ))
+            page=$(( page + 1 ))
+          done
+
+          echo "TOTAL_DOWNLOADS=$total" >> "$GITHUB_ENV"
+          echo "Computed total downloads: $total"
+
+      - name: Generate badges/downloads.svg
+        env:
+          TOTAL_DOWNLOADS: ${{ env.TOTAL_DOWNLOADS }}
+        run: |
+          set -euo pipefail
+          mkdir -p badges
+
+          python3 - <<'PY'
+import os
+
+value = os.environ.get("TOTAL_DOWNLOADS", "0").strip()
+try:
+    n = int(value)
+except Exception:
+    n = 0
+
+label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:"
+msg = str(n)  # FULL NUMBER (no K/M formatting)
+
+# Visuals (match your current light label + blue value)
+label_bg = "#faf9f6"
+value_bg = "#1f6feb"   # blue
+label_fg = "#111111"
+value_fg = "#ffffff"
+
+# Simple SVG badge sizing
+# Approx character width for DejaVu Sans at 11px is ~6px; add padding
+font_size = 11
+pad = 10
+char_w = 6
+
+label_w = max(80, len(label) * char_w + pad * 2)
+value_w = max(50, len(msg) * char_w + pad * 2)
+h = 20
+w = label_w + value_w
+
+svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" role="img" aria-label="{label} {msg}">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
+    <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>
+    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>
+    <stop offset="1" stop-color="#000" stop-opacity=".3"/>
+  </linearGradient>
+
+  <clipPath id="r">
+    <rect width="{w}" height="{h}" rx="4" fill="#fff"/>
+  </clipPath>
+
+  <g clip-path="url(#r)">
+    <rect width="{label_w}" height="{h}" fill="{label_bg}"/>
+    <rect x="{label_w}" width="{value_w}" height="{h}" fill="{value_bg}"/>
+    <rect width="{w}" height="{h}" fill="url(#s)"/>
+  </g>
+
+  <g fill="{label_fg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="{font_size}">
+    <text x="{label_w/2}" y="14">{label}</text>
+  </g>
+
+  <g fill="{value_fg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="{font_size}" font-weight="700">
+    <text x="{label_w + value_w/2}" y="14">{msg}</text>
+  </g>
+</svg>
+'''
+with open("badges/downloads.svg", "w", encoding="utf-8") as f:
+    f.write(svg)
+PY
+
+      - name: Commit badge update (only if changed)
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- badges/downloads.svg; then
+            echo "No badge changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add badges/downloads.svg
+          git commit -m "chore(badges): update downloads badge"
+          git push origin uOPL-1-release
