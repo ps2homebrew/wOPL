@@ -59,22 +59,25 @@ jobs:
           set -euo pipefail
           mkdir -p badges
 
-          python3 -c "
+          cat > /tmp/gen_downloads_badge.py <<'PY'
 import os
-value = os.environ.get('TOTAL_DOWNLOADS','0').strip()
+
+value = os.environ.get("TOTAL_DOWNLOADS", "0").strip()
 try:
     n = int(value)
 except Exception:
     n = 0
 
-label = '| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:'
-msg = str(n)  # FULL NUMBER (no K/M formatting)
+label = "| UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:"
+msg = str(n)  # FULL NUMBER
 
-label_bg = '#faf9f6'
-value_bg = '#1f6feb'
-label_fg = '#111111'
-value_fg = '#ffffff'
+# Match your scheme: light label background, blue value background
+label_bg = "#faf9f6"
+value_bg = "#0000ff"   # pure blue (change if you prefer a different blue)
+label_fg = "#111111"
+value_fg = "#ffffff"
 
+# Basic sizing
 font_size = 11
 pad = 10
 char_w = 6
@@ -84,36 +87,39 @@ value_w = max(50, len(msg) * char_w + pad * 2)
 h = 20
 w = label_w + value_w
 
-svg = f'''<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{w}\" height=\"{h}\" role=\"img\" aria-label=\"{label} {msg}\">
-  <linearGradient id=\"s\" x2=\"0\" y2=\"100%\">
-    <stop offset=\"0\" stop-color=\"#fff\" stop-opacity=\".7\"/>
-    <stop offset=\".1\" stop-color=\"#fff\" stop-opacity=\".1\"/>
-    <stop offset=\".9\" stop-color=\"#000\" stop-opacity=\".1\"/>
-    <stop offset=\"1\" stop-color=\"#000\" stop-opacity=\".3\"/>
+svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" role="img" aria-label="{label} {msg}">
+  <linearGradient id="s" x2="0" y2="100%">
+    <stop offset="0" stop-color="#fff" stop-opacity=".7"/>
+    <stop offset=".1" stop-color="#fff" stop-opacity=".1"/>
+    <stop offset=".9" stop-color="#000" stop-opacity=".1"/>
+    <stop offset="1" stop-color="#000" stop-opacity=".3"/>
   </linearGradient>
 
-  <clipPath id=\"r\">
-    <rect width=\"{w}\" height=\"{h}\" rx=\"4\" fill=\"#fff\"/>
+  <clipPath id="r">
+    <rect width="{w}" height="{h}" rx="4" fill="#fff"/>
   </clipPath>
 
-  <g clip-path=\"url(#r)\">
-    <rect width=\"{label_w}\" height=\"{h}\" fill=\"{label_bg}\"/>
-    <rect x=\"{label_w}\" width=\"{value_w}\" height=\"{h}\" fill=\"{value_bg}\"/>
-    <rect width=\"{w}\" height=\"{h}\" fill=\"url(#s)\"/>
+  <g clip-path="url(#r)">
+    <rect width="{label_w}" height="{h}" fill="{label_bg}"/>
+    <rect x="{label_w}" width="{value_w}" height="{h}" fill="{value_bg}"/>
+    <rect width="{w}" height="{h}" fill="url(#s)"/>
   </g>
 
-  <g fill=\"{label_fg}\" text-anchor=\"middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"{font_size}\">
-    <text x=\"{label_w/2}\" y=\"14\">{label}</text>
+  <g fill="{label_fg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="{font_size}">
+    <text x="{label_w/2}" y="14">{label}</text>
   </g>
 
-  <g fill=\"{value_fg}\" text-anchor=\"middle\" font-family=\"DejaVu Sans,Verdana,Geneva,sans-serif\" font-size=\"{font_size}\" font-weight=\"700\">
-    <text x=\"{label_w + value_w/2}\" y=\"14\">{msg}</text>
+  <g fill="{value_fg}" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="{font_size}" font-weight="700">
+    <text x="{label_w + value_w/2}" y="14">{msg}</text>
   </g>
 </svg>
 '''
-with open('badges/downloads.svg','w',encoding='utf-8') as f:
+
+with open("badges/downloads.svg", "w", encoding="utf-8") as f:
     f.write(svg)
-"
+PY
+
+          python3 /tmp/gen_downloads_badge.py
 
       - name: Commit badge update (only if changed)
         run: |
