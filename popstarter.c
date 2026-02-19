@@ -24,10 +24,10 @@ int popsInit(void)
 {
     // Set default configuration
     popsSetDefaultConfig();
-    
+
     // Load configuration if exists
     popsLoadConfig();
-    
+
     return 0;
 }
 
@@ -36,10 +36,10 @@ int popsLoadConfig(void)
 {
     char path[256];
     config_set_t *configSet;
-    
+
     snprintf(path, sizeof(path), "%s/POPSTARTER.cfg", gOPLPath);
     configSet = configAlloc(0, NULL, path);
-    
+
     if (configRead(configSet)) {
         configGetInt(configSet, "enabled", &popsConfig.enabled);
         configGetInt(configSet, "resolution", (int *)&popsConfig.resolution);
@@ -52,7 +52,7 @@ int popsLoadConfig(void)
         configGetInt(configSet, "smoothPolygons", &popsConfig.visualOptions.smoothPolygons);
         configGetStr(configSet, "configFile", popsConfig.configFile, sizeof(popsConfig.configFile));
     }
-    
+
     configFree(configSet);
     return 1;
 }
@@ -62,10 +62,10 @@ int popsSaveConfig(void)
 {
     char path[256];
     config_set_t *configSet;
-    
+
     snprintf(path, sizeof(path), "%s/POPSTARTER.cfg", gOPLPath);
     configSet = configAlloc(0, NULL, path);
-    
+
     configSetInt(configSet, "enabled", popsConfig.enabled);
     configSetInt(configSet, "resolution", (int)popsConfig.resolution);
     configSetInt(configSet, "aspectRatio", (int)popsConfig.aspectRatio);
@@ -76,7 +76,7 @@ int popsSaveConfig(void)
     configSetInt(configSet, "enhanceTextures", popsConfig.visualOptions.enhanceTextures);
     configSetInt(configSet, "smoothPolygons", popsConfig.visualOptions.smoothPolygons);
     configSetStr(configSet, "configFile", popsConfig.configFile);
-    
+
     configWrite(configSet);
     configFree(configSet);
     return 1;
@@ -101,7 +101,7 @@ void popsSetDefaultConfig(void)
 int popsApplyResolutionSettings(void)
 {
     char popsParms[256] = "";
-    
+
     // Build parameters based on resolution settings
     switch (popsConfig.resolution) {
         case POPS_RES_NATIVE:
@@ -120,7 +120,7 @@ int popsApplyResolutionSettings(void)
             strcat(popsParms, "--auto");
             break;
     }
-    
+
     // Add aspect ratio parameter
     switch (popsConfig.aspectRatio) {
         case POPS_ASPECT_4_3:
@@ -133,7 +133,7 @@ int popsApplyResolutionSettings(void)
             strcat(popsParms, " --aspect=auto");
             break;
     }
-    
+
     // Add quality settings
     switch (popsConfig.quality) {
         case POPS_QUALITY_FAST:
@@ -146,37 +146,37 @@ int popsApplyResolutionSettings(void)
             strcat(popsParms, " --quality=smooth");
             break;
     }
-    
+
     // Add visual options
     if (popsConfig.visualOptions.enableScanlines) {
         char temp[32];
         sprintf(temp, " --scanlines=%d", popsConfig.visualOptions.scanlineIntensity);
         strcat(popsParms, temp);
     }
-    
+
     if (popsConfig.visualOptions.bilinearFilter) {
         strcat(popsParms, " --filter");
     }
-    
+
     if (popsConfig.visualOptions.enhanceTextures) {
         strcat(popsParms, " --enhance");
     }
-    
+
     if (popsConfig.visualOptions.smoothPolygons) {
         strcat(popsParms, " --smooth");
     }
-    
+
     // Save parameters to config file
     char path[256];
     snprintf(path, sizeof(path), "%s/POPSCONFIG.CFG", gOPLPath);
-    
+
     FILE *file = fopen(path, "w");
     if (file) {
         fprintf(file, "%s\n", popsParms);
         fclose(file);
         return 1;
     }
-    
+
     return 0;
 }
 
@@ -188,10 +188,10 @@ int popsLaunchGame(const char *vcdPath, config_set_t *configSet)
     char bootParams[512];
     char *popsData = NULL;
     int popsSize = 0;
-    
+
     // Apply resolution settings before launch
     popsApplyResolutionSettings();
-    
+
     // Determine storage device and select appropriate binary
     if (strncmp(vcdPath, "mass:", 5) == 0) {
         // USB mode
@@ -212,37 +212,37 @@ int popsLaunchGame(const char *vcdPath, config_set_t *configSet)
         // Unsupported device
         return -1;
     }
-    
+
     if (!popsData || popsSize <= 0) {
         // Binary not found
         return -2;
     }
-    
+
     // Create temporary file for POPSTARTER binary
     snprintf(popsBinary, sizeof(popsBinary), "%s/POPSTARTER.ELF", gOPLPath);
     FILE *file = fopen(popsBinary, "wb");
     if (!file) {
         return -3;
     }
-    
+
     // Write binary data
     fwrite(popsData, 1, popsSize, file);
     fclose(file);
-    
+
     // Build boot parameters
-    snprintf(bootParams, sizeof(bootParams), 
-             "%s %s --hdtvfix --resolution=%d --aspect=%d %s", 
-             popsBinary, vcdPath, 
-             popsConfig.resolution, 
+    snprintf(bootParams, sizeof(bootParams),
+             "%s %s --hdtvfix --resolution=%d --aspect=%d %s",
+             popsBinary, vcdPath,
+             popsConfig.resolution,
              popsConfig.aspectRatio,
              popsConfig.configFile);
-    
+
     // Launch POPSTARTER
     int ret = oplExecELF(bootParams);
-    
+
     // Clean up
     unlink(popsBinary);
-    
+
     return ret;
 }
 
@@ -254,7 +254,7 @@ int popsIsValidVCD(const char *path)
     if (ext && (strcasecmp(ext, ".VCD") == 0 || strcasecmp(ext, ".BIN") == 0)) {
         return 1;
     }
-    
+
     return 0;
 }
 
@@ -266,4 +266,3 @@ int popsUpdateCompatibility(void)
     // For now, just return success
     return 1;
 }
-

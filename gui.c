@@ -13,4 +13,3 @@ static GSTEXTURE diagIconFailed;
 static GSTEXTURE diagIconWarning;
 
 // Extern diagnostic results from dialogs
-

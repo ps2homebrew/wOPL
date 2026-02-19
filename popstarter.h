@@ -5,11 +5,11 @@
 
 // Resolution modes
 typedef enum {
-    POPS_RES_NATIVE,  // Native PS1 resolution (320x240)
-    POPS_RES_480P,    // Progressive scan 480p
-    POPS_RES_720P,    // HD 720p
-    POPS_RES_1080I,   // HD 1080i
-    POPS_RES_AUTO     // Auto detect best mode
+    POPS_RES_NATIVE, // Native PS1 resolution (320x240)
+    POPS_RES_480P,   // Progressive scan 480p
+    POPS_RES_720P,   // HD 720p
+    POPS_RES_1080I,  // HD 1080i
+    POPS_RES_AUTO    // Auto detect best mode
 } POPS_RESOLUTION;
 
 // Aspect ratio modes
@@ -21,28 +21,30 @@ typedef enum {
 
 // Display quality settings
 typedef enum {
-    POPS_QUALITY_FAST,    // Fast rendering, minimal filtering
+    POPS_QUALITY_FAST,     // Fast rendering, minimal filtering
     POPS_QUALITY_BALANCED, // Balanced performance/quality
     POPS_QUALITY_SMOOTH    // Best quality, full filtering
 } POPS_QUALITY;
 
 // Visual enhancement options
-typedef struct {
-    int enableScanlines;     // Enable CRT scanline effect
-    int scanlineIntensity;   // Intensity of scanlines (0-100)
-    int bilinearFilter;      // Enable bilinear filtering
-    int enhanceTextures;     // Enhance/sharpen textures
-    int smoothPolygons;      // Smooth polygon edges
+typedef struct
+{
+    int enableScanlines;   // Enable CRT scanline effect
+    int scanlineIntensity; // Intensity of scanlines (0-100)
+    int bilinearFilter;    // Enable bilinear filtering
+    int enhanceTextures;   // Enhance/sharpen textures
+    int smoothPolygons;    // Smooth polygon edges
 } POPS_VISUAL_OPTIONS;
 
 // POPSTARTER settings
-typedef struct {
-    int enabled;               // POPSTARTER enabled
-    POPS_RESOLUTION resolution; // Resolution mode
-    POPS_ASPECT_RATIO aspectRatio; // Aspect ratio setting
-    POPS_QUALITY quality;     // Quality preset
+typedef struct
+{
+    int enabled;                       // POPSTARTER enabled
+    POPS_RESOLUTION resolution;        // Resolution mode
+    POPS_ASPECT_RATIO aspectRatio;     // Aspect ratio setting
+    POPS_QUALITY quality;              // Quality preset
     POPS_VISUAL_OPTIONS visualOptions; // Visual enhancement options
-    char configFile[128];     // Path to config file
+    char configFile[128];              // Path to config file
 } POPS_CONFIG;
 
 // Global POPSTARTER config
@@ -73,4 +75,3 @@ int popsIsValidVCD(const char *path);
 int popsUpdateCompatibility(void);
 
 #endif // __POPSTARTER_H
-
