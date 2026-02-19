@@ -1,6 +1,3 @@
-# Add POPSTARTER to build
-POPS_OBJS = obj/popstarter.o
-
 VERSION = 1
 SUBVERSION = 2
 PATCHLEVEL = 0
@@ -56,17 +53,22 @@ DECI2_DEBUG ?= 0
 TTY_APPROACH ?= UDP
 
 # ======== DO NOT MODIFY VALUES AFTER THIS POINT! UNLESS YOU KNOW WHAT YOU ARE DOING ========
-REVISION = $(shell expr $(shell git rev-list --count HEAD) + 2)
+GIT_AVAILABLE = $(shell command -v git >/dev/null 2>&1 && echo 1 || echo 0)
+GIT_REPO = $(shell test -d .git && echo 1 || echo 0)
 
+ifeq ($(GIT_AVAILABLE)$(GIT_REPO),11)
+REVISION = $(shell expr $(shell git rev-list --count HEAD) + 2)
 GIT_HASH = $(shell git rev-parse --short=7 HEAD 2>/dev/null)
 ifeq ($(shell git diff --quiet; echo $$?),1)
   DIRTY = -dirty
 endif
-ifneq ($(shell test -d .git; echo $$?),0)
-  DIRTY = -dirty
-endif
-
 GIT_TAG = $(shell git describe --exact-match --tags 2>/dev/null)
+else
+REVISION = 0
+GIT_HASH =
+GIT_TAG =
+DIRTY = -dirty
+endif
 OPL_VERSION = v$(VERSION).$(SUBVERSION).$(PATCHLEVEL)$(if $(EXTRAVERSION),-$(EXTRAVERSION))$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
 
 ifneq ($(GIT_TAG),)
@@ -234,7 +236,7 @@ EE_CFLAGS += -Wno-format-truncation -Wno-stringop-truncation
 EE_CFLAGS += -MMD -MP
 EE_OBJS += $(FRONTEND_OBJS) $(GFX_OBJS) $(AUDIO_OBJS) $(MISC_OBJS) $(EECORE_OBJS) $(IOP_OBJS)
 EE_OBJS := $(EE_OBJS:%=$(EE_OBJS_DIR)%)
-EE_DEPS = $($(filter %.o,$(EE_OBJS)):%.o=%.d)
+EE_DEPS = $(patsubst %.o,%.d,$(filter %.o,$(EE_OBJS)))
 
 # To help linking getting rid off unused functions and data
 EE_CFLAGS += -fdata-sections -ffunction-sections
@@ -397,7 +399,11 @@ $(EE_BIN_STRIPPED): $(EE_BIN)
 
 $(EE_BIN_PACKED): $(EE_BIN_STRIPPED)
 	echo "Compressing..."
-	ps2-packer $< $@ > /dev/null
+	@if [ -n "$(PS2DEV)" ] && [ -f "$(PS2DEV)/share/ps2-packer/stub/lzma-1d00-stub" ]; then \
+		(cd "$(PS2DEV)/share/ps2-packer" && ps2-packer -p module/lzma -s stub/lzma-1d00-stub "$(CURDIR)/$<" "$(CURDIR)/$@" > /dev/null); \
+	else \
+		ps2-packer $< $@ > /dev/null; \
+	fi
 
 $(EE_VPKD).ELF: $(EE_BIN_PACKED)
 	cp -f $< $@
