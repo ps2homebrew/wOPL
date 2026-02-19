@@ -438,6 +438,7 @@ void ethInit(item_list_t *itemList)
         gNetworkStartup = ERROR_ETH_NOT_STARTED;
         ioPutRequest(IO_CUSTOM_SIMPLEACTION, &smbLoadModules);
         ethGameList.enabled = 1;
+        itemList->enabled = 1;
     }
 }
 
