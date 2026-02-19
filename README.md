@@ -1,12 +1,13 @@
 # Unofficial-Open-PS2-Loader
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
-Copyright 2024-2026, KrahJohilto, Wolf3s, Ripto and ca44p<br/>
+Copyright 2024-2026, KrahJohilto, Wolf3s, Ripto and chasebocamp<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/uOPL/compilation.yml?branch=uOPL-1-release&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml) [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard) [![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE) [![Downloads](https://img.shields.io/endpoint?style=plastic&logo=playstation&logoColor=blue&url=https%3A%2F%2Fraw.githubusercontent.com%2FNathanNeurotic%2FuOPL%2FuOPL-1-release%2Fbadges%2Fdownloads.json)](https://github.com/NathanNeurotic/uOPL/releases)
-
+[![CI](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml/badge.svg?branch=uOPL-1-release)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
 
 
 ## Introduction
@@ -315,6 +316,25 @@ To run u-OPL, you need an entry point for running PS2 titles. You can use everyt
 <p>
 
 Open PS2 Loader needs the [**latest PS2SDK**](https://github.com/ps2dev/ps2sdk)
+
+Quick build commands:
+
+```sh
+# Direct Makefile build (canonical)
+make
+
+# Release package build
+make release
+```
+
+Optional CMake wrapper (delegates to Makefile targets):
+
+```sh
+cmake -S . -B build
+cmake --build build
+```
+
+Useful CMake targets: `release`, `clean`, `rebuild`, `debug`, `iopcore_debug`, `ingame_debug`.
 
 </p>
 </details>
