@@ -34,6 +34,7 @@
 
 #include "include/cheatman.h"
 #include "include/sound.h"
+#include "include/tetris.h"
 #include "include/xparam.h"
 
 // FIXME: We should not need this function.
@@ -2201,6 +2202,11 @@ int main(int argc, char *argv[])
 
     // until this point in the code is reached, only PREINIT_LOG macro should be used
     LOG_ENABLE();
+
+    // Secret boot: hold TRIANGLE to start Tetris directly
+    readPads();
+    if (getKeyPressed(KEY_TRIANGLE))
+        tetrisRun();
 
     // queue deffered init which shuts down the intro screen later
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredInit);
