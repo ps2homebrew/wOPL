@@ -894,6 +894,10 @@ struct UIItem diaAbout[] = {
     {UI_BREAK},
 
     {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"Ripto - Wolf3s - Chase Bo Camp", -1}}},
+    {UI_BREAK},
+
+    {UI_SPACER},
     {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"hominem.te.esse - ifcaro - izdubar - jimmikaelkael - KrahJohlito", -1}}},
     {UI_BREAK},
 
