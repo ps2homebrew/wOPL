@@ -182,7 +182,7 @@ static int addAppsLegacyList(struct app_info_linked **appsLinkedList)
             strncpy(app->app.boot, cur->val, APP_BOOT_MAX + 1);
             app->app.boot[APP_BOOT_MAX] = '\0';
             strncpy(app->app.path, cur->val, APP_PATH_MAX + 1);
-            app->app.path[APP_BOOT_MAX] = '\0';
+            app->app.path[APP_PATH_MAX] = '\0';
         }
 
         app->app.legacy = 1;
@@ -267,6 +267,11 @@ static int appUpdateItemList(item_list_t *itemList)
             }
         } else {
             LOG("APPSUPPORT unable to allocate memory.\n");
+            while (appsLinkedList != NULL) {
+                appNext = appsLinkedList->next;
+                free(appsLinkedList);
+                appsLinkedList = appNext;
+            }
             appItemCount = 0;
         }
     }
@@ -279,6 +284,7 @@ static int appUpdateItemList(item_list_t *itemList)
 static void appFreeList(void)
 {
     if (appsList != NULL) {
+        free(appsList);
         appsList = NULL;
         appItemCount = 0;
     }
