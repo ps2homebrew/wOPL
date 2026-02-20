@@ -1,4 +1,4 @@
-# Unofficial-Open-PS2-Loader
+# Double Unofficial-Open-PS2-Loader
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto
