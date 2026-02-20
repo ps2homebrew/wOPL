@@ -182,6 +182,7 @@ int configRead(config_set_t *configSet);
 int configReadBuffer(config_set_t *configSet, const void *buffer, int size);
 int configReadMulti(int types);
 int configWrite(config_set_t *configSet);
+int configGetStat(config_set_t *configSet, struct stat *st);
 int configWriteMulti(int types);
 void configClear(config_set_t *configSet);
 
