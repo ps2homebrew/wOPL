@@ -152,7 +152,7 @@ jobs:
       - name: Compile -> make ${{ matrix.extra }} ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }} NOT_PACKED=1
         run: |
           make --trace ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }} NOT_PACKED=1
-          mv wopl.elf OPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}-${{ matrix.udpbd }}.ELF
+          mv wopl.elf WOPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}-${{ matrix.udpbd }}.ELF
 
       - name: Create detailed changelog
         run: sh ./make_changelog.sh
@@ -170,8 +170,8 @@ jobs:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          name: OPNPS2LD-VARIANTS
-          pattern: OPNPS2LD-VARIANTS*
+          name: WOPNPS2LD-VARIANTS
+          pattern: WOPNPS2LD-VARIANTS*
           delete-merged: true
 
   build-lang:
@@ -223,9 +223,9 @@ jobs:
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: OPNPS2LD-LANGS
+          name: WOPNPS2LD-LANGS
           path: |
-            OPNPS2LD-LANGS-*.zip
+            WOPNPS2LD-LANGS-*.zip
 
   build-debug:
     strategy:
@@ -281,7 +281,7 @@ jobs:
       - name: Compile -> make debug
         run: |
           make ${{ matrix.debug }} --trace
-          mv wopl.elf opl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
+          mv wopl.elf wopl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
 
       - name: Upload variants artifact ELF
         uses: actions/upload-artifact@v4
@@ -341,9 +341,9 @@ jobs:
           # Copy INFO into folders where it exists
           cp -v INFO/* WOPNPS2LD/ || true
           cp -v INFO/* WOPNPS2LD-VARIANTS/ || true
-          cp -v INFO/* OPNPS2LD-LANGS/ || true
+          cp -v INFO/* WOPNPS2LD-LANGS/ || true
 
-          # Put raw main ELF on the release as OPNPS2LD.ELF
+          # Put raw main ELF on the release as WOPNPS2LD.ELF
           MAIN_ELF="$(find WOPNPS2LD -maxdepth 1 -type f -name 'WOPNPS2LD-*.ELF' | head -n 1)"
           if [ -z "${MAIN_ELF}" ]; then
             echo "ERROR: Could not find main ELF in WOPNPS2LD/ (expected WOPNPS2LD-*.ELF)"
