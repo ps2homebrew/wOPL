@@ -341,6 +341,7 @@ void hddInit(item_list_t *itemList)
     configGetInt(configGetByType(CONFIG_OPL), "hdd_frames_delay", &hddGameList.delay);
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &hddInitModules);
     hddGameList.enabled = 1;
+    itemList->enabled = 1;
 }
 
 item_list_t *hddGetObject(int initOnly)
