@@ -18,6 +18,30 @@
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl
 
+#define BDM_MODE_UPDATE_DELAY MENU_UPD_DELAY_GENREFRESH
+
+#include "include/mcemu.h"
+
+typedef struct
+{
+    int active;       /* Activation flag */
+    u64 start_sector; /* Start sector of vmc file */
+    int flags;        /* Card flag */
+    vmc_spec_t specs; /* Card specifications */
+} bdm_vmc_infos_t;
+
+#define MAX_BDM_DEVICES 5
+
+#define BDM_TYPE_UNKNOWN -1
+#define BDM_TYPE_USB     0
+#define BDM_TYPE_ILINK   1
+#define BDM_TYPE_SDC     2
+#define BDM_TYPE_ATA     3
+
+#ifdef UDPBD
+#define BDM_TYPE_UDPBD 4
+#endif
+
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
@@ -176,7 +200,7 @@ void bdmLoadModules(void)
     LOG("BDMSUPPORT Modules loaded\n");
 }
 
-void bdmInit(item_list_t *itemList)
+static void bdmInit(item_list_t *itemList)
 {
     LOG("BDMSUPPORT Init\n");
 
@@ -874,7 +898,7 @@ int bdmUpdateDeviceData(item_list_t *itemList)
     if (gBDMStartMode == START_MODE_DISABLED)
         return 0;
 
-    //LOG("bdmUpdateDeviceData: %d\n", itemList->mode);
+    // LOG("bdmUpdateDeviceData: %d\n", itemList->mode);
 
     // Get the per-device data and check if the menu item is currently visible.
     bdm_device_data_t *pDeviceData = itemList->priv;
@@ -883,7 +907,7 @@ int bdmUpdateDeviceData(item_list_t *itemList)
     // Format the device path and try to open the device.
     sprintf(path, "mass%d:/", itemList->mode);
     int dir = fileXioDopen(path);
-    //LOG("opendir %s -> %d\n", path, dir);
+    // LOG("opendir %s -> %d\n", path, dir);
 
     // If we opened the device and the menu isn't visible (OR is visible but hasn't been initialized ex: manual device start) initialize device info.
     if (dir >= 0 && (visible == 0 || pDeviceData->bdmPrefix[0] == '\0')) {

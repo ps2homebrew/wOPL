@@ -12,8 +12,6 @@
 #include <malloc.h>
 #include <rom0_info.h>
 
-#include "include/hdd.h"
-
 #include "../modules/isofs/zso.h"
 
 extern int probed_fd;
