@@ -1,7 +1,7 @@
 # Double Unofficial-Open-PS2-Loader
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
-Copyright 2024, KrahJohilto
+Copyright 2024, KrahJohilto</br>
 Copyright 2025-2026, Wolf3s, Ripto and chasebocamp<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
