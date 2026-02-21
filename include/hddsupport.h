@@ -31,7 +31,7 @@ int hddReadSectors(u32 lba, u32 nsectors, void *buf);
 int hddSetTransferMode(int type, int mode);
 void hddSetIdleTimeout(int timeout);
 
-
+void hddInit(item_list_t *itemList);
 item_list_t *hddGetObject(int initOnly);
 void hddLoadModules(void);
 void hddLoadSupportModules(void);

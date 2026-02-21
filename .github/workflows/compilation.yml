@@ -68,10 +68,10 @@ jobs:
           cp -f DETAILED_CHANGELOG "$TMP"
 
           cat > DETAILED_CHANGELOG << 'EOF'
-          [![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/uOPL/compilation.yml?branch=uOPL-1-release&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
-          [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard)
+          [![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/wOPL/compilation.yml?branch=wOPL-base&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
+          [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard)
           [![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE)
-          [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/uOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/releases)
+          [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
 
           ---
 
@@ -85,9 +85,9 @@ jobs:
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: OPNPS2LD
+          name: WOPNPS2LD
           path: |
-            OPNPS2LD-*.ELF
+            WOPNPS2LD-*.ELF
 
       - name: Upload release artifact info
         if: ${{ success() }}
@@ -147,12 +147,12 @@ jobs:
 
       - name: Get version
         run: |
-          echo "OPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
+          echo "wOPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
 
       - name: Compile -> make ${{ matrix.extra }} ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }} NOT_PACKED=1
         run: |
           make --trace ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }} NOT_PACKED=1
-          mv opl.elf OPNPS2LD-${{ env.OPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}-${{ matrix.udpbd }}.ELF
+          mv wopl.elf WOPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}-${{ matrix.udpbd }}.ELF
 
       - name: Create detailed changelog
         run: sh ./make_changelog.sh
@@ -160,8 +160,8 @@ jobs:
       - name: Upload variants artifact ELF
         uses: actions/upload-artifact@v4
         with:
-          name: OPNPS2LD-VARIANTS ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }}
-          path: OPNPS2LD*.ELF
+          name: WOPNPS2LD-VARIANTS ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }}
+          path: WOPNPS2LD*.ELF
 
   merge-variants:
     runs-on: ubuntu-22.04
@@ -170,8 +170,8 @@ jobs:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          name: OPNPS2LD-VARIANTS
-          pattern: OPNPS2LD-VARIANTS*
+          name: WOPNPS2LD-VARIANTS
+          pattern: WOPNPS2LD-VARIANTS*
           delete-merged: true
 
   build-lang:
@@ -223,9 +223,9 @@ jobs:
         if: ${{ success() }}
         uses: actions/upload-artifact@v4
         with:
-          name: OPNPS2LD-LANGS
+          name: WOPNPS2LD-LANGS
           path: |
-            OPNPS2LD-LANGS-*.zip
+            WOPNPS2LD-LANGS-*.zip
 
   build-debug:
     strategy:
@@ -273,7 +273,7 @@ jobs:
 
       - name: Get version
         run: |
-          echo "OPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
+          echo "wOPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
           SHORT_COMMIT="${{ matrix.container_commit }}"
           SHORT_COMMIT=${SHORT_COMMIT: -4}
           echo "SHORT_COMMIT=$SHORT_COMMIT" >> $GITHUB_ENV
@@ -281,13 +281,13 @@ jobs:
       - name: Compile -> make debug
         run: |
           make ${{ matrix.debug }} --trace
-          mv opl.elf opl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
+          mv wopl.elf wopl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
 
       - name: Upload variants artifact ELF
         uses: actions/upload-artifact@v4
         with:
-          name: opl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}
-          path: opl-*.elf
+          name: wopl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}
+          path: wopl-*.elf
 
   merge-debug:
     runs-on: ubuntu-22.04
@@ -296,8 +296,8 @@ jobs:
       - name: Merge Artifacts
         uses: actions/upload-artifact/merge@v4
         with:
-          name: OPNPS2LD-DEBUG
-          pattern: opl-*
+          name: WOPNPS2LD-DEBUG
+          pattern: wopl-*
           delete-merged: true
 
   release:
@@ -316,13 +316,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          OPL_VERSION="$(make oplversion)"
+          wOPL_VERSION="$(make woplversion)"
           SHORT_SHA="${GITHUB_SHA::7}"
           TS="$(date -u +'%Y%m%d-%H%M%S')"
-          TAG="pre-v${OPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
-          echo "OPL_VERSION=${OPL_VERSION}" >> "$GITHUB_ENV"
+          TAG="pre-v${wOPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          echo "wOPL_VERSION=${wOPL_VERSION}" >> "$GITHUB_ENV"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "name=Pre-release v${OPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
+          echo "name=Pre-release v${wOPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -336,33 +336,33 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Preparing prerelease ${OPL_VERSION}"
+          echo "Preparing prerelease ${wOPL_VERSION}"
 
           # Copy INFO into folders where it exists
-          cp -v INFO/* OPNPS2LD/ || true
-          cp -v INFO/* OPNPS2LD-VARIANTS/ || true
-          cp -v INFO/* OPNPS2LD-LANGS/ || true
+          cp -v INFO/* WOPNPS2LD/ || true
+          cp -v INFO/* WOPNPS2LD-VARIANTS/ || true
+          cp -v INFO/* WOPNPS2LD-LANGS/ || true
 
-          # Put raw main ELF on the release as OPNPS2LD.ELF
-          MAIN_ELF="$(find OPNPS2LD -maxdepth 1 -type f -name 'OPNPS2LD-*.ELF' | head -n 1)"
+          # Put raw main ELF on the release as WOPNPS2LD.ELF
+          MAIN_ELF="$(find WOPNPS2LD -maxdepth 1 -type f -name 'WOPNPS2LD-*.ELF' | head -n 1)"
           if [ -z "${MAIN_ELF}" ]; then
-            echo "ERROR: Could not find main ELF in OPNPS2LD/ (expected OPNPS2LD-*.ELF)"
-            ls -la OPNPS2LD || true
+            echo "ERROR: Could not find main ELF in WOPNPS2LD/ (expected WOPNPS2LD-*.ELF)"
+            ls -la WOPNPS2LD || true
             exit 1
           fi
-          cp -f "${MAIN_ELF}" OPNPS2LD.ELF
+          cp -f "${MAIN_ELF}" WOPNPS2LD.ELF
 
           # Create archives
-          7z a -t7z "OPNPS2LD-${OPL_VERSION}.7z" OPNPS2LD/*
-          7z a -t7z "OPNPS2LD-VARIANTS-${OPL_VERSION}.7z" OPNPS2LD-VARIANTS/* || true
-          7z a -t7z "OPNPS2LD-LANGS-${OPL_VERSION}.7z" OPNPS2LD-LANGS/* || true
-          7z a -t7z "OPNPS2LD-DEBUG-${OPL_VERSION}.7z" OPNPS2LD-DEBUG/* || true
+          7z a -t7z "WOPNPS2LD-${wOPL_VERSION}.7z" WOPNPS2LD/*
+          7z a -t7z "WOPNPS2LD-VARIANTS-${wOPL_VERSION}.7z" WOPNPS2LD-VARIANTS/* || true
+          7z a -t7z "WOPNPS2LD-LANGS-${wOPL_VERSION}.7z" WOPNPS2LD-LANGS/* || true
+          7z a -t7z "WOPNPS2LD-DEBUG-${wOPL_VERSION}.7z" WOPNPS2LD-DEBUG/* || true
 
           # Stable filenames
-          cp -f "OPNPS2LD-${OPL_VERSION}.7z" OPNPS2LD.7z
-          cp -f "OPNPS2LD-VARIANTS-${OPL_VERSION}.7z" OPNPS2LD-VARIANTS.7z || true
-          cp -f "OPNPS2LD-LANGS-${OPL_VERSION}.7z" OPNPS2LD-LANGS.7z || true
-          cp -f "OPNPS2LD-DEBUG-${OPL_VERSION}.7z" OPNPS2LD-DEBUG.7z || true
+          cp -f "WOPNPS2LD-${wOPL_VERSION}.7z" WOPNPS2LD.7z
+          cp -f "WOPNPS2LD-VARIANTS-${wOPL_VERSION}.7z" WOPNPS2LD-VARIANTS.7z || true
+          cp -f "WOPNPS2LD-LANGS-${wOPL_VERSION}.7z" WOPNPS2LD-LANGS.7z || true
+          cp -f "WOPNPS2LD-DEBUG-${wOPL_VERSION}.7z" WOPNPS2LD-DEBUG.7z || true
 
 #      - name: Create GitHub prerelease (new tag every run)
 #        uses: softprops/action-gh-release@v2
@@ -379,11 +379,11 @@ jobs:
 #            [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/uOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/uOPL/releases)
 #
 #          files: |
-#            OPNPS2LD.ELF
-#            OPNPS2LD.7z
-#            OPNPS2LD-VARIANTS.7z
-#            OPNPS2LD-LANGS.7z
-#            OPNPS2LD-DEBUG.7z
+#            WOPNPS2LD.ELF
+#            WOPNPS2LD.7z
+#            WOPNPS2LD-VARIANTS.7z
+#            WOPNPS2LD-LANGS.7z
+#            WOPNPS2LD-DEBUG.7z
 #            INFO/DETAILED_CHANGELOG
 #            INFO/README.md
 #            INFO/LICENSE

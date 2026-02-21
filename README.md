@@ -1,18 +1,19 @@
-# Unofficial-Open-PS2-Loader
+# Double Unofficial-Open-PS2-Loader
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
-Copyright 2024-2026, KrahJohilto, Wolf3s, Ripto and chasebocamp<br/>
+Copyright 2024, KrahJohilto</br>
+Copyright 2025-2026, Wolf3s, Ripto and chasebocamp<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml/badge.svg?branch=uOPL-1-release)](https://github.com/NathanNeurotic/uOPL/actions/workflows/compilation.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/uOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-1-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
 
 
 ## Introduction
 
-Unofficial Open PS2 Loader (uOPL) is a 100% Open source game and application loader based on [OPL](https://github.com/ps2homebrew/Open-PS2-Loader) for
+Double Unofficial Open PS2 Loader (wOPL) is a 100% Open source game and application loader based on [OPL](https://github.com/ps2homebrew/Open-PS2-Loader) for
 the PS2 and PS3 units. This version uses features that at the moment are not merged upstream and unique.
 <details>
   <summary> <b> Changes in uOPL </b> </summary>
@@ -64,16 +65,16 @@ These are all optional and will use default values if omitted.
   <summary> <b> Release types </b> </summary>
 <p>
 
-Open PS2 Loader bundle included several types of the same OPL version. These
+Double Unofficial Open PS2 Loader bundle included several types of the same wOPL version. These
 types come with more or fewer features included.
 
 | Type (can be a combination) | Description                                                                             |
 | --------------------------- | --------------------------------------------------------------------------------------- |
-| `Release`                   | Regular OPL release with GSM, IGS, PADEMU, VMC, PS2RD Cheat Engine & Parental Controls. |
-| `DTL_T10000`                | OPL for TOOLs (DevKit PS2)                                                              |
-| `IGS`                       | OPL with InGame Screenshot feature.                                                     |
-| `PADEMU`                    | OPL with Pad Emulation for DS3 & DS4.                                                   |
-| `RTL`                       | OPL with the right to left language support.                                            |
+| `Release`                   | Regular wOPL release with GSM, IGS, PADEMU, VMC, PS2RD Cheat Engine & Parental Controls.|
+| `DTL_T10000`                | wOPL for TOOLs (DevKit PS2)                                                             |
+| `IGS`                       | wOPL with InGame Screenshot feature.                                                    |
+| `PADEMU`                    | wOPL with Pad Emulation for DS3 & DS4.                                                  |
+| `RTL`                       | wOPL with the right to left language support.                                           |
 
 </p>
 </details>
@@ -185,9 +186,9 @@ For example, to use `hdl_dump` to install a game to the HDD:
   * Run `hdl_dump inject_dvd ps2/nbd "Test Game" ./TEST.ISO`
   * Disconnect the client.
 
-To use the NBD server in OPL:
+To use the NBD server in wOPL:
 
-  * Grab the latest beta version (OPL 1.1.0 (current stable) has some bugs in the NBD server) - go to the [Releases](https://github.com/ps2homebrew/Open-PS2-Loader/releases) section and grab the one at the top.
+  * Grab the latest beta version - go to the [Releases](https://github.com/NathanNeurotic/wOPL/releases) section and grab the one at the top.
   * Ensure OPL is configured with an IP address (either static or DHCP).
   * Open the menu and select "Start NBD server". Once it's ready, it should update the screen to say "NBD Server running..."
   * Now you can connect with any of the following NBD clients.
@@ -273,7 +274,7 @@ Not supported.
   <summary> <b> ZSO Format </b> </summary>
 <p>
 
-As of version 1.2.0, compressed ISO files in ZSO format is supported by u-OPL.
+As of version 1.2.0, compressed ISO files in ZSO format is supported by wOPL.
 
 To handle ZSO files, a python script (ziso.py) is included in the pc folder of this repository.
 It requires Python 3 and the LZ4 library:
@@ -294,7 +295,7 @@ To decompress a ZSO back to the original ISO:
 python ziso.py -c 0 "input.zso" "output.iso"
 ```
 
-You can copy ZSO files to the same folder as your ISOs and they will be detected by u-OPL.
+You can copy ZSO files to the same folder as your ISOs and they will be detected by wOPL.
 To install onto internal HDD, you can use the latest version of HDL-Dump.
 
 </p>
@@ -306,7 +307,7 @@ To install onto internal HDD, you can use the latest version of HDL-Dump.
 
 Currently, supported only [PS3 Backward Compatible](https://www.psdevwiki.com/ps3/PS2_Compatibility#PS2-Compatibility) (BC) versions. So only [COK-001](https://www.psdevwiki.com/ps3/COK-00x#COK-001) and [COK-002/COK-002W](https://www.psdevwiki.com/ps3/COK-00x#COK-002) boards are supported. USB, SMB, HDD modes are supported.
 
-To run u-OPL, you need an entry point for running PS2 titles. You can use everything (Swapmagic PS2, for example), but custom firmware with the latest Cobra is preferred. Note: only CFW supports HDD mode.
+To run w-OPL, you need an entry point for running PS2 titles. You can use everything (Swapmagic PS2, for example), but custom firmware with the latest Cobra is preferred. Note: only CFW supports HDD mode.
 
 </p>
 </details>
@@ -340,10 +341,10 @@ Useful CMake targets: `release`, `clean`, `rebuild`, `debug`, `iopcore_debug`, `
 </details>
 
 <details>
-  <summary> <b> u-OPL Archive </b> </summary>
+  <summary> <b> w-OPL Archive </b> </summary>
 <p>
 
-Since 05/07/2021 every u-OPL build dispatched to the release section of this repository will be uploaded to a [mega account](https://mega.nz/folder/Ndwi1bAK#oLWNhH_g-h0p4BoT4c556A). You can access the archive by clicking the mega badge on top of this readme
+Since 05/07/2021 every w-OPL build dispatched to the release section of this repository will be uploaded to a [mega account](https://mega.nz/folder/Ndwi1bAK#oLWNhH_g-h0p4BoT4c556A). You can access the archive by clicking the mega badge on top of this readme
 
 </p>
 </details>
@@ -352,19 +353,19 @@ Since 05/07/2021 every u-OPL build dispatched to the release section of this rep
   <summary> <b> Frequent Issues </b> </summary>
 <p>
 
-### u-OPL Freezes on logo or grey screen
+### w-OPL Freezes on logo or grey screen
 
- Sometimes u-OPL freezes when loading config files made by older u-OPL builds.
-> hold __`START`__ while u-OPL initializes to make it skip the config loading, then, you can save your own settings.
+ Sometimes w-OPL freezes when loading config files made by older w-OPL builds.
+> hold __`START`__ while w-OPL initializes to make it skip the config loading, then, you can save your own settings.
 > fixing the issue.
 
 ### Game freezes on white screen
 
 > Main game executable could not be found. Either game is fragmented or image is corrupted
 
-### u-OPL does not display anything on boot
+### w-OPL does not display anything on boot
 
-> You may have selected a Video Mode which your TV does not support. Hold Triangle and Cross while u-OPL initializes to reset your video mode to "Auto".
+> You may have selected a Video Mode which your TV does not support. Hold Triangle and Cross while w-OPL initializes to reset your video mode to "Auto".
 
 </p>
 </details>

@@ -1,10 +1,10 @@
 VERSION = 1
 SUBVERSION = 2
 PATCHLEVEL = 0
-EXTRAVERSION = unofficial
+EXTRAVERSION = beta
 
 # How to DEBUG?
-# Simply type "make <debug mode>" to build OPL with the necessary debugging functionality.
+# Simply type "make <debug mode>" to build wOPL with the necessary debugging functionality.
 # Debug modes:
 #	debug		    	 -	UI-side debug mode (UDPTTY)
 #	iopcore_debug		 -	UI-side + iopcore debug mode (UDPTTY).
@@ -38,7 +38,7 @@ PADEMU ?= 1
 
 UDPBD ?= 0
 
-#Enables/disables building of an edition of OPL that will support the DTL-T10000 (SDK v2.3+)
+#Enables/disables building of an edition of wOPL that will support the DTL-T10000 (SDK v2.3+)
 DTL_T10000 ?= 0
 
 #Nor stripping neither compressing binary ELF after compiling.
@@ -69,16 +69,16 @@ GIT_HASH =
 GIT_TAG =
 DIRTY = -dirty
 endif
-OPL_VERSION = v$(VERSION).$(SUBVERSION).$(PATCHLEVEL)$(if $(EXTRAVERSION),-$(EXTRAVERSION))$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
+wOPL_VERSION = v$(VERSION).$(SUBVERSION).$(PATCHLEVEL)$(if $(EXTRAVERSION),-$(EXTRAVERSION))$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
 
 ifneq ($(GIT_TAG),)
 ifneq ($(GIT_TAG),latest)
 	# git revision is tagged
-	OPL_VERSION = $(GIT_TAG)$(if $(DIRTY),$(DIRTY))
+	wOPL_VERSION = $(GIT_TAG)$(if $(DIRTY),$(DIRTY))
 endif
 endif
 
-FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o \
+FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o zso.o lz4.o \
 		appsupport.o favsupport.o gui.o guigame.o textures.o opl.o atlas.o nbns.o httpclient.o gsm.o cheatman.o sound.o ps2cnf.o
 
@@ -119,10 +119,10 @@ TRANSLATIONS = Albanian Arabic Bulgarian Cebuano Croatian Czech Danish Dutch Fil
 	German Greek Hungarian Indonesian Italian Japanese Korean Laotian Persian Polish Portuguese \
 	Portuguese_BR Romana Russian Ryukyuan SChinese Spanish Swedish TChinese Turkish Vietnamese
 
-EE_BIN = opl.elf
-EE_BIN_STRIPPED = opl_stripped.elf
-EE_BIN_PACKED = OPNPS2LD.ELF
-EE_VPKD = OPNPS2LD-$(OPL_VERSION)
+EE_BIN = wopl.elf
+EE_BIN_STRIPPED = wopl_stripped.elf
+EE_BIN_PACKED = WOPNPS2LD.ELF
+EE_VPKD = WOPNPS2LD-$(wOPL_VERSION)
 EE_SRC_DIR = src/
 EE_OBJS_DIR = obj/
 EE_ASM_DIR = asm/
@@ -131,10 +131,10 @@ LNG_TMPL_DIR = lng_tmpl/
 LNG_DIR = lng/
 PNG_ASSETS_DIR = gfx/
 
-MAPFILE = opl.map
+MAPFILE = wopl.map
 EE_LDFLAGS += -Wl,-Map,$(MAPFILE)
 
-EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour
+EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lkernel
 EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/freetype2 -I$(GSKIT)/include -I$(GSKIT)/ee/dma/include -I$(GSKIT)/ee/gs/include -Imodules/iopcore/common -Imodules/network/common -Imodules/hdd/common -Iinclude
 BIN2C = $(PS2SDK)/bin/bin2c
 
@@ -228,7 +228,7 @@ else
   SMSTCPIP_INGAME_CFLAGS = INGAME_DRIVER=1
 endif
 
-EE_CFLAGS += -fsingle-precision-constant -DOPL_VERSION=\"$(OPL_VERSION)\"
+EE_CFLAGS += -fsingle-precision-constant -DWOPL_VERSION=\"$(wOPL_VERSION)\"
 
 # There are a few places where the config key/value are truncated, so disable these warnings
 EE_CFLAGS += -Wno-format-truncation -Wno-stringop-truncation
@@ -244,12 +244,12 @@ EE_LDFLAGS += -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 .SILENT:
 
-.PHONY: all release debug iopcore_debug eesio_debug ingame_debug deci2_debug debug_ppctty iopcore_ppctty_debug ingame_ppctty_debug clean rebuild pc_tools pc_tools_win32 oplversion format format-check ps2sdk-not-setup download_lng download_lwNBD languages
+.PHONY: all release debug iopcore_debug eesio_debug ingame_debug deci2_debug debug_ppctty iopcore_ppctty_debug ingame_ppctty_debug clean rebuild pc_tools pc_tools_win32 woplversion format format-check ps2sdk-not-setup download_lng download_lwNBD languages
 
 ifdef PS2SDK
 
 all: download_lng download_lwNBD languages
-	echo "Building Open PS2 Loader $(OPL_VERSION)..."
+	echo "Building Open PS2 Loader $(wOPL_VERSION)..."
 	echo "-Interface"
 ifneq ($(NOT_PACKED),1)
 	$(MAKE) $(EE_BIN_PACKED)
@@ -879,8 +879,8 @@ ps2sdk-not-setup:
 	@echo "PS2SDK is not setup. Please setup PS2SDK before building this project"
 endif
 
-oplversion:
-	@echo $(OPL_VERSION)
+woplversion:
+	@echo $(wOPL_VERSION)
 
 ifdef PS2SDK
 include $(PS2SDK)/samples/Makefile.pref

@@ -22,6 +22,7 @@
 #include "include/cheatman.h"
 #include "include/sound.h"
 #include "include/guigame.h"
+#include "include/tetris.h"
 
 #include <limits.h>
 #include <stdlib.h>
@@ -199,22 +200,22 @@ void guiEndFrame(void)
 
 void guiShowAbout()
 {
-    char OPLVersion[48];
-    char OPLBuildDetails[40];
+    char wOPLVersion[48];
+    char wOPLBuildDetails[40];
 
-    snprintf(OPLVersion, sizeof(OPLVersion), "Open PS2 Loader %s", OPL_VERSION);
-    diaSetLabel(diaAbout, ABOUT_TITLE, OPLVersion);
+    snprintf(wOPLVersion, sizeof(wOPLVersion), "Double Unofficial Open PS2 Loader %s", WOPL_VERSION);
+    diaSetLabel(diaAbout, ABOUT_TITLE, wOPLVersion);
 
-    snprintf(OPLBuildDetails, sizeof(OPLBuildDetails), "GSM %s"
-                                                       " - UDMA+"
+    snprintf(wOPLBuildDetails, sizeof(wOPLBuildDetails), "GSM %s"
+                                                         " - UDMA+"
 #ifdef __RTL
-                                                       " - RTL"
+                                                         " - RTL"
 #endif
 #ifdef IGS
-                                                       " - IGS %s"
+                                                         " - IGS %s"
 #endif
 #ifdef PADEMU
-                                                       " - PADEMU"
+                                                         " - PADEMU"
 #endif
              // Version numbers
              ,
@@ -224,9 +225,14 @@ void guiShowAbout()
              IGS_VERSION
 #endif
     );
-    diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, OPLBuildDetails);
+    diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, wOPLBuildDetails);
 
-    diaExecuteDialog(diaAbout, -1, 1, NULL);
+    diaSetSecretHandler(tetrisSecretHandler);
+    int aboutResult = diaExecuteDialog(diaAbout, -1, 1, NULL);
+    diaClearSecretHandler();
+
+    if (aboutResult == UIID_BTN_SECRET)
+        tetrisRun();
 }
 
 void guiCheckNotifications(int checkTheme, int checkLang)

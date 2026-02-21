@@ -6,6 +6,7 @@
 enum UI_ITEMS {
     UIID_BTN_CANCEL = 0,
     UIID_BTN_OK,
+    UIID_BTN_SECRET,
 
     UICFG_THEME = 10,
     UICFG_LANG,

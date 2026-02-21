@@ -1,7 +1,7 @@
 #ifndef __COMPATUPD_H
 #define __COMPATUPD_H
 
-#define OPL_USER_AGENT          "OPL/" OPL_VERSION
+#define OPL_USER_AGENT          "OPL/" WOPL_VERSION
 #define OPL_COMPAT_HTTP_HOST    "sx.sytes.net"
 #define OPL_COMPAT_HTTP_PORT    80
 #define OPL_COMPAT_HTTP_RETRIES 3
