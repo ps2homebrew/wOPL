@@ -16,7 +16,6 @@
 
 extern GSGLOBAL *gsGlobal;
 extern theme_t *gTheme;
-extern int DelayThread(int);
 
 #define TETRIS_COLS 10
 #define TETRIS_ROWS 20
@@ -207,7 +206,7 @@ static void tetrisSplash(void)
         readPads();
         if (getKeyOn(KEY_START) || getKeyOn(KEY_CROSS) || getKeyOn(KEY_TRIANGLE) || getKeyOn(KEY_SQUARE))
             shown = 1;
-        DelayThread(16000);
+        usleep(16000);
     }
 }
 
@@ -257,6 +256,6 @@ void tetrisRun(void)
         }
 
         drawBoard();
-        DelayThread(16000); // ~60fps
+        usleep(16000); // ~60fps
     }
 }
