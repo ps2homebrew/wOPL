@@ -74,6 +74,7 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_PLAS_BLEND_COLOR     "plasma_blend_color"
 #define CONFIG_OPL_ENABLE_NOTIFICATIONS "enable_notifications"
 #define CONFIG_OPL_ENABLE_COVERART      "enable_coverart"
+#define CONFIG_OPL_ENABLE_ARCHIVEDART   "enable_archivedart"
 #define CONFIG_OPL_WIDESCREEN           "wide_screen"
 #define CONFIG_OPL_VMODE                "vmode"
 #define CONFIG_OPL_XOFF                 "xoff"

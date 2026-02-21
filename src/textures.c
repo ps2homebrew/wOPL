@@ -2,6 +2,7 @@
 #include "include/textures.h"
 #include "include/util.h"
 #include "include/ioman.h"
+#include "include/art_tar.h"
 #include <png.h>
 
 extern void *load0_png;
@@ -427,7 +428,7 @@ static void texReadData(GSTEXTURE *texture, png_structp pngPtr, png_infop infoPt
     png_read_end(pngPtr, NULL);
 }
 
-static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
+static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int archived)
 {
     texPrepare(texture);
     png_structp pngPtr = NULL;
@@ -436,8 +437,12 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
     png_rw_ptr readFunction = NULL;
     void *PngFileBufferPtr;
     void *pFileBuffer = NULL;
-
-    if (filePath) {
+    if (archived) {
+        pFileBuffer = getFileFromTar(filePath);
+        if (!pFileBuffer) {
+            return ERR_BAD_FILE;
+        }
+    } else if (filePath) {
         int fd = open(filePath, O_RDONLY, 0);
         if (fd < 0)
             return ERR_BAD_FILE;
@@ -557,17 +562,17 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
     return texEnd(pngPtr, infoPtr, pFileBuffer, 0);
 }
 
-static int texLoad(GSTEXTURE *texture, const char *filePath)
+static int texLoad(GSTEXTURE *texture, const char *filePath, int archived)
 {
-    return texLoadAll(texture, filePath, -1);
+    return texLoadAll(texture, filePath, -1, archived);
 }
 
 int texLoadInternal(GSTEXTURE *texture, int texId)
 {
-    return texLoadAll(texture, NULL, texId);
+    return texLoadAll(texture, NULL, texId, 0);
 }
 
-int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId)
+int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archived)
 {
     char filePath[256];
 
@@ -578,11 +583,17 @@ int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId)
     else
         snprintf(filePath, sizeof(filePath), "%s.%s", path, "png");
 
-    int fd = open(filePath, O_RDONLY);
-    if (fd > 0) {
-        // File found, load it
-        close(fd);
-        return (texLoad(texture, filePath) >= 0) ? 0 : ERR_BAD_FILE;
+    if (archived) {
+        if (findTarEntry(filePath) != NULL) {
+            return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
+        }
+    } else {
+        int fd = open(filePath, O_RDONLY);
+        if (fd > 0) {
+            // File found, load it
+            close(fd);
+            return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
+        }
     }
 
     return ERR_BAD_FILE;

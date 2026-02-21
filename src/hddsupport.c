@@ -11,6 +11,7 @@
 #include "include/system.h"
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
+#include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/mcemu.h"
 
@@ -479,6 +480,11 @@ static void hddInitModules(void)
 
     sprintf(path, "%sLNG", gHDDPrefix);
     lngAddLanguages(path, "/", hddGameList.mode);
+
+    if (gEnableArchivedArt) {
+        sprintf(path, "%sART/art.tar", gHDDPrefix);
+        loadTarFile(path);
+    }
 
     sbCreateFolders(gHDDPrefix, 0);
 }
@@ -1079,11 +1085,14 @@ static config_set_t *hddGetConfig(item_list_t *itemList, int id)
 static int hddGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
-    if (isRelative)
+    if (gEnableArchivedArt)
+        snprintf(path, sizeof(path), "%s_%s", value, suffix);
+    else if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", gHDDPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1);
+
+    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
 }
 
 static int hddGetTextId(item_list_t *itemList)

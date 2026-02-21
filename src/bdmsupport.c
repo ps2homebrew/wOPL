@@ -11,6 +11,7 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
+#include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 
 #include <usbhdfsd-common.h>
@@ -309,6 +310,11 @@ static int bdmNeedsUpdate(item_list_t *itemList)
         sprintf(path, "%sTHM", pDeviceData->bdmPrefix);
         if (thmAddElements(path, "/", 1) > 0)
             pDeviceData->ThemesLoaded = 1;
+    }
+
+    if (gEnableArchivedArt) {
+        sprintf(path, "%sART/art.tar", pDeviceData->bdmPrefix);
+        loadTarFile(path);
     }
 
     // update Languages
@@ -686,11 +692,14 @@ static int bdmGetImage(item_list_t *itemList, char *folder, int isRelative, char
 
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
 
-    if (isRelative)
+    if (gEnableArchivedArt)
+        snprintf(path, sizeof(path), "%s_%s", value, suffix);
+    else if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", pDeviceData->bdmPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1);
+
+    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
 }
 
 static int bdmGetTextId(item_list_t *itemList)
