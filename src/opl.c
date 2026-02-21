@@ -2205,7 +2205,7 @@ int main(int argc, char *argv[])
 
     // Secret boot: hold TRIANGLE to start Tetris directly
     readPads();
-    if (getKeyPressed(KEY_TRIANGLE))
+    if (getKeyPressed(KEY_TRIANGLE) || (getKeyPressed(KEY_L1) && getKeyPressed(KEY_R1) && getKeyPressed(KEY_START)))
         tetrisRun();
 
     // queue deffered init which shuts down the intro screen later
