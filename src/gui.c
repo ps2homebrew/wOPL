@@ -22,6 +22,7 @@
 #include "include/cheatman.h"
 #include "include/sound.h"
 #include "include/guigame.h"
+#include "include/tetris.h"
 
 #include <limits.h>
 #include <stdlib.h>
@@ -226,7 +227,12 @@ void guiShowAbout()
     );
     diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, wOPLBuildDetails);
 
-    diaExecuteDialog(diaAbout, -1, 1, NULL);
+    diaSetSecretHandler(tetrisSecretHandler);
+    int aboutResult = diaExecuteDialog(diaAbout, -1, 1, NULL);
+    diaClearSecretHandler();
+
+    if (aboutResult == UIID_BTN_SECRET)
+        tetrisRun();
 }
 
 void guiCheckNotifications(int checkTheme, int checkLang)
