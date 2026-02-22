@@ -366,7 +366,7 @@ void writeLogToBD(const char *format, ...)
     vsnprintf(logMessage, sizeof(logMessage), format, args);
     va_end(args);
 
-    FILE *logFile = fopen("mass0:opllog.txt", "a");
+    FILE *logFile = fopen("mass0:wopllog.txt", "a");
     if (logFile) {
         fprintf(logFile, "%s", logMessage);
         fclose(logFile);

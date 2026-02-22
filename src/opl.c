@@ -741,7 +741,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
     config_set_t *appConfig;
     char appsPath[128];
 
-    snprintf(appsPath, sizeof(appsPath), "mc?:OPL/conf_apps.cfg");
+    snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
     fd = openFile(appsPath, O_RDONLY);
     if (fd >= 0) {
         appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
@@ -937,7 +937,7 @@ static int checkLoadConfigBDM(int types)
     int value;
 
     // check USB
-    if (bdmFindPartition(path, "conf_uopl.cfg", 0)) {
+    if (bdmFindPartition(path, "conf_wopl.cfg", 0)) {
         configEnd();
         configInit(path);
         value = configReadMulti(types);
@@ -957,7 +957,7 @@ static int checkLoadConfigHDD(int types)
     hddLoadModules();
     hddLoadSupportModules();
 
-    snprintf(path, sizeof(path), "%sconf_uopl.cfg", gHDDPrefix);
+    snprintf(path, sizeof(path), "%sconf_wopl.cfg", gHDDPrefix);
     value = open(path, O_RDONLY);
     if (value >= 0) {
         close(value);
@@ -1160,7 +1160,7 @@ static int trySaveConfigBDM(int types)
     char path[64];
 
     // check USB
-    if (bdmFindPartition(path, "conf_uopl.cfg", 1)) {
+    if (bdmFindPartition(path, "conf_wopl.cfg", 1)) {
         configSetMove(path);
         return configWriteMulti(types);
     }
@@ -1848,7 +1848,7 @@ static void setDefaults(void)
     gAutoLaunchDeviceData = NULL;
     gOPLPart[0] = '\0';
     gHDDPrefix = "pfs0:";
-    gBaseMCDir = "mc?:OPL";
+    gBaseMCDir = "mc?:wOPL";
 
     bdmCacheSize = 16;
     hddCacheSize = 8;
