@@ -54,5 +54,5 @@ wopl_add_make_target(iopcore_ppctty_debug iopcore_ppctty_debug)
 wopl_add_make_target(ingame_ppctty_debug ingame_ppctty_debug)
 
 message(STATUS "wOPL CMake wrapper configured.")
-message(STATUS "Use: cmake --build <build-dir> (default target: uopl)")
+message(STATUS "Use: cmake --build <build-dir> (default target: wopl)")
 message(STATUS "Requires PS2SDK in environment when invoking make targets.")
