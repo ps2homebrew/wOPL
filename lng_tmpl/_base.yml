@@ -710,5 +710,3 @@ gui_strings:
   string: Patch IOP Buffer Overrun
 - label: DISABLE_ALL
   string: Disable All
-- label: UDPBD_GAMES
-  string: UDPBD Games

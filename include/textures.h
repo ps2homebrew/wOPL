@@ -15,9 +15,6 @@ enum INTERNAL_TEXTURE {
     ILINK_ICON,
     MX4SIO_ICON,
     HDD_BD_ICON,
-#ifdef UDPBD
-    UDP_BD_ICON,
-#endif
     HDD_ICON,
     ETH_ICON,
     APP_ICON,
