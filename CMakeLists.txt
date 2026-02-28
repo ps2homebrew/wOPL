@@ -26,7 +26,7 @@ endif()
 function(wopl_add_make_target target_name make_target)
     add_custom_target(${target_name}
         COMMAND "${WOPL_MAKE}" ${WOPL_COMMON_ARGS} ${make_target}
-        WORKING_DIRECTORY "${UOPL_SOURCE_DIR}"
+        WORKING_DIRECTORY "${WOPL_SOURCE_DIR}"
         USES_TERMINAL
         COMMENT "Running: make ${make_target}"
         VERBATIM
