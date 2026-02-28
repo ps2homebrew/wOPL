@@ -155,6 +155,9 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
             LoadOPLModule(OPL_MODULE_ID_SMAP, 0, g_ipconfig_len, g_ipconfig);
             break;
 #endif
+        case MMCE_MODE:
+            LoadOPLModule(OPL_MODULE_ID_MMCEDRV, 0, 0, NULL);
+            break;
     };
 }
 

@@ -98,9 +98,17 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ETH_MODE             "eth_mode"
 #define CONFIG_OPL_APP_MODE             "app_mode"
 #define CONFIG_OPL_FAV_MODE             "fav_mode"
+#define CONFIG_OPL_MMCE_MODE            "mmce_mode"
 #define CONFIG_OPL_BDM_CACHE            "bdm_cache"
 #define CONFIG_OPL_HDD_CACHE            "hdd_cache"
 #define CONFIG_OPL_SMB_CACHE            "smb_cache"
+#define CONFIG_OPL_MMCE_PREFIX          "mmce_prefix"
+#define CONFIG_OPL_MMCE_SLOT            "mmce_slot"
+#define CONFIG_OPL_MMCEIGR_SLOT         "mmceigr_slot"
+#define CONFIG_OPL_MMCE_GAMEID          "mmce_gameid"
+#define CONFIG_OPL_MMCE_WAIT_CYCLES     "mmce_wait_cylces"
+#define CONFIG_OPL_MMCE_USE_ALARMS      "mmce_use_alarms"
+#define CONFIG_OPL_ENABLE_USB           "enable_usb"
 #define CONFIG_OPL_ENABLE_ILINK         "enable_ilink"
 #define CONFIG_OPL_ENABLE_MX4SIO        "enable_mx4sio"
 #define CONFIG_OPL_ENABLE_BDMHDD        "enable_bdm_hdd"
@@ -108,7 +116,6 @@ enum CONFIG_INDEX {
 #ifdef UDPBD
 #define CONFIG_OPL_ENABLE_UDPBD "enable_udpbd"
 #endif
-
 #define CONFIG_OPL_SWAP_SEL_BUTTON   "swap_select_btn"
 #define CONFIG_OPL_PARENTAL_LOCK_PWD "parental_lock_password"
 #define CONFIG_OPL_SFX               "enable_sfx"

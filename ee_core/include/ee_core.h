@@ -75,6 +75,7 @@ enum GAME_MODE {
 #endif
     ETH_MODE,
     HDD_MODE,
+    MMCE_MODE,
 };
 
 extern int EnableDebug;

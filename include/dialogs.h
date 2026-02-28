@@ -46,6 +46,13 @@ enum UI_ITEMS {
 #ifdef UDPBD
     CFG_ENABLEUDPBD,
 #endif
+    CFG_MMCEMODE,
+    CFG_MMCEPREFIX,
+    CFG_MMCESLOT,
+    CFG_MMCEIGRSLOT,
+    CFG_MMCE_WAIT_CYCLES,
+    CFG_MMCE_USE_ALARMS,
+    CFG_MMCEGAMEID,
     CFG_LASTPLAYED,
     CFG_LBL_AUTOSTARTLAST,
     CFG_AUTOSTARTLAST,
@@ -234,4 +241,6 @@ extern struct UIItem diaParentalLockConfig[];
 extern struct UIItem diaBlockDevicesConfig[];
 
 extern struct UIItem diaOSDConfig[];
+extern struct UIItem diaMMCEConfig[];
+
 #endif

@@ -50,6 +50,13 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
 
+      - name: Build and install MMCE
+        run: |
+          git clone https://github.com/ps2-mmce/mmceman.git
+          cd mmceman
+          make clean all 
+          cp */irx/*.irx $PS2SDK/iop/irx/ 
+
       - name: Compile -> make clean release
         run: make --trace clean release
 
@@ -144,6 +151,13 @@ jobs:
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
+
+      - name: Build and install MMCE
+        run: |
+          git clone https://github.com/ps2-mmce/mmceman.git
+          cd mmceman
+          make clean all 
+          cp */irx/*.irx $PS2SDK/iop/irx/
 
       - name: Get version
         run: |
@@ -270,6 +284,13 @@ jobs:
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
+
+      - name: Build and install MMCE
+        run: |
+          git clone https://github.com/ps2-mmce/mmceman.git
+          cd mmceman
+          make clean all 
+          cp */irx/*.irx $PS2SDK/iop/irx/ 
 
       - name: Get version
         run: |
