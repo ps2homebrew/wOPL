@@ -1,10 +1,10 @@
 VERSION = 1
 SUBVERSION = 2
 PATCHLEVEL = 0
-EXTRAVERSION = unofficial
+EXTRAVERSION = beta
 
 # How to DEBUG?
-# Simply type "make <debug mode>" to build OPL with the necessary debugging functionality.
+# Simply type "make <debug mode>" to build wOPL with the necessary debugging functionality.
 # Debug modes:
 #	debug		    	 -	UI-side debug mode (UDPTTY)
 #	iopcore_debug		 -	UI-side + iopcore debug mode (UDPTTY).
@@ -38,7 +38,7 @@ PADEMU ?= 1
 
 UDPBD ?= 0
 
-#Enables/disables building of an edition of OPL that will support the DTL-T10000 (SDK v2.3+)
+#Enables/disables building of an edition of wOPL that will support the DTL-T10000 (SDK v2.3+)
 DTL_T10000 ?= 0
 
 #Nor stripping neither compressing binary ELF after compiling.
@@ -69,16 +69,16 @@ GIT_HASH =
 GIT_TAG =
 DIRTY = -dirty
 endif
-OPL_VERSION = v$(VERSION).$(SUBVERSION).$(PATCHLEVEL)$(if $(EXTRAVERSION),-$(EXTRAVERSION))$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
+wOPL_VERSION = v$(VERSION).$(SUBVERSION).$(PATCHLEVEL)$(if $(EXTRAVERSION),-$(EXTRAVERSION))$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
 
 ifneq ($(GIT_TAG),)
 ifneq ($(GIT_TAG),latest)
 	# git revision is tagged
-	OPL_VERSION = $(GIT_TAG)$(if $(DIRTY),$(DIRTY))
+	wOPL_VERSION = $(GIT_TAG)$(if $(DIRTY),$(DIRTY))
 endif
 endif
 
-FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o hdd.o dialogs.o \
+FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o zso.o lz4.o \
 		appsupport.o favsupport.o gui.o guigame.o textures.o opl.o atlas.o nbns.o httpclient.o gsm.o cheatman.o sound.o ps2cnf.o
 
@@ -119,10 +119,10 @@ TRANSLATIONS = Albanian Arabic Bulgarian Cebuano Croatian Czech Danish Dutch Fil
 	German Greek Hungarian Indonesian Italian Japanese Korean Laotian Persian Polish Portuguese \
 	Portuguese_BR Romana Russian Ryukyuan SChinese Spanish Swedish TChinese Turkish Vietnamese
 
-EE_BIN = opl.elf
-EE_BIN_STRIPPED = opl_stripped.elf
-EE_BIN_PACKED = OPNPS2LD.ELF
-EE_VPKD = OPNPS2LD-$(OPL_VERSION)
+EE_BIN = wopl.elf
+EE_BIN_STRIPPED = wopl_stripped.elf
+EE_BIN_PACKED = WOPNPS2LD.ELF
+EE_VPKD = WOPNPS2LD-$(wOPL_VERSION)
 EE_SRC_DIR = src/
 EE_OBJS_DIR = obj/
 EE_ASM_DIR = asm/
@@ -131,10 +131,10 @@ LNG_TMPL_DIR = lng_tmpl/
 LNG_DIR = lng/
 PNG_ASSETS_DIR = gfx/
 
-MAPFILE = opl.map
+MAPFILE = wopl.map
 EE_LDFLAGS += -Wl,-Map,$(MAPFILE)
 
-EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc
+EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc -lkernel
 EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/freetype2 -I$(GSKIT)/include -I$(GSKIT)/ee/dma/include -I$(GSKIT)/ee/gs/include -Imodules/iopcore/common -Imodules/network/common -Imodules/hdd/common -Iinclude
 BIN2C = $(PS2SDK)/bin/bin2c
 
@@ -167,15 +167,6 @@ ifeq ($(PADEMU),1)
   PADEMU_FLAGS = PADEMU=1
 else
   PADEMU_FLAGS = PADEMU=0
-endif
-
-ifeq ($(UDPBD),1)
-  EE_OBJS += smap_udpbd.o bdm_udp_cdvdman.o
-  PNG_ASSETS += udp_bd
-  EE_CFLAGS += -DUDPBD
-  UDPBD_FLAGS = UDPBD=1
-else
-  UDPBD_FLAGS = UDPBD=0
 endif
 
 ifeq ($(DEBUG),1)
@@ -228,7 +219,7 @@ else
   SMSTCPIP_INGAME_CFLAGS = INGAME_DRIVER=1
 endif
 
-EE_CFLAGS += -fsingle-precision-constant -DOPL_VERSION=\"$(OPL_VERSION)\"
+EE_CFLAGS += -fsingle-precision-constant -DWOPL_VERSION=\"$(wOPL_VERSION)\"
 
 # There are a few places where the config key/value are truncated, so disable these warnings
 EE_CFLAGS += -Wno-format-truncation -Wno-stringop-truncation
@@ -244,12 +235,12 @@ EE_LDFLAGS += -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 .SILENT:
 
-.PHONY: all release debug iopcore_debug eesio_debug ingame_debug deci2_debug debug_ppctty iopcore_ppctty_debug ingame_ppctty_debug clean rebuild pc_tools pc_tools_win32 oplversion format format-check ps2sdk-not-setup download_lng download_lwNBD languages
+.PHONY: all release debug iopcore_debug eesio_debug ingame_debug deci2_debug debug_ppctty iopcore_ppctty_debug ingame_ppctty_debug clean rebuild pc_tools pc_tools_win32 woplversion format format-check ps2sdk-not-setup download_lng download_lwNBD languages
 
 ifdef PS2SDK
 
 all: download_lng download_lwNBD languages
-	echo "Building Open PS2 Loader $(OPL_VERSION)..."
+	echo "Building Open PS2 Loader $(wOPL_VERSION)..."
 	echo "-Interface"
 ifneq ($(NOT_PACKED),1)
 	$(MAKE) $(EE_BIN_PACKED)
@@ -296,7 +287,6 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM_ATA=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_SMB=1 clean
-	$(MAKE) -C modules/iopcore/cdvdman USE_UDPBD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDPRO=1 clean
 	echo " -cdvdfsv"
@@ -324,8 +314,6 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/network/SMSTCPIP clean
 	echo " -in-game SMAP"
 	$(MAKE) -C modules/network/smap-ingame clean
-	echo " -UDPBD SMAP"
-	$(MAKE) -C modules/smap_udpbd/ clean
 	echo " -smbinit"
 	$(MAKE) -C modules/network/smbinit clean
 	echo " -nbns"
@@ -419,12 +407,6 @@ ee_core/ee_core.elf: ee_core
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
 
-modules/smap_udpbd/smap_udpbd.irx: modules/smap_udpbd/
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)smap_udpbd.c: modules/smap_udpbd/smap_udpbd.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ $(*F)_irx
-
 $(EE_ASM_DIR)udnl.c: $(UDNL_OUT) | $(EE_ASM_DIR)
 	$(BIN2C) $(UDNL_OUT) $@ udnl_irx
 
@@ -448,12 +430,6 @@ modules/iopcore/cdvdman/bdm_ata_cdvdman.irx: modules/iopcore/cdvdman
 
 $(EE_ASM_DIR)bdm_ata_cdvdman.c: modules/iopcore/cdvdman/bdm_ata_cdvdman.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ bdm_ata_cdvdman_irx
-
-modules/iopcore/cdvdman/bdm_udp_cdvdman.irx: modules/iopcore/cdvdman
-	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_UDPBD=1 -C $< all
-
-$(EE_ASM_DIR)bdm_udp_cdvdman.c: modules/iopcore/cdvdman/bdm_udp_cdvdman.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ bdm_udp_cdvdman_irx
 
 modules/iopcore/cdvdman/smb_cdvdman.irx: modules/iopcore/cdvdman
 	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_SMB=1 -C $< all
@@ -879,8 +855,8 @@ ps2sdk-not-setup:
 	@echo "PS2SDK is not setup. Please setup PS2SDK before building this project"
 endif
 
-oplversion:
-	@echo $(OPL_VERSION)
+woplversion:
+	@echo $(wOPL_VERSION)
 
 ifdef PS2SDK
 include $(PS2SDK)/samples/Makefile.pref

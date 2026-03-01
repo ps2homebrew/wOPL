@@ -481,7 +481,7 @@ int sbReadList(base_game_info_t **list, const char *prefix, int *fsize, int *gam
 
 extern int probed_fd;
 extern u32 probed_lba;
-extern u8 IOBuffer[2048];
+extern u8 IOBuffer[2048] ALIGNED(64); // one sector
 
 static int ProbeZISO(int fd)
 {

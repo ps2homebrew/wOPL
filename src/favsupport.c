@@ -20,6 +20,7 @@ void favInit(item_list_t *itemList)
     LOG("FAVSUPPORT Init\n");
     configGetInt(configGetByType(CONFIG_OPL), "fav_frames_delay", &favItemList.delay);
     favItemList.enabled = 1;
+    itemList->enabled = 1;
 }
 
 item_list_t *favGetObject(int initOnly)

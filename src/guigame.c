@@ -1118,7 +1118,7 @@ void guiGameRemoveGlobalSettings(config_set_t *configGame)
         configRemoveKey(configGame, CONFIG_ITEM_GSMXOFFSET);
         configRemoveKey(configGame, CONFIG_ITEM_GSMYOFFSET);
         configRemoveKey(configGame, CONFIG_ITEM_GSMFIELDFIX);
-        //OSD Language
+        // OSD Language
         configRemoveKey(configGame, CONFIG_ITEM_OSD_SETTINGS_LANGID);
         configRemoveKey(configGame, CONFIG_ITEM_OSD_SETTINGS_TV_ASP);
         configRemoveKey(configGame, CONFIG_ITEM_OSD_SETTINGS_VMODE);
@@ -1157,7 +1157,7 @@ void guiGameRemoveSettings(config_set_t *configSet)
         configRemoveKey(configSet, CONFIG_ITEM_ENABLECHEAT);
         configRemoveKey(configSet, CONFIG_ITEM_CHEATMODE);
 
-        //OSD Language
+        // OSD Language
         configRemoveKey(configSet, CONFIG_ITEM_OSD_SETTINGS_LANGID);
         configRemoveKey(configSet, CONFIG_ITEM_OSD_SETTINGS_TV_ASP);
         configRemoveKey(configSet, CONFIG_ITEM_OSD_SETTINGS_VMODE);
@@ -1326,7 +1326,7 @@ static void guiGameLoadPadMacroConfig(config_set_t *configSet, config_set_t *con
 }
 #endif
 
-//OSD
+// OSD
 
 static int guiGameOSDLanguageUpdater(int modified)
 {
@@ -1443,7 +1443,7 @@ static void guiGameLoadOSDLanguageConfig(config_set_t *configSet, config_set_t *
     diaSetInt(diaOSDConfig, OSD_TVASPECT_VALUE, gOSDTVAspectRatio);
     diaSetInt(diaOSDConfig, OSD_VMODE_VALUE, gOSDVideOutput);
 }
-//OSD Language
+// OSD Language
 
 // loads defaults if no config found
 void guiGameLoadConfig(item_list_t *support, config_set_t *configSet)

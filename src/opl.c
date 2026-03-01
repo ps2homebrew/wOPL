@@ -34,6 +34,7 @@
 
 #include "include/cheatman.h"
 #include "include/sound.h"
+#include "include/tetris.h"
 #include "include/xparam.h"
 
 #include <unistd.h>
@@ -136,9 +137,6 @@ int smbCacheSize;
 int gEnableILK;
 int gEnableMX4SIO;
 int gEnableBdmHDD;
-#ifdef UDPBD
-int gEnableUDPBD;
-#endif
 int gAutosort;
 int gAutoRefresh;
 int gEnableNotifications;
@@ -734,7 +732,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
     config_set_t *appConfig;
     char appsPath[128];
 
-    snprintf(appsPath, sizeof(appsPath), "mc?:OPL/conf_apps.cfg");
+    snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
     fd = openFile(appsPath, O_RDONLY);
     if (fd >= 0) {
         appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
@@ -930,7 +928,7 @@ static int checkLoadConfigBDM(int types)
     int value;
 
     // check USB
-    if (bdmFindPartition(path, "conf_uopl.cfg", 0)) {
+    if (bdmFindPartition(path, "conf_wopl.cfg", 0)) {
         configEnd();
         configInit(path);
         value = configReadMulti(types);
@@ -950,7 +948,7 @@ static int checkLoadConfigHDD(int types)
     hddLoadModules();
     hddLoadSupportModules();
 
-    snprintf(path, sizeof(path), "%sconf_uopl.cfg", gHDDPrefix);
+    snprintf(path, sizeof(path), "%sconf_wopl.cfg", gHDDPrefix);
     value = open(path, O_RDONLY);
     if (value >= 0) {
         close(value);
@@ -1092,9 +1090,6 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, &gEnableILK);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-            configGetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, &gEnableUDPBD);
-#endif
             configGetInt(configOPL, CONFIG_OPL_SFX, &gEnableSFX);
             configGetInt(configOPL, CONFIG_OPL_BOOT_SND, &gEnableBootSND);
             configGetInt(configOPL, CONFIG_OPL_BGM, &gEnableBGM);
@@ -1153,7 +1148,7 @@ static int trySaveConfigBDM(int types)
     char path[64];
 
     // check USB
-    if (bdmFindPartition(path, "conf_uopl.cfg", 1)) {
+    if (bdmFindPartition(path, "conf_wopl.cfg", 1)) {
         configSetMove(path);
         return configWriteMulti(types);
     }
@@ -1258,9 +1253,6 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, gEnableILK);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, gEnableMX4SIO);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-        configSetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, gEnableUDPBD);
-#endif
         configSetInt(configOPL, CONFIG_OPL_SFX, gEnableSFX);
         configSetInt(configOPL, CONFIG_OPL_BOOT_SND, gEnableBootSND);
         configSetInt(configOPL, CONFIG_OPL_BGM, gEnableBGM);
@@ -1844,7 +1836,7 @@ static void setDefaults(void)
     gAutoLaunchDeviceData = NULL;
     gOPLPart[0] = '\0';
     gHDDPrefix = "pfs0:";
-    gBaseMCDir = "mc?:OPL";
+    gBaseMCDir = "mc?:wOPL";
 
     bdmCacheSize = 16;
     hddCacheSize = 8;
@@ -1917,9 +1909,6 @@ static void setDefaults(void)
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
-#ifdef UDPBD
-    gEnableUDPBD = 0;
-#endif
 
     frameCounter = 0;
 
@@ -2028,9 +2017,6 @@ static void miniInit(int mode)
         gEnableILK = 1; // iLink will break pcsx2 however.
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;
-#ifdef UDPBD
-        gEnableUDPBD = 1; // likely not enough
-#endif
         bdmLoadModules();
         delay(6); // Wait for the device to be detected.
     } else if (mode == HDD_MODE) {
@@ -2198,6 +2184,11 @@ int main(int argc, char *argv[])
 
     // until this point in the code is reached, only PREINIT_LOG macro should be used
     LOG_ENABLE();
+
+    // Secret boot: hold TRIANGLE to start Tetris directly
+    readPads();
+    if (getKeyPressed(KEY_TRIANGLE) || (getKeyPressed(KEY_L1) && getKeyPressed(KEY_R1) && getKeyPressed(KEY_START)))
+        tetrisRun();
 
     // queue deffered init which shuts down the intro screen later
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredInit);

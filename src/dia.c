@@ -851,6 +851,18 @@ static void diaRestoreScrollSpeed(void)
     padRestoreSettings(diaPadSettings);
 }
 
+static int (*gDiaSecretHandler)(void) = NULL;
+
+void diaSetSecretHandler(int (*handler)(void))
+{
+    gDiaSecretHandler = handler;
+}
+
+void diaClearSecretHandler(void)
+{
+    gDiaSecretHandler = NULL;
+}
+
 static struct UIItem *diaFindByID(struct UIItem *ui, int id)
 {
     while (ui->type != UI_TERMINATOR) {
@@ -906,6 +918,14 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
         rmEndFrame();
 
         readPads();
+
+        if (gDiaSecretHandler) {
+            int secret = gDiaSecretHandler();
+            if (secret) {
+                diaRestoreScrollSpeed();
+                return secret;
+            }
+        }
 
         if (haveFocus) {
             modified = 1;

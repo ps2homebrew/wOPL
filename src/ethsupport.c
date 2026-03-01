@@ -19,6 +19,18 @@
 #include "include/nbns.h"
 #include "httpclient.h"
 
+#define ETH_MODE_UPDATE_DELAY 300
+
+#include "include/mcemu.h"
+typedef struct
+{
+    int active;       /* Activation flag */
+    char fname[64];   /* File name (memorycard?.bin) */
+    u16 fid;          /* SMB File ID */
+    int flags;        /* Card flag */
+    vmc_spec_t specs; /* Card specifications */
+} smb_vmc_infos_t;
+
 static char ethPrefix[40]; // Contains the full path to the folder where all the games are.
 static char *ethBase;
 static int ethULSizePrev = -2;
@@ -415,7 +427,7 @@ static void smbLoadModules(void)
     ethDisplayErrorStatus();
 }
 
-void ethInit(item_list_t *itemList)
+static void ethInit(item_list_t *itemList)
 {
     if (ethInitSema() < 0)
         return;
@@ -438,6 +450,7 @@ void ethInit(item_list_t *itemList)
         gNetworkStartup = ERROR_ETH_NOT_STARTED;
         ioPutRequest(IO_CUSTOM_SIMPLEACTION, &smbLoadModules);
         ethGameList.enabled = 1;
+        itemList->enabled = 1;
     }
 }
 
