@@ -27,9 +27,6 @@ int sceCdSync(int mode)
 int sceCdRead(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
 {
     int result;
-#if defined(USE_UDPBD)
-    static int count = 0;
-#endif
 
     u16 sector_size = 2048;
 
@@ -50,14 +47,6 @@ int sceCdRead(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
     } else {
         result = cdvdman_SyncRead(lsn, sectors, sector_size, buf);
     }
-
-#if defined(USE_UDPBD)
-    count += sectors;
-    if (count > 100) {
-        count = 0;
-        //LOG("- memory free = %dKiB\n", QueryTotalFreeMemSize() / 1024);
-    }
-#endif
 
     return result;
 }

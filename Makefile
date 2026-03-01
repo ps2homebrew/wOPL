@@ -169,15 +169,6 @@ else
   PADEMU_FLAGS = PADEMU=0
 endif
 
-ifeq ($(UDPBD),1)
-  EE_OBJS += smap_udpbd.o bdm_udp_cdvdman.o
-  PNG_ASSETS += udp_bd
-  EE_CFLAGS += -DUDPBD
-  UDPBD_FLAGS = UDPBD=1
-else
-  UDPBD_FLAGS = UDPBD=0
-endif
-
 ifeq ($(DEBUG),1)
   EE_CFLAGS += -D__DEBUG -g
   ifeq ($(DECI2_DEBUG),1)
@@ -296,7 +287,6 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM_ATA=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_SMB=1 clean
-	$(MAKE) -C modules/iopcore/cdvdman USE_UDPBD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDPRO=1 clean
 	echo " -cdvdfsv"
@@ -324,8 +314,6 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/network/SMSTCPIP clean
 	echo " -in-game SMAP"
 	$(MAKE) -C modules/network/smap-ingame clean
-	echo " -UDPBD SMAP"
-	$(MAKE) -C modules/smap_udpbd/ clean
 	echo " -smbinit"
 	$(MAKE) -C modules/network/smbinit clean
 	echo " -nbns"
@@ -419,12 +407,6 @@ ee_core/ee_core.elf: ee_core
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
 
-modules/smap_udpbd/smap_udpbd.irx: modules/smap_udpbd/
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)smap_udpbd.c: modules/smap_udpbd/smap_udpbd.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ $(*F)_irx
-
 $(EE_ASM_DIR)udnl.c: $(UDNL_OUT) | $(EE_ASM_DIR)
 	$(BIN2C) $(UDNL_OUT) $@ udnl_irx
 
@@ -448,12 +430,6 @@ modules/iopcore/cdvdman/bdm_ata_cdvdman.irx: modules/iopcore/cdvdman
 
 $(EE_ASM_DIR)bdm_ata_cdvdman.c: modules/iopcore/cdvdman/bdm_ata_cdvdman.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ bdm_ata_cdvdman_irx
-
-modules/iopcore/cdvdman/bdm_udp_cdvdman.irx: modules/iopcore/cdvdman
-	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_UDPBD=1 -C $< all
-
-$(EE_ASM_DIR)bdm_udp_cdvdman.c: modules/iopcore/cdvdman/bdm_udp_cdvdman.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ bdm_udp_cdvdman_irx
 
 modules/iopcore/cdvdman/smb_cdvdman.irx: modules/iopcore/cdvdman
 	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_SMB=1 -C $< all

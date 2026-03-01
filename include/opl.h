@@ -127,9 +127,6 @@ extern int smbCacheSize;
 extern int gEnableILK;
 extern int gEnableMX4SIO;
 extern int gEnableBdmHDD;
-#ifdef UDPBD
-extern int gEnableUDPBD;
-#endif
 
 extern int gAutosort;
 extern int gAutoRefresh;

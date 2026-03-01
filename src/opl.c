@@ -143,9 +143,6 @@ int smbCacheSize;
 int gEnableILK;
 int gEnableMX4SIO;
 int gEnableBdmHDD;
-#ifdef UDPBD
-int gEnableUDPBD;
-#endif
 int gAutosort;
 int gAutoRefresh;
 int gEnableNotifications;
@@ -1099,9 +1096,6 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, &gEnableILK);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-            configGetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, &gEnableUDPBD);
-#endif
             configGetInt(configOPL, CONFIG_OPL_SFX, &gEnableSFX);
             configGetInt(configOPL, CONFIG_OPL_BOOT_SND, &gEnableBootSND);
             configGetInt(configOPL, CONFIG_OPL_BGM, &gEnableBGM);
@@ -1265,9 +1259,6 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, gEnableILK);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, gEnableMX4SIO);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-        configSetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, gEnableUDPBD);
-#endif
         configSetInt(configOPL, CONFIG_OPL_SFX, gEnableSFX);
         configSetInt(configOPL, CONFIG_OPL_BOOT_SND, gEnableBootSND);
         configSetInt(configOPL, CONFIG_OPL_BGM, gEnableBGM);
@@ -1921,9 +1912,6 @@ static void setDefaults(void)
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
-#ifdef UDPBD
-    gEnableUDPBD = 0;
-#endif
 
     frameCounter = 0;
 
@@ -2032,9 +2020,6 @@ static void miniInit(int mode)
         gEnableILK = 1; // iLink will break pcsx2 however.
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;
-#ifdef UDPBD
-        gEnableUDPBD = 1; // likely not enough
-#endif
         bdmLoadModules();
         delay(6); // Wait for the device to be detected.
     } else if (mode == HDD_MODE) {

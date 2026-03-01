@@ -450,18 +450,12 @@ static void guiShowBlockDeviceConfig(void)
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, gEnableMX4SIO);
     diaSetEnabled(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, !gHDDStartMode);
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, gEnableUDPBD);
-#endif
 
     ret = diaExecuteDialog(diaBlockDevicesConfig, -1, 1, NULL);
     if (ret) {
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEILK, &gEnableILK);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, &gEnableMX4SIO);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, &gEnableUDPBD);
-#endif
     }
 }
 
