@@ -10,12 +10,6 @@
 #include "include/sound.h"
 #include <string.h>
 
-// FIXME: We should not need this function.
-//        Use newlib's 'stat' to get GMT time.
-#define NEWLIB_PORT_AWARE
-#include <fileXio_rpc.h> // iox_stat_t, fileXioGetStat
-int configGetStat(config_set_t *configSet, iox_stat_t *stat);
-
 static u32 currentUID = 0;
 static config_set_t configFiles[CONFIG_INDEX_COUNT];
 static char legacyNetConfigPath[256] = "mc?:SYS-CONF/IPCONFIG.DAT";
@@ -564,9 +558,9 @@ int configWrite(config_set_t *configSet)
     return 1;
 }
 
-int configGetStat(config_set_t *configSet, iox_stat_t *stat)
+int configGetStat(config_set_t *configSet, struct stat *st)
 {
-    return (fileXioGetStat(configSet->filename, stat) >= 0 ? 1 : 0);
+    return (stat(configSet->filename, st) >= 0 ? 1 : 0);
 }
 
 void configClear(config_set_t *configSet)
