@@ -1322,7 +1322,7 @@ void guiDrawBGPlasma()
 
     pery = ymax;
     rmInvalidateTexture(&gBackgroundTex);
-    rmDrawPixmap(&gBackgroundTex, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
+    rmSetBackground(&gBackgroundTex);
 }
 
 int guiDrawBGSettings(void)
