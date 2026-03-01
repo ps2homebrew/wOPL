@@ -73,8 +73,6 @@
 #include <sysclib.h>
 #include <intrman.h>
 
-#include "smsutils.h"
-
 static u8_t pbuf_pool_memory[(PBUF_POOL_SIZE * MEM_ALIGN_SIZE(PBUF_POOL_BUFSIZE + sizeof(struct pbuf)))];
 
 #if !SYS_LIGHTWEIGHT_PROT

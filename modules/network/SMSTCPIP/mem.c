@@ -49,8 +49,6 @@
 #include <intrman.h>
 #include <sysclib.h>
 
-#include "smsutils.h"
-
 #if MEM_LIBC_MALLOC
 /** mem_init is not used when using C library malloc().
  */

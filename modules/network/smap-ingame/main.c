@@ -9,7 +9,6 @@
 #include <sysclib.h>
 #include <loadcore.h>
 #include <thbase.h>
-#include "smsutils.h"
 #include <intrman.h>
 
 #include "smstcpip.h"

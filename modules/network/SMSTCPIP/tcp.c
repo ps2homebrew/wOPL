@@ -56,8 +56,6 @@
 
 #include "sysclib.h"
 
-#include "smsutils.h"
-
 #include "thbase.h"
 
 #if LWIP_TCP

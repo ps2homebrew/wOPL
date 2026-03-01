@@ -44,8 +44,6 @@
 #include <sysclib.h>
 #include <errno.h>
 
-#include "smsutils.h"
-
 #define NUM_SOCKETS MEMP_NUM_NETCONN
 
 struct lwip_socket

@@ -50,8 +50,6 @@
 #include <sysclib.h>
 #include <thbase.h>
 
-#include "smsutils.h"
-
 /*
  * Copy len bytes from offset in pbuf to buffer
  *
@@ -234,7 +232,7 @@ ip_reass(struct pbuf *p)
        available data in the pbuf is given by the q->len
        variable. */
                     memcpy(q->payload, &ip_reassbuf[i],
-                                q->len > ip_reasslen - i ? ip_reasslen - i : q->len);
+                           q->len > ip_reasslen - i ? ip_reasslen - i : q->len);
                     i += q->len;
                 }
             }

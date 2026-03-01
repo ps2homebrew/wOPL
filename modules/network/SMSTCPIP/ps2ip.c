@@ -22,8 +22,6 @@
 #include <thsemap.h>
 #include <sysmem.h>
 
-#include "smsutils.h"
-
 #include <lwip/memp.h>
 #include <lwip/sys.h>
 #include <lwip/tcpip.h>

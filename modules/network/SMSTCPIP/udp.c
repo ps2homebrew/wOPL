@@ -58,8 +58,6 @@
 
 #include "sysclib.h"
 
-#include "smsutils.h"
-
 /* The list of UDP PCBs */
 #if LWIP_UDP
 /* was static, but we may want to access this from a socket layer */

@@ -46,8 +46,6 @@
 
 #include <sysclib.h>
 
-#include "smsutils.h"
-
 void icmp_input(struct pbuf *p, struct netif *inp)
 {
     unsigned char type;

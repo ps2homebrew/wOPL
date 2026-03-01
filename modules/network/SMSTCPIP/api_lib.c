@@ -43,8 +43,6 @@
 #include <thsemap.h>
 #include <sysclib.h>
 
-#include "smsutils.h"
-
 struct netbuf *netbuf_new(void)
 {
     struct netbuf *buf = memp_malloc(MEMP_NETBUF);
