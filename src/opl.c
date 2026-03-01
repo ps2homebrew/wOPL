@@ -1829,9 +1829,9 @@ void setDefaultColors(void)
     gDefaultSelTextColor[1] = 0x00;
     gDefaultSelTextColor[2] = 0x00;
 
-    gDefaultUITextColor[0] = 0x00;
-    gDefaultUITextColor[1] = 0x00;
-    gDefaultUITextColor[2] = 0x00;
+    gDefaultUITextColor[0] = 0xFF;
+    gDefaultUITextColor[1] = 0xFF;
+    gDefaultUITextColor[2] = 0xFF;
 
     gDefaultPlasmaBlendColor[0] = 0x00;
     gDefaultPlasmaBlendColor[1] = 0x00;
