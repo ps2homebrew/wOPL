@@ -112,7 +112,7 @@ void netbuf_copy_partial(
 
             lDiff = buf_copy_len > lDiff ? lDiff : buf_copy_len;
 
-            mips_memcpy(
+            memcpy(
                 &((char *)dataptr)[left],
                 &((char *)p->payload)[offset],
                 lDiff);
