@@ -1311,9 +1311,9 @@ void applyConfig(int themeID, int langID, int skipDeviceRefresh)
 
     guiSetFrameHook(&menuUpdateHook);
 
-	guiLock();
+    guiLock();
     int changed = rmSetMode(0);
-	guiUnlock();
+    guiUnlock();
     if (changed) {
         bgmMute();
         // reinit the graphics...
