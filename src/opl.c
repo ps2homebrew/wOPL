@@ -1813,17 +1813,17 @@ void setDefaultColors(void)
     gDefaultTextColor[1] = 0x5C;
     gDefaultTextColor[2] = 0x5C;
 
-    gDefaultSelTextColor[0] = 0x00;
-    gDefaultSelTextColor[1] = 0x00;
-    gDefaultSelTextColor[2] = 0x00;
+    gDefaultSelTextColor[0] = 0xFF;
+    gDefaultSelTextColor[1] = 0xFF;
+    gDefaultSelTextColor[2] = 0xFF;
 
     gDefaultUITextColor[0] = 0xFF;
     gDefaultUITextColor[1] = 0xFF;
     gDefaultUITextColor[2] = 0xFF;
 
-    gDefaultPlasmaBlendColor[0] = 0x00;
-    gDefaultPlasmaBlendColor[1] = 0x00;
-    gDefaultPlasmaBlendColor[2] = 0x00;
+    gDefaultPlasmaBlendColor[0] = 0xFF;
+    gDefaultPlasmaBlendColor[1] = 0xFF;
+    gDefaultPlasmaBlendColor[2] = 0xFF;
 }
 
 static void setDefaults(void)
