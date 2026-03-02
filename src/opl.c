@@ -38,6 +38,9 @@
 #include "include/xparam.h"
 
 #include <unistd.h>
+#define NEWLIB_PORT_AWARE
+#include <fileXio_rpc.h> // fileXioDopen, fileXioIoctl2, fileXioDclose
+
 #ifdef PADEMU
 #include <libds34bt.h>
 #include <libds34usb.h>
