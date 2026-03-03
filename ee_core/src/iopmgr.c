@@ -106,9 +106,7 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
     LoadOPLModule(OPL_MODULE_ID_DRVTIF, 0, 0, NULL);
     LoadOPLModule(OPL_MODULE_ID_TIFINET, 0, 0, NULL);
 #elif defined(TTY_UDP)
-#ifndef UDPBD
     LoadOPLModule(OPL_MODULE_ID_UDPTTY, 0, 0, NULL);
-#endif
     LoadOPLModule(OPL_MODULE_ID_IOPTRAP, 0, 0, NULL);
 #elif defined(TTY_PPC)
     LoadOPLModule(OPL_MODULE_ID_PPCTTY, 0, 0, NULL);
@@ -150,11 +148,6 @@ static void ResetIopSpecial(const char *args, unsigned int arglen)
             break;
         case BDM_HDD_MODE:
             break;
-#ifdef UDPBD
-        case BDM_UDP_MODE:
-            LoadOPLModule(OPL_MODULE_ID_SMAP, 0, g_ipconfig_len, g_ipconfig);
-            break;
-#endif
     };
 }
 

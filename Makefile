@@ -85,7 +85,7 @@ FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o syste
 IOP_OBJS =	iomanx.o filexio.o ps2fs.o usbd.o bdmevent.o \
 		bdm.o bdmfs_fatfs.o usbmass_bd.o usbmass_bd_single.o iLinkman.o IEEE1394_bd.o mx4sio_bd.o \
 		ps2atad.o hdpro_atad.o poweroff.o ps2hdd.o xhdd.o genvmc.o lwnbdsvr.o \
-		ps2dev9.o smsutils.o ps2ip.o smap.o isofs.o nbns-iop.o \
+		ps2dev9.o ps2ip.o smap.o isofs.o nbns-iop.o \
 		sio2man.o padman.o mcman.o mcserv.o \
 		httpclient-iop.o netman.o ps2ips.o \
 		bdm_mcemu.o hdd_mcemu.o smb_mcemu.o \
@@ -134,7 +134,7 @@ PNG_ASSETS_DIR = gfx/
 MAPFILE = wopl.map
 EE_LDFLAGS += -Wl,-Map,$(MAPFILE)
 
-EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lkernel
+EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc -lkernel
 EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/freetype2 -I$(GSKIT)/include -I$(GSKIT)/ee/dma/include -I$(GSKIT)/ee/gs/include -Imodules/iopcore/common -Imodules/network/common -Imodules/hdd/common -Iinclude
 BIN2C = $(PS2SDK)/bin/bin2c
 
@@ -167,15 +167,6 @@ ifeq ($(PADEMU),1)
   PADEMU_FLAGS = PADEMU=1
 else
   PADEMU_FLAGS = PADEMU=0
-endif
-
-ifeq ($(UDPBD),1)
-  EE_OBJS += smap_udpbd.o bdm_udp_cdvdman.o
-  PNG_ASSETS += udp_bd
-  EE_CFLAGS += -DUDPBD
-  UDPBD_FLAGS = UDPBD=1
-else
-  UDPBD_FLAGS = UDPBD=0
 endif
 
 ifeq ($(DEBUG),1)
@@ -296,7 +287,6 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM_ATA=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_SMB=1 clean
-	$(MAKE) -C modules/iopcore/cdvdman USE_UDPBD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDPRO=1 clean
 	echo " -cdvdfsv"
@@ -318,14 +308,10 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/isofs clean
 	echo " -bdmevent"
 	$(MAKE) -C modules/bdmevent clean
-	echo " -SMSUTILS"
-	$(MAKE) -C modules/network/SMSUTILS clean
 	echo " -SMSTCPIP"
 	$(MAKE) -C modules/network/SMSTCPIP clean
 	echo " -in-game SMAP"
 	$(MAKE) -C modules/network/smap-ingame clean
-	echo " -UDPBD SMAP"
-	$(MAKE) -C modules/smap_udpbd/ clean
 	echo " -smbinit"
 	$(MAKE) -C modules/network/smbinit clean
 	echo " -nbns"
@@ -419,12 +405,6 @@ ee_core/ee_core.elf: ee_core
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
 
-modules/smap_udpbd/smap_udpbd.irx: modules/smap_udpbd/
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)smap_udpbd.c: modules/smap_udpbd/smap_udpbd.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ $(*F)_irx
-
 $(EE_ASM_DIR)udnl.c: $(UDNL_OUT) | $(EE_ASM_DIR)
 	$(BIN2C) $(UDNL_OUT) $@ udnl_irx
 
@@ -448,12 +428,6 @@ modules/iopcore/cdvdman/bdm_ata_cdvdman.irx: modules/iopcore/cdvdman
 
 $(EE_ASM_DIR)bdm_ata_cdvdman.c: modules/iopcore/cdvdman/bdm_ata_cdvdman.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ bdm_ata_cdvdman_irx
-
-modules/iopcore/cdvdman/bdm_udp_cdvdman.irx: modules/iopcore/cdvdman
-	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_UDPBD=1 -C $< all
-
-$(EE_ASM_DIR)bdm_udp_cdvdman.c: modules/iopcore/cdvdman/bdm_udp_cdvdman.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ bdm_udp_cdvdman_irx
 
 modules/iopcore/cdvdman/smb_cdvdman.irx: modules/iopcore/cdvdman
 	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_SMB=1 -C $< all
@@ -628,12 +602,6 @@ $(EE_ASM_DIR)bdmevent.c: modules/bdmevent/bdmevent.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_irx
 
 $(EE_ASM_DIR)ps2dev9.c: $(PS2SDK)/iop/irx/ps2dev9.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ $(*F)_irx
-
-modules/network/SMSUTILS/SMSUTILS.irx: modules/network/SMSUTILS
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)smsutils.c: modules/network/SMSUTILS/SMSUTILS.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_irx
 
 $(EE_ASM_DIR)ps2ip.c: $(PS2SDK)/iop/irx/ps2ip-nm.irx | $(EE_ASM_DIR)

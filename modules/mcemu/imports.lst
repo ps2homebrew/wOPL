@@ -48,17 +48,14 @@ I_sceSifCheckInit
 I_sceSifDmaStat
 sifman_IMPORTS_end
 
-smsutils_IMPORTS_start
-I_mips_memset
-I_mips_memcpy
-smsutils_IMPORTS_end
-
 stdio_IMPORTS_start
 I_printf
 stdio_IMPORTS_end
 
 sysclib_IMPORTS_start
 I_prnt
+I_memset
+I_memcpy
 I_strcmp
 sysclib_IMPORTS_end
 

@@ -536,7 +536,7 @@ static void hddCheckOPLFolder(const char *mountPoint)
     DIR *dir;
     char path[32];
 
-    sprintf(path, "%sOPL", mountPoint);
+    sprintf(path, "%swOPL", mountPoint);
 
     dir = opendir(path);
     if (dir == NULL)
@@ -555,9 +555,9 @@ static void hddFindOPLPartition(void)
 
     ret = fileXioMount("pfs0:", "hdd0:__common", FIO_MT_RDWR);
     if (ret == 0) {
-        fd = open("pfs0:OPL/conf_hdd.cfg", O_RDONLY);
+        fd = open("pfs0:wOPL/conf_hdd.cfg", O_RDONLY);
         if (fd >= 0) {
-            config = configAlloc(0, NULL, "pfs0:OPL/conf_hdd.cfg");
+            config = configAlloc(0, NULL, "pfs0:wOPL/conf_hdd.cfg");
             configRead(config);
 
             configGetStrCopy(config, "hdd_partition", name, sizeof(name));
@@ -571,12 +571,12 @@ static void hddFindOPLPartition(void)
 
         hddCheckOPLFolder(hddPrefix);
 
-        fd = open("pfs0:OPL/conf_hdd.cfg", O_CREAT | O_TRUNC | O_WRONLY);
+        fd = open("pfs0:wOPL/conf_hdd.cfg", O_CREAT | O_TRUNC | O_WRONLY);
         if (fd >= 0) {
-            config = configAlloc(0, NULL, "pfs0:OPL/conf_hdd.cfg");
+            config = configAlloc(0, NULL, "pfs0:wOPL/conf_hdd.cfg");
             configRead(config);
 
-            configSetStr(config, "hdd_partition", "+OPL");
+            configSetStr(config, "hdd_partition", "+wOPL");
             configWrite(config);
 
             configFree(config);
@@ -584,7 +584,7 @@ static void hddFindOPLPartition(void)
         }
     }
 
-    snprintf(gOPLPart, sizeof(gOPLPart), "hdd0:+OPL");
+    snprintf(gOPLPart, sizeof(gOPLPart), "hdd0:+wOPL");
 
     return;
 }
@@ -761,7 +761,7 @@ void hddLoadSupportModules(void)
 
         if (gOPLPart[5] != '+') {
             hddCheckOPLFolder(hddPrefix);
-            gHDDPrefix = "pfs0:OPL/";
+            gHDDPrefix = "pfs0:wOPL/";
         }
     }
 }

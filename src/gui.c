@@ -200,8 +200,8 @@ void guiEndFrame(void)
 
 void guiShowAbout()
 {
-    char wOPLVersion[48];
-    char wOPLBuildDetails[40];
+    char wOPLVersion[128];
+    char wOPLBuildDetails[96];
 
     snprintf(wOPLVersion, sizeof(wOPLVersion), "Double Unofficial Open PS2 Loader %s", WOPL_VERSION);
     diaSetLabel(diaAbout, ABOUT_TITLE, wOPLVersion);
@@ -450,18 +450,12 @@ static void guiShowBlockDeviceConfig(void)
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, gEnableMX4SIO);
     diaSetEnabled(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, !gHDDStartMode);
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, gEnableUDPBD);
-#endif
 
     ret = diaExecuteDialog(diaBlockDevicesConfig, -1, 1, NULL);
     if (ret) {
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEILK, &gEnableILK);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, &gEnableMX4SIO);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, &gEnableUDPBD);
-#endif
     }
 }
 
@@ -1330,7 +1324,7 @@ void guiDrawBGPlasma()
 
     pery = ymax;
     rmInvalidateTexture(&gBackgroundTex);
-    rmDrawPixmap(&gBackgroundTex, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
+    rmSetBackground(&gBackgroundTex);
 }
 
 int guiDrawBGSettings(void)

@@ -63,14 +63,14 @@ static int checkMC()
         }
 
         mc0_has_folder = 0;
-        DIR *mc0_opl_dir = opendir("mc0:OPL/");
+        DIR *mc0_opl_dir = opendir("mc0:wOPL/");
         if (mc0_opl_dir != NULL) {
             closedir(mc0_opl_dir);
             mc0_has_folder = 1;
         }
 
         mc1_has_folder = 0;
-        DIR *mc1_opl_dir = opendir("mc1:OPL/");
+        DIR *mc1_opl_dir = opendir("mc1:wOPL/");
         if (mc1_opl_dir != NULL) {
             closedir(mc1_opl_dir);
             mc1_has_folder = 1;
@@ -108,10 +108,10 @@ void checkMCFolder(void)
         return;
     }
 
-    snprintf(path, sizeof(path), "mc%d:OPL/", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:wOPL/", mcID & 1);
     mkdir(path, 0777);
 
-    snprintf(path, sizeof(path), "mc%d:OPL/list.icn", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:wOPL/list.icn", mcID & 1);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = openFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -122,7 +122,7 @@ void checkMCFolder(void)
     } else
         close(fd);
 
-    snprintf(path, sizeof(path), "mc%d:OPL/copy.icn", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:wOPL/copy.icn", mcID & 1);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = openFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -133,7 +133,7 @@ void checkMCFolder(void)
     } else
         close(fd);
 
-    snprintf(path, sizeof(path), "mc%d:OPL/del.icn", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:wOPL/del.icn", mcID & 1);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = openFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -144,7 +144,7 @@ void checkMCFolder(void)
     } else
         close(fd);
 
-    snprintf(path, sizeof(path), "mc%d:OPL/icon.sys", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:wOPL/icon.sys", mcID & 1);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = openFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -523,7 +523,7 @@ int GetSystemRegion(void)
 
 void logfile(char *text)
 {
-    int fd = open("mass:/opl_log.txt", O_APPEND | O_CREAT | O_WRONLY);
+    int fd = open("mass:/wopl_log.txt", O_APPEND | O_CREAT | O_WRONLY);
     write(fd, text, strlen(text));
     close(fd);
 }

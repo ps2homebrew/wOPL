@@ -70,9 +70,6 @@ enum GAME_MODE {
     BDM_M4S_MODE,
     BDM_USB_MODE,
     BDM_HDD_MODE,
-#ifdef UDPBD
-    BDM_UDP_MODE,
-#endif
     ETH_MODE,
     HDD_MODE,
 };
