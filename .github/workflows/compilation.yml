@@ -106,7 +106,6 @@ jobs:
       matrix:
         extra: [EXTRA_FEATURES=0, EXTRA_FEATURES=1]
         pademu: [PADEMU=0, PADEMU=1]
-        udpbd: [UDPBD=0, UDPBD=1]
     runs-on: ubuntu-22.04
     container: ghcr.io/ps2dev/ps2dev@sha256:362bcd26b8bd94149c539f41749edb13facbb5b68a8b960e219fc079693cb95f
     steps:
@@ -147,12 +146,12 @@ jobs:
 
       - name: Get version
         run: |
-          echo "wOPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
+          echo "wOPL_VERSION=$(make woplversion)" >> $GITHUB_ENV
 
-      - name: Compile -> make ${{ matrix.extra }} ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }} NOT_PACKED=1
+      - name: Compile -> make ${{ matrix.extra }} ${{ matrix.pademu }} ${{ matrix.extra }} NOT_PACKED=1
         run: |
-          make --trace ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }} NOT_PACKED=1
-          mv wopl.elf WOPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}-${{ matrix.udpbd }}.ELF
+          make --trace ${{ matrix.pademu }} ${{ matrix.extra }} NOT_PACKED=1
+          mv wopl.elf WOPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}.ELF
 
       - name: Create detailed changelog
         run: sh ./make_changelog.sh
@@ -160,7 +159,7 @@ jobs:
       - name: Upload variants artifact ELF
         uses: actions/upload-artifact@v4
         with:
-          name: WOPNPS2LD-VARIANTS ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.udpbd }}
+          name: WOPNPS2LD-VARIANTS ${{ matrix.pademu }} ${{ matrix.extra }}
           path: WOPNPS2LD*.ELF
 
   merge-variants:
@@ -273,7 +272,7 @@ jobs:
 
       - name: Get version
         run: |
-          echo "wOPL_VERSION=$(make oplversion)" >> $GITHUB_ENV
+          echo "wOPL_VERSION=$(make woplversion)" >> $GITHUB_ENV
           SHORT_COMMIT="${{ matrix.container_commit }}"
           SHORT_COMMIT=${SHORT_COMMIT: -4}
           echo "SHORT_COMMIT=$SHORT_COMMIT" >> $GITHUB_ENV
@@ -281,12 +280,12 @@ jobs:
       - name: Compile -> make debug
         run: |
           make ${{ matrix.debug }} --trace
-          mv wopl.elf wopl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
+          mv wopl.elf wopl-${{ matrix.debug }}-${{ env.wOPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
 
       - name: Upload variants artifact ELF
         uses: actions/upload-artifact@v4
         with:
-          name: wopl-${{ matrix.debug }}-${{ env.OPL_VERSION }}-${{ env.SHORT_COMMIT }}
+          name: wopl-${{ matrix.debug }}-${{ env.wOPL_VERSION }}-${{ env.SHORT_COMMIT }}
           path: wopl-*.elf
 
   merge-debug:
