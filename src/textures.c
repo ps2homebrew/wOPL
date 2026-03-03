@@ -442,6 +442,9 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
         if (!pFileBuffer) {
             return ERR_BAD_FILE;
         }
+        PngFileBufferPtr = pFileBuffer;
+        readData = &PngFileBufferPtr;
+        readFunction = &texReadMemFunction;
     } else if (filePath) {
         int fd = open(filePath, O_RDONLY, 0);
         if (fd < 0)
