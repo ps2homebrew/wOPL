@@ -200,8 +200,8 @@ void guiEndFrame(void)
 
 void guiShowAbout()
 {
-    char wOPLVersion[48];
-    char wOPLBuildDetails[40];
+    char wOPLVersion[128];
+    char wOPLBuildDetails[96];
 
     snprintf(wOPLVersion, sizeof(wOPLVersion), "Double Unofficial Open PS2 Loader %s", WOPL_VERSION);
     diaSetLabel(diaAbout, ABOUT_TITLE, wOPLVersion);
