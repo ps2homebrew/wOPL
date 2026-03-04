@@ -12,7 +12,6 @@
 #include "thbase.h"
 #include "thsemap.h"
 #include "ds34bt.h"
-#include "sys_utils.h"
 #include "padmacro.h"
 
 #define MODNAME "DS34BT"

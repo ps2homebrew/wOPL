@@ -5,6 +5,10 @@
    Review OpenUsbLd README & LICENSE files for further details.
    */
 
+#ifndef _PADEMU_H_
+#define _PADEMU_H_
+
+
 #include <ioman.h>
 #include <intrman.h>
 #include <loadcore.h>
@@ -54,7 +58,4 @@ typedef struct
 
 typedef void (*Sio2McProc)(sio2_transfer_data_t *arg);
 
-void *GetExportTable(char *libname, int version);
-u32 GetExportTableSize(void *table);
-void *GetExportEntry(void *table, u32 entry);
-void *HookExportEntry(void *table, u32 entry, void *func);
+#endif

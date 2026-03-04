@@ -35,6 +35,4 @@
 #include "vblank.h"
 #include "xloadcore.h"
 
-#include "sys_utils.h"
-
 #endif /* IOP_IRX_IMPORTS_H */
