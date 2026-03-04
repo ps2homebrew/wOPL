@@ -38,7 +38,7 @@
 #error "must define mode"
 #endif
 
-//#define DPRINTF(x...) printf(x)
+// #define DPRINTF(x...) printf(x)
 #define DPRINTF(x...)
 
 typedef struct
@@ -171,8 +171,17 @@ static int install_sio2hook()
     if (exp != NULL) {
         /* hooking SIO2MAN's routines */
         InstallSio2manHook(exp, 1);
+
     } else {
-        DPRINTF("SIO2MAN exports not found.\n");
+        DPRINTF("SIO2MAN 0x201 exports not found, trying 0x101\n");
+        /* searching for a SIO2MAN export table */
+        exp = GetExportTable("sio2man", 0x101);
+        if (exp != NULL) {
+            /* hooking SIO2MAN's routines */
+            InstallSio2manHook(exp, 0);
+        } else {
+            DPRINTF("SIO2MAN exports not found.\n");
+        }
     }
 
     return 1;
@@ -390,6 +399,9 @@ static void pademu(sio2_transfer_data_t *td)
 static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
 {
     u8 i;
+
+    if ((in[1] != 0x42) && (out_size != 5))
+        DPRINTF("%s: port = %d, cmd = 0x%x, size = %d\n", __FUNCTION__, port, in[1], out_size);
 
     memset(out, 0x00, out_size);
 

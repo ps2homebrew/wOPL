@@ -188,8 +188,10 @@ int usb_disconnect(int devId)
             break;
     }
 
-    if (pad < MAX_PADS)
+    if (pad < MAX_PADS) {
         usb_release(pad);
+    }
+
 
     return 0;
 }

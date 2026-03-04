@@ -13,8 +13,8 @@
 #define DS4_PID_SLIM        0x09CC // PS4 Slim Controller
 #define GUITAR_HERO_PS3_PID 0x0100 // PS3 Guitar Hero Guitar
 #define ROCK_BAND_PS3_PID   0x0200 // PS3 Rock Band Guitar
-#define DS3       0
-#define DS4       1
+#define DS3                 0
+#define DS4                 1
 
 #define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
 
@@ -299,6 +299,11 @@ enum eHID {
     HID_THDR_SET_REPORT_OUTPUT = 0x52,
     HID_THDR_SET_REPORT_FEATURE = 0x53,
     HID_THDR_DATA_INPUT = 0xa1,
+
+    /* USB HID Transaction Header (THdr) */
+    HID_USB_GET_REPORT_FEATURE = 0x03,
+    HID_USB_SET_REPORT_OUTPUT = 0x02,
+    HID_USB_DATA_INPUT = 0x01,
 
     /* Defines of various parameters for PS3 Game controller reports */
     PS3_F4_REPORT_ID = 0xF4,

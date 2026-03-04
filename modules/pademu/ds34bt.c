@@ -31,13 +31,6 @@ static void bt_config_set(int result, int count, void *arg);
 static UsbDriver bt_driver = {NULL, NULL, "ds34bt", bt_probe, bt_connect, bt_disconnect};
 static bt_device bt_dev = {-1, -1, -1, -1, -1, -1, DS34BT_STATE_USB_DISCONNECTED};
 
-static int chrg_probe(int devId);
-static int chrg_connect(int devId);
-static int chrg_disconnect(int devId);
-static int chrg_dev = -1;
-
-static UsbDriver chrg_driver = {NULL, NULL, "ds34chrg", chrg_probe, chrg_connect, chrg_disconnect};
-
 static void ds34pad_clear(int pad);
 static void ds34pad_init();
 
@@ -180,58 +173,6 @@ static int bt_disconnect(int devId)
         ds34pad_init();
         SignalSema(bt_dev.hid_sema);
     }
-
-    return 0;
-}
-
-int chrg_probe(int devId)
-{
-    UsbDeviceDescriptor *device = NULL;
-
-    DPRINTF("DS34CHRG: probe: devId=%i\n", devId);
-
-    device = (UsbDeviceDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_DEVICE);
-    if (device == NULL) {
-        DPRINTF("DS34CHRG: Error - Couldn't get device descriptor\n");
-        return 0;
-    }
-
-    if (device->idVendor == DS34_VID && (device->idProduct == DS3_PID || device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM))
-        return 1;
-
-    return 0;
-}
-
-int chrg_connect(int devId)
-{
-    int chrg_end;
-    UsbDeviceDescriptor *device;
-    UsbConfigDescriptor *config;
-
-    DPRINTF("DS34CHRG: connect: devId=%i\n", devId);
-
-    if (chrg_dev != -1) {
-        DPRINTF("DS34CHRG: Error - only one device allowed !\n");
-        return 1;
-    }
-
-    chrg_dev = devId;
-
-    chrg_end = UsbOpenEndpoint(devId, NULL);
-
-    device = (UsbDeviceDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_DEVICE);
-    config = (UsbConfigDescriptor *)UsbGetDeviceStaticDescriptor(devId, device, USB_DT_CONFIG);
-
-    UsbSetDeviceConfiguration(chrg_end, config->bConfigurationValue, NULL, NULL);
-
-    return 0;
-}
-
-int chrg_disconnect(int devId)
-{
-    DPRINTF("DS34CHRG: disconnect: devId=%i\n", devId);
-
-    chrg_dev = -1;
 
     return 0;
 }
@@ -763,17 +704,20 @@ static void hci_event_cb(int resultCode, int bytes, void *arg)
 /* L2CAP Commands                                           */
 /************************************************************/
 
-static int L2CAP_Command(u16 handle, u8 *data, u8 length)
+static int L2CAP_Command(u16 handle, u16 scid, u8 *data, u8 length)
 {
+    // HCI ACL header
     l2cap_cmd_buf[0] = (u8)(handle & 0xff); // HCI handle with PB,BC flag
     l2cap_cmd_buf[1] = (u8)(((handle >> 8) & 0x0f) | 0x20);
     l2cap_cmd_buf[2] = (u8)((4 + length) & 0xff); // HCI ACL total data length
     l2cap_cmd_buf[3] = (u8)((4 + length) >> 8);
+    // L2CAP 'header'
     l2cap_cmd_buf[4] = (u8)(length & 0xff); // L2CAP header: Length
     l2cap_cmd_buf[5] = (u8)(length >> 8);
-    l2cap_cmd_buf[6] = 0x01; // L2CAP header: Channel ID
-    l2cap_cmd_buf[7] = 0x00; // L2CAP Signalling channel over ACL-U logical link
+    l2cap_cmd_buf[6] = (u8)(scid & 0xff); // L2CAP header: Channel ID
+    l2cap_cmd_buf[7] = (u8)(scid >> 8);   // L2CAP Signalling channel over ACL-U logical link
 
+    // L2CAP 'command'
     memcpy(&l2cap_cmd_buf[8], data, length);
 
     // output on endpoint 2
@@ -793,7 +737,7 @@ static int l2cap_connection_request(u16 handle, u8 rxid, u16 scid, u16 psm)
     cmd_buf[6] = (u8)(scid & 0xff); // Source CID (PS Remote)
     cmd_buf[7] = (u8)(scid >> 8);
 
-    return L2CAP_Command(handle, cmd_buf, 8);
+    return L2CAP_Command(handle, 1, cmd_buf, 8);
 }
 
 static int l2cap_connection_response(u16 handle, u8 rxid, u16 dcid, u16 scid, u8 result)
@@ -816,7 +760,7 @@ static int l2cap_connection_response(u16 handle, u8 rxid, u16 dcid, u16 scid, u8
     if (result != 0)
         cmd_buf[10] = 0x01; // Authentication pending
 
-    return L2CAP_Command(handle, cmd_buf, 12);
+    return L2CAP_Command(handle, 1, cmd_buf, 12);
 }
 
 static int l2cap_config_request(u16 handle, u8 rxid, u16 dcid)
@@ -840,7 +784,7 @@ static int l2cap_config_request(u16 handle, u8 rxid, u16 dcid)
     cmd_buf[10] = 0xFF; // Config Opt: data
     cmd_buf[11] = 0xFF;
 
-    return L2CAP_Command(handle, cmd_buf, 12);
+    return L2CAP_Command(handle, 1, cmd_buf, 12);
 }
 
 static int l2cap_config_response(u16 handle, u8 rxid, u16 scid)
@@ -862,7 +806,7 @@ static int l2cap_config_response(u16 handle, u8 rxid, u16 scid)
     cmd_buf[12] = 0xA0;
     cmd_buf[13] = 0x02;
 
-    return L2CAP_Command(handle, cmd_buf, 14);
+    return L2CAP_Command(handle, 1, cmd_buf, 14);
 }
 
 static int l2cap_disconnection_request(u16 handle, u8 rxid, u16 dcid, u16 scid)
@@ -878,7 +822,7 @@ static int l2cap_disconnection_request(u16 handle, u8 rxid, u16 dcid, u16 scid)
     cmd_buf[6] = (u8)(scid & 0xff); // Source CID
     cmd_buf[7] = (u8)(scid >> 8);
 
-    return L2CAP_Command(handle, cmd_buf, 8);
+    return L2CAP_Command(handle, 1, cmd_buf, 8);
 }
 
 static int l2cap_disconnection_response(u16 handle, u8 rxid, u16 scid, u16 dcid)
@@ -894,7 +838,7 @@ static int l2cap_disconnection_response(u16 handle, u8 rxid, u16 scid, u16 dcid)
     cmd_buf[6] = (u8)(scid & 0xff); // Source CID
     cmd_buf[7] = (u8)(scid >> 8);
 
-    return L2CAP_Command(handle, cmd_buf, 8);
+    return L2CAP_Command(handle, 1, cmd_buf, 8);
 }
 
 #define CMD_DELAY 2
@@ -1053,7 +997,7 @@ static int L2CAP_event_task(int result, int bytes)
                 pad = MAX_PADS;
             }
         } // acl_handle_ok
-    }     // !rcode
+    }    // !rcode
 
     return pad;
 }
@@ -1098,23 +1042,6 @@ static void l2cap_event_cb(int resultCode, int bytes, void *arg)
 /* HID Commands                                             */
 /************************************************************/
 
-static int HID_command(u16 handle, u16 scid, u8 *data, u8 length, int pad)
-{
-    l2cap_cmd_buf[0] = (u8)(handle & 0xff); // HCI handle with PB,BC flag
-    l2cap_cmd_buf[1] = (u8)(((handle >> 8) & 0x0f) | 0x20);
-    l2cap_cmd_buf[2] = (u8)((4 + length) & 0xff); // HCI ACL total data length
-    l2cap_cmd_buf[3] = (u8)((4 + length) >> 8);
-    l2cap_cmd_buf[4] = (u8)(length & 0xff); // L2CAP header: Length
-    l2cap_cmd_buf[5] = (u8)(length >> 8);
-    l2cap_cmd_buf[6] = (u8)(scid & 0xff); // L2CAP header: Channel ID
-    l2cap_cmd_buf[7] = (u8)(scid >> 8);
-
-    memcpy(&l2cap_cmd_buf[8], data, length);
-
-    // output on endpoint 2
-    return UsbBulkTransfer(bt_dev.outEndp, l2cap_cmd_buf, (8 + length), NULL, NULL);
-}
-
 static int hid_initDS34(int pad)
 {
     u8 init_buf[PS3_F4_REPORT_LEN + 2];
@@ -1133,7 +1060,7 @@ static int hid_initDS34(int pad)
         init_buf[1] = PS4_02_REPORT_ID;            // Report ID
     }
 
-    return HID_command(ds34pad[pad].hci_handle, ds34pad[pad].control_scid, init_buf, size, pad);
+    return L2CAP_Command(ds34pad[pad].hci_handle, ds34pad[pad].control_scid, init_buf, size);
 }
 
 /**
@@ -1208,7 +1135,7 @@ static int hid_LEDRumbleCommand(u8 *led, u8 lrum, u8 rrum, int pad)
     ds34pad[pad].oldled[2] = led[2];
     ds34pad[pad].oldled[3] = led[3];
 
-    return HID_command(ds34pad[pad].hci_handle, ds34pad[pad].control_scid, led_buf, size, pad);
+    return L2CAP_Command(ds34pad[pad].hci_handle, ds34pad[pad].control_scid, led_buf, size);
 }
 
 static void hid_readReport(u8 *data, int bytes, int pad_idx)
@@ -1399,8 +1326,6 @@ int ds34bt_init(u8 pads, u8 options)
         DPRINTF("Error registering USB devices: %02X\n", ret);
         return 0;
     }
-
-    UsbRegisterDriver(&chrg_driver);
 
     return 1;
 }

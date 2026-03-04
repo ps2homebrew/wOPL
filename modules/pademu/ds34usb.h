@@ -44,32 +44,6 @@ enum eDS34USBStatus {
     DS34USB_STATE_RUNNING = 0x08,
 };
 
-enum eHID {
-    // {{{
-    /* HID event flag */
-    HID_FLAG_STATUS_REPORTED = 0x01,
-    HID_FLAG_BUTTONS_CHANGED = 0x02,
-    HID_FLAG_EXTENSION = 0x04,
-    HID_FLAG_COMMAND_SUCCESS = 0x08,
-
-    /* USB HID Transaction Header (THdr) */
-    HID_USB_GET_REPORT_FEATURE = 0x03,
-    HID_USB_SET_REPORT_OUTPUT = 0x02,
-    HID_USB_DATA_INPUT = 0x01,
-
-    /* Defines of various parameters for PS3 Game controller reports */
-    PS3_F4_REPORT_ID = 0xF4,
-    PS3_F4_REPORT_LEN = 0x04,
-
-    PS3_01_REPORT_ID = 0x01,
-    PS3_01_REPORT_LEN = 0x30,
-
-    PS4_02_REPORT_ID = 0x02,
-    PS4_11_REPORT_ID = 0x11,
-    PS4_11_REPORT_LEN = 0x4D,
-    // }}}
-};
-
 int ds34usb_init(u8 pads, u8 options);
 int ds34usb_get_status(int port);
 int ds34usb_get_model(int port);
