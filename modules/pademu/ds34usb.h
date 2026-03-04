@@ -5,15 +5,12 @@
 
 #include <ds34common.h>
 
-#define DS3       0
-#define DS4       1
+
 #define GUITAR_GH 2
 #define GUITAR_RB 3
 
 #define MODEL_GUITAR 1
 #define MODEL_PS2    3
-
-#define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
 
 typedef struct _usb_ds34
 {

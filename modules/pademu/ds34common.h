@@ -13,6 +13,10 @@
 #define DS4_PID_SLIM        0x09CC // PS4 Slim Controller
 #define GUITAR_HERO_PS3_PID 0x0100 // PS3 Guitar Hero Guitar
 #define ROCK_BAND_PS3_PID   0x0200 // PS3 Rock Band Guitar
+#define DS3       0
+#define DS4       1
+
+#define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
 
 // NOTE: struct member prefixed with "n" means it's active-low (i.e. value of 0 indicates button is pressed, value 1 is released)
 enum DS2ButtonBitNumber {
@@ -281,6 +285,34 @@ struct ds4report
     uint16_t Finger2Y      : 12;
 
 } __attribute__((packed));
+
+enum eHID {
+    // {{{
+    /* HID event flag */
+    HID_FLAG_STATUS_REPORTED = 0x01,
+    HID_FLAG_BUTTONS_CHANGED = 0x02,
+    HID_FLAG_EXTENSION = 0x04,
+    HID_FLAG_COMMAND_SUCCESS = 0x08,
+
+    /* Bluetooth HID Transaction Header (THdr) */
+    HID_THDR_GET_REPORT_FEATURE = 0x43,
+    HID_THDR_SET_REPORT_OUTPUT = 0x52,
+    HID_THDR_SET_REPORT_FEATURE = 0x53,
+    HID_THDR_DATA_INPUT = 0xa1,
+
+    /* Defines of various parameters for PS3 Game controller reports */
+    PS3_F4_REPORT_ID = 0xF4,
+    PS3_F4_REPORT_LEN = 0x04,
+
+    PS3_01_REPORT_ID = 0x01,
+    PS3_01_REPORT_LEN = 0x30,
+
+    PS4_02_REPORT_ID = 0x02,
+    PS4_11_REPORT_ID = 0x11,
+    PS4_11_REPORT_LEN = 0x4D,
+
+    // }}}
+};
 
 /**
  * Translate DS3 pad data into DS2 pad data.
