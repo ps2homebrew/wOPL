@@ -58,4 +58,7 @@ typedef struct
 
 typedef void (*Sio2McProc)(sio2_transfer_data_t *arg);
 
+void pademu_hookSio2man(sio2_transfer_data_t *td, Sio2McProc sio2proc);
+
+
 #endif
