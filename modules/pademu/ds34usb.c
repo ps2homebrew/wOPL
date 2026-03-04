@@ -10,6 +10,7 @@
 #include "ds34usb.h"
 #include "sys_utils.h"
 #include "padmacro.h"
+#include "ds34common.h"
 
 #define MODNAME "DS34USB"
 

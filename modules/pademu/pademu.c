@@ -8,6 +8,7 @@
 
 #include "pademu.h"
 #include "padmacro.h"
+#include "ds34common.h"
 
 #ifdef BT
 
