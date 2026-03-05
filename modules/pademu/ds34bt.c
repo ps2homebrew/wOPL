@@ -319,6 +319,19 @@ static int HCI_Command(int nbytes, u8 *dataptr)
     return UsbControlTransfer(bt_dev.controlEndp, REQ_HCI_OUT, HCI_COMMAND_REQ, 0, 0, nbytes, dataptr, NULL, NULL);
 }
 
+
+static void hci_print_bd_addr(const u8 *addr)
+{
+    int i;
+
+    for (i = 0; i < 6; i++) {
+        //DPRINTF("0x%02X", addr[i]);
+        DPRINTF("%02X", addr[i]);
+        if (i < 5)
+            DPRINTF(":");
+    }
+}
+
 static int hci_reset()
 {
     hci_cmd_buf[0] = HCI_OCF_RESET;
@@ -475,11 +488,7 @@ static void HCI_event_task(int result)
                 if (!hci_buf[2]) { // check if connected OK
                     DPRINTF("\t Connection_Handle 0x%02X \n", hci_buf[3] | ((hci_buf[4] & 0x0F) << 8));
                     DPRINTF("\t Requested by BD_ADDR: \n\t");
-                    for (i = 0; i < 6; i++) {
-                        DPRINTF("0x%02X", hci_buf[5 + i]);
-                        if (i < 5)
-                            DPRINTF(":");
-                    }
+                    hci_print_bd_addr(&hci_buf[5]);
                     DPRINTF("\n");
                     for (i = 0; i < MAX_PADS; i++) {
                         if (memcmp(ds34pad[i].bdaddr, hci_buf + 5, 6) == 0) {
@@ -570,11 +579,7 @@ static void HCI_event_task(int result)
 
             case HCI_EVENT_CONNECT_REQUEST:
                 DPRINTF("HCI Connection Requested by BD_ADDR: \n\t");
-                for (i = 0; i < 6; i++) {
-                    DPRINTF("0x%02X", hci_buf[2 + i]);
-                    if (i < 5)
-                        DPRINTF(":");
-                }
+                hci_print_bd_addr(&hci_buf[2 + i]);
                 DPRINTF("\n\t Link = 0x%02X \n", hci_buf[11]);
                 DPRINTF("\t Class = 0x%02X 0x%02X 0x%02X \n", hci_buf[8], hci_buf[9], hci_buf[10]);
                 for (i = 0; i < MAX_PADS; i++) { // find free slot
@@ -616,11 +621,7 @@ static void HCI_event_task(int result)
                 DPRINTF("HCI Role Change Event: \n");
                 DPRINTF("\t Status = 0x%02X \n", hci_buf[2]);
                 DPRINTF("\t BD_ADDR: ");
-                for (i = 0; i < 6; i++) {
-                    DPRINTF("0x%02X", hci_buf[3 + i]);
-                    if (i < 5)
-                        DPRINTF(":");
-                }
+                hci_print_bd_addr(&hci_buf[3 + 1]);
                 DPRINTF("\n\t Role 0x%02X \n", hci_buf[9]);
                 break;
 
@@ -636,11 +637,7 @@ static void HCI_event_task(int result)
 
             case HCI_EVENT_LINK_KEY_REQUEST:
                 DPRINTF("HCI Link Key Request Event by BD_ADDR: \n\t");
-                for (i = 0; i < 6; i++) {
-                    DPRINTF("0x%02X", hci_buf[2 + i]);
-                    if (i < 5)
-                        DPRINTF(":");
-                }
+                hci_print_bd_addr(&hci_buf[2 + i]);
                 DPRINTF("\n");
                 hci_link_key_request_reply(hci_buf + 2);
                 break;
