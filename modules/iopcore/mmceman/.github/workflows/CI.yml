@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  repository_dispatch:
+    types: [run_build]
+  workflow_dispatch: {}
+
+jobs:
+  ps2:
+    runs-on: ubuntu-latest
+    container: ps2dev/ps2sdk:latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup dependencies
+      run: |
+        apk update
+        apk add build-base make
+
+    - name: Compile project & Install
+      run: |
+        make clean all
+        cp */irx/*.irx .
+
+    - name: Get short SHA
+      id: slug
+      run: echo "sha8=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_OUTPUT
+
+    - name: Upload artifacts
+      if: ${{ success() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: mmceman-${{ steps.slug.outputs.sha8 }}
+        path: |
+          *.irx
+
+    - name: Create release
+      if: github.ref == 'refs/heads/main'
+      uses: mathieucarbou/marvinpinto-action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        title: "Latest mmceman IRX driver"
+        files: |
+          *.irx

@@ -532,6 +532,24 @@ modules/iopcore/patch_membo/patch_membo.irx: modules/iopcore/patch_membo
 $(EE_ASM_DIR)patch_membo.c: modules/iopcore/patch_membo/patch_membo.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_irx
 
+modules/iopcore/mmceman/mmceman/mmceman.irx: modules/iopcore/mmceman/mmceman/
+	$(MAKE) -C $<
+
+$(EE_ASM_DIR)mmceman.c: modules/iopcore/mmceman/mmceman/mmceman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
+
+modules/iopcore/mmceman/mmceigr/mmceigr.irx: modules/iopcore/mmceman/mmceigr/
+	$(MAKE) -C $<
+
+$(EE_ASM_DIR)mmceigr.c: modules/iopcore/mmceman/mmceigr/mmceigr.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
+
+modules/iopcore/mmceman/mmcedrv/mmcedrv.irx: modules/iopcore/mmceman/mmcedrv/
+	$(MAKE) -C $<
+
+$(EE_ASM_DIR)mmcedrv.c: modules/iopcore/mmceman/mmcedrv/mmcedrv.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
+
 modules/mcemu/bdm_mcemu.irx: modules/mcemu
 	$(MAKE) $(MCEMU_DEBUG_FLAGS) $(PADEMU_FLAGS) USE_BDM=1 -C $< all
 
