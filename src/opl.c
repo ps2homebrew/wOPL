@@ -737,7 +737,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
     char appsPath[128];
 
     snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
-    fd = openFile(appsPath, O_RDONLY);
+    fd = sbOpenFile(appsPath, O_RDONLY);
     if (fd >= 0) {
         appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
         close(fd);
@@ -750,7 +750,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
             char *prefix = listSupport->itemGetPrefix(listSupport);
             snprintf(appsPath, sizeof(appsPath), "%sconf_apps.cfg", prefix);
 
-            fd = openFile(appsPath, O_RDONLY);
+            fd = sbOpenFile(appsPath, O_RDONLY);
             if (fd >= 0) {
                 appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
                 close(fd);
@@ -779,7 +779,7 @@ config_set_t *oplGetLegacyAppsInfo(char *name)
             char *prefix = listSupport->itemGetPrefix(listSupport);
             snprintf(appsPath, sizeof(appsPath), "%sCFG%s%s.cfg", prefix, i == ETH_MODE ? "\\" : "/", name);
 
-            fd = openFile(appsPath, O_RDONLY);
+            fd = sbOpenFile(appsPath, O_RDONLY);
             if (fd >= 0) {
                 appConfig = configAlloc(0, NULL, appsPath);
                 close(fd);
@@ -1298,7 +1298,7 @@ static void _saveConfig()
 
     char *path = configGetDir();
     if (!strncmp(path, "mc", 2)) {
-        checkMCFolder();
+        sbCheckMCFolder();
         configPrepareNotifications(gBaseMCDir);
     }
 

@@ -816,13 +816,13 @@ LANG_COMPILER = lang_compiler.py
 languages: $(ENGLISH_TEMPLATE_YML) $(TRANSLATIONS_YML) $(ENGLISH_LNG) $(TRANSLATIONS_LNG) $(INTERNAL_LANGUAGE_C) $(INTERNAL_LANGUAGE_H)
 
 download_lng:
-	sh $(GITHUB_WORKSPACE)/download_lng.sh
+	sh download_lng.sh
 
 download_lwNBD:
-	sh $(GITHUB_WORKSPACE)/download_lwNBD.sh
+	sh download_lwNBD.sh
 
 download_cfla:
-	sh $(GITHUB_WORKSPACE)/download_cfla.sh
+	sh download_cfla.sh
 
 $(TRANSLATIONS_LNG): $(LNG_DIR)lang_%.lng: $(LNG_SRC_DIR)%.yml $(BASE_LANGUAGE) $(LANG_COMPILER)
 	python3 $(LANG_COMPILER) --make_lng --base $(BASE_LANGUAGE) --translation $< $@

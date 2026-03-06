@@ -85,7 +85,7 @@ static float appGetELFSize(char *path)
         return 0.0f;
     }
 
-    size = getFileSize(fd);
+    size = sbGetFileSize(fd);
     close(fd);
 
     // Return size in MiB

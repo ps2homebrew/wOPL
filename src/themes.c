@@ -1627,7 +1627,7 @@ int thmAddElements(char *path, const char *separator, int forceRefresh)
 {
     int result, i;
 
-    result = listDir(path, separator, THM_MAX_FILES - nThemes, &thmReadEntry);
+    result = sbListDir(path, separator, THM_MAX_FILES - nThemes, &thmReadEntry);
     nThemes += result;
     thmRebuildGuiNames();
 

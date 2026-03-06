@@ -250,12 +250,13 @@ static int hddWriteSectors(u32 lba, u32 nsectors, const void *buf)
     return 0;
 }
 
-static struct GameDataEntry
+struct GameDataEntry
 {
     u32 lba, size;
     struct GameDataEntry *next;
     char id[APA_IDMAX + 1];
-};
+} GameDataEntry;
+
 static void hddFreeHDLGamelist(hdl_games_list_t *game_list)
 {
     if (game_list->games != NULL) {

@@ -501,7 +501,7 @@ static void diaRenderItem(int x, int y, struct UIItem *item, int selected, int h
             int len;
 
             if (strlen(item->stringvalue.text)) {
-                len = min(strlen(item->stringvalue.text), sizeof(stars) - 1);
+                len = MIN(strlen(item->stringvalue.text), sizeof(stars) - 1);
                 for (i = 0; i < len; ++i)
                     stars[i] = '*';
 
@@ -952,7 +952,7 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
             }
 
             if (getKey(KEY_UP)) {
-                scrollOffset = max(0, scrollOffset - 12); // prevent negative scroll offset
+                scrollOffset = MAX(0, scrollOffset - 12); // prevent negative scroll offset
                 newf = diaGetPrevLine(cur, ui);
                 if (newf == cur) {
                     newf = diaGetLastControl(ui);
@@ -961,7 +961,7 @@ int diaExecuteDialog(struct UIItem *ui, int uiId, short inMenu, int (*updater)(i
             }
 
             if (getKey(KEY_DOWN)) {
-                scrollOffset = min(maxScrollOffset, scrollOffset + 12); // prevent exceeding max scroll offset
+                scrollOffset = MIN(maxScrollOffset, scrollOffset + 12); // prevent exceeding max scroll offset
                 newf = diaGetNextLine(cur, ui);
                 if (newf == cur) {
                     newf = diaGetFirstControl(ui);
