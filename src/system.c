@@ -27,6 +27,17 @@
 #include "include/pggsm.h"
 #include "include/cheatman.h"
 #include "include/xparam.h"
+#include <fcntl.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <libpwroff.h>
+#include <loadfile.h>
+#include <sifrpc.h>
+#include <iopcontrol.h>
+#include <iopheap.h>
+#include <kernel.h>
+#include <sbv_patches.h>
+
 
 #ifdef PADEMU
 #include <libds34bt.h>

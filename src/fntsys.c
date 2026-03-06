@@ -11,8 +11,10 @@
 #include "include/utf8.h"
 #include "include/util.h"
 #include "include/atlas.h"
+#include <malloc.h>
 #include <sys/types.h>
 #include <ft2build.h>
+#include <kernel.h>
 
 #include FT_FREETYPE_H
 

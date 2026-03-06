@@ -1,6 +1,11 @@
-#include "include/opl.h"
-#include "include/art_tar.h"
 #include <ps2sdkapi.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <fcntl.h>
+#include <string.h>
+#include "include/opl.h"
+
+#include "include/art_tar.h"
 
 static ArtTarEntry *s_tarIndex = NULL;
 static u32 s_tarCount = 0;

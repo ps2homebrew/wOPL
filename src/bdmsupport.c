@@ -13,8 +13,13 @@
 #include "include/sound.h"
 #include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
-
+#include <fcntl.h>
+#include <stdlib.h>
 #include <usbhdfsd-common.h>
+#include <sifrpc.h>
+#include <kernel.h>
+#include "opl-hdd-ioctl.h"
+#include <errno.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl

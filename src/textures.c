@@ -4,6 +4,8 @@
 #include "include/ioman.h"
 #include "include/art_tar.h"
 #include <png.h>
+#include <fcntl.h>
+#include <malloc.h>
 
 extern void *load0_png;
 extern void *load1_png;
@@ -509,7 +511,9 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
     png_set_filler(pngPtr, 0xff, PNG_FILLER_AFTER);
     png_read_update_info(pngPtr, infoPtr);
 
+    // clang-format off
     void (*texPngReadPixels)(GSTEXTURE * texture, png_bytep * rowPointers, size_t size);
+    // clang-format on
     switch (png_get_color_type(pngPtr, infoPtr)) {
         case PNG_COLOR_TYPE_RGB_ALPHA:
             texture->PSM = GS_PSM_CT32;

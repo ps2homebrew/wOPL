@@ -5,6 +5,9 @@
 #include "include/ioman.h"
 #include "include/themes.h"
 #include "include/sound.h"
+#include <stdlib.h>
+#include <fcntl.h>
+#include <dirent.h>
 
 static int guiLangID = 0;
 static char **lang_strs = internalEnglish;

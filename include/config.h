@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#include <sys/stat.h>
+
 // Enum for the different types of config files. Game-specific config files (<game ID>.cfg) will always have an ID of 0.
 enum CONFIG_INDEX {
     CONFIG_INDEX_OPL = 0,

@@ -14,6 +14,11 @@
 #include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/mcemu.h"
+#include <malloc.h>
+#include <dirent.h>
+#include <libcdvd.h>
+#include <kernel.h>
+#include "opl-hdd-ioctl.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioFormat, fileXioMount, fileXioUmount, fileXioDevctl

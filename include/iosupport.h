@@ -2,9 +2,17 @@
 #define __IOSUPPORT_H
 
 #include "include/config.h"
+#include <gsKit.h>
+
 
 #define IO_MODE_SELECTED_NONE -1
 #define IO_MODE_SELECTED_ALL  MODE_COUNT
+
+// IO type IDs
+#define IO_CUSTOM_SIMPLEACTION    1 // handler for parameter-less actions
+#define IO_MENU_UPDATE_DEFFERED   2
+#define IO_CACHE_LOAD_ART         3 // io call to handle the loading of covers
+#define IO_COMPAT_UPDATE_DEFFERED 4
 
 enum IO_MODES {
     BDM_MODE = 0,

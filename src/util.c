@@ -11,8 +11,10 @@
 #include <string.h>
 #include <malloc.h>
 #include <rom0_info.h>
-
+#include <fcntl.h>
+#include <dirent.h>
 #include "../modules/isofs/zso.h"
+#include <kernel.h>
 
 extern int probed_fd;
 extern u32 probed_lba;

@@ -11,6 +11,8 @@
 #include "include/ethsupport.h"
 #include "include/hddsupport.h"
 
+#include <fcntl.h>
+#include <stdlib.h>
 #include <elf-loader.h>
 
 #define APP_MODE_UPDATE_DELAY 240

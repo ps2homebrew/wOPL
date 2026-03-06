@@ -5,10 +5,14 @@
 */
 
 #include "include/opl.h"
+#include "include/config.h"
 #include "include/util.h"
 #include "include/ioman.h"
 #include "include/sound.h"
 #include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <dirent.h>
 
 static u32 currentUID = 0;
 static config_set_t configFiles[CONFIG_INDEX_COUNT];

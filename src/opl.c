@@ -38,6 +38,17 @@
 #include "include/xparam.h"
 
 #include <unistd.h>
+#include <osd_config.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <malloc.h>
+#include <usbhdfsd-common.h>
+#include <libmc.h>
+#include <libpad.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
+
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioDopen, fileXioIoctl2, fileXioDclose
 

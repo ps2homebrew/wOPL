@@ -24,6 +24,10 @@
 #include "include/guigame.h"
 #include "include/tetris.h"
 
+#include <malloc.h>
+#include <math.h>
+#include <kernel.h>
+
 #include <limits.h>
 #include <stdlib.h>
 #include <libvux.h>

@@ -5,6 +5,7 @@
 #include "include/gui.h"
 #include "include/util.h"
 #include "include/renderman.h"
+#include <stdlib.h>
 
 typedef struct
 {

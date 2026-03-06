@@ -12,6 +12,13 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include <ps2smb.h>
+#include <ps2ips.h>
+#include <netman.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioDevctl(ethBase, SMB_***)

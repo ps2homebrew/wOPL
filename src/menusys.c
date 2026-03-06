@@ -18,6 +18,9 @@
 #include "include/ioman.h"
 #include "include/sound.h"
 #include <assert.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
 
 enum MENU_IDs {
     MENU_SETTINGS = 0,

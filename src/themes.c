@@ -9,6 +9,8 @@
 #include "include/lang.h"
 #include "include/pad.h"
 #include "include/sound.h"
+#include <stdlib.h>
+#include <math.h>
 
 #define MENU_POS_V      50
 #define HINT_HEIGHT     32
