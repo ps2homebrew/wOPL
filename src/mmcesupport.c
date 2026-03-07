@@ -15,6 +15,7 @@
 #include <usbhdfsd-common.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include "include/art_tar.h"
 
 #include <ps2sdkapi.h>
 #define NEWLIB_PORT_AWARE
@@ -141,6 +142,11 @@ static int mmceNeedsUpdate(item_list_t *itemList)
             LanguagesLoaded = 1;
     }
 
+    if (gEnableArchivedArt) {
+        sprintf(path, "%sART/art.tar", mmcePrefix);
+        loadTarFile(path);
+    }
+    
     sbCreateFolders(mmcePrefix, 1);
 
     return result;
@@ -381,11 +387,14 @@ static config_set_t *mmceGetConfig(item_list_t *itemList, int id)
 static int mmceGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
-    if (isRelative)
+    if (gEnableArchivedArt)
+        snprintf(path, sizeof(path), "%s_%s", value, suffix);
+    else if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", mmcePrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1);
+
+    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
 }
 
 static int mmceGetTextId(item_list_t *itemList)
