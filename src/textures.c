@@ -271,6 +271,7 @@ static void texPrepare(GSTEXTURE *texture)
     texture->Vram = 0;                  // VRAM allocation handled by texture manager
     texture->VramClut = 0;              // VRAM allocation handled by texture manager
     texture->Filter = GS_FILTER_LINEAR; // Default
+    texture->ClutStorageMode = GS_CLUT_STORAGE_CSM1; // Default
 
     // Do not load the texture to VRAM directly, only load it to EE RAM
     texture->Delayed = 1;
