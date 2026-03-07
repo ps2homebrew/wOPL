@@ -13,7 +13,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2dev/ps2dev@sha256:362bcd26b8bd94149c539f41749edb13facbb5b68a8b960e219fc079693cb95f
+    container: ghcr.io/ps2homebrew/ps2homebrew:main
     steps:
       - name: Install required dependencies
         run: |
@@ -33,15 +33,6 @@ jobs:
             wget \
             curl \
             zip
-
-      - name: Install pip for Python 3
-        run: |
-          python3 -m ensurepip --upgrade
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install pyyaml
 
       - name: git checkout
         uses: actions/checkout@v4
@@ -107,7 +98,7 @@ jobs:
         extra: [EXTRA_FEATURES=0, EXTRA_FEATURES=1]
         pademu: [PADEMU=0, PADEMU=1]
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2dev/ps2dev@sha256:362bcd26b8bd94149c539f41749edb13facbb5b68a8b960e219fc079693cb95f
+    container: ghcr.io/ps2homebrew/ps2homebrew:main
     steps:
       - name: Install required dependencies
         run: |
@@ -127,15 +118,6 @@ jobs:
             wget \
             curl \
             zip
-
-      - name: Install pip for Python 3
-        run: |
-          python3 -m ensurepip --upgrade
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install pyyaml
 
       - name: git checkout
         uses: actions/checkout@v4
@@ -175,7 +157,7 @@ jobs:
 
   build-lang:
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2dev/ps2dev@sha256:362bcd26b8bd94149c539f41749edb13facbb5b68a8b960e219fc079693cb95f
+    container: ghcr.io/ps2homebrew/ps2homebrew:main
     steps:
       - name: Install required dependencies
         run: |
@@ -195,15 +177,6 @@ jobs:
             wget \
             curl \
             zip
-
-      - name: Install pip for Python 3
-        run: |
-          python3 -m ensurepip --upgrade
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install pyyaml
 
       - name: git checkout
         uses: actions/checkout@v4
@@ -233,7 +206,7 @@ jobs:
         debug: [iopcore_debug, ingame_debug, eesio_debug, DTL_T10000=1]
         container_commit: [":main"]
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2dev/ps2dev@sha256:362bcd26b8bd94149c539f41749edb13facbb5b68a8b960e219fc079693cb95f
+    container: ghcr.io/ps2homebrew/ps2homebrew:main
     steps:
       - name: Install required dependencies
         run: |
@@ -253,15 +226,6 @@ jobs:
             wget \
             curl \
             zip
-
-      - name: Install pip for Python 3
-        run: |
-          python3 -m ensurepip --upgrade
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install pyyaml
 
       - name: git checkout
         uses: actions/checkout@v4
