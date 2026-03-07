@@ -13,6 +13,8 @@
 #include "modules/iopcore/common/cdvd_config.h"
 #include "../ee_core/include/coreconfig.h"
 #include <usbhdfsd-common.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
 #include <ps2sdkapi.h>
 #define NEWLIB_PORT_AWARE
