@@ -1832,9 +1832,9 @@ void setDefaultColors(void)
     gDefaultTextColor[1] = 0x5C;
     gDefaultTextColor[2] = 0x5C;
 
-    gDefaultSelTextColor[0] = 0xFF;
-    gDefaultSelTextColor[1] = 0xFF;
-    gDefaultSelTextColor[2] = 0xFF;
+    gDefaultSelTextColor[0] = 0x2a;
+    gDefaultSelTextColor[1] = 0x2a;
+    gDefaultSelTextColor[2] = 0x2a;
 
     gDefaultUITextColor[0] = 0xFF;
     gDefaultUITextColor[1] = 0xFF;
