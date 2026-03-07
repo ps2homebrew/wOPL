@@ -146,7 +146,7 @@ static int mmceNeedsUpdate(item_list_t *itemList)
         sprintf(path, "%sART/art.tar", mmcePrefix);
         loadTarFile(path);
     }
-    
+
     sbCreateFolders(mmcePrefix, 1);
 
     return result;
