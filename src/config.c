@@ -5,16 +5,14 @@
 */
 
 #include "include/opl.h"
+#include "include/config.h"
 #include "include/util.h"
 #include "include/ioman.h"
 #include "include/sound.h"
 #include <string.h>
-
-// FIXME: We should not need this function.
-//        Use newlib's 'stat' to get GMT time.
-#define NEWLIB_PORT_AWARE
-#include <fileXio_rpc.h> // iox_stat_t, fileXioGetStat
-int configGetStat(config_set_t *configSet, iox_stat_t *stat);
+#include <stdlib.h>
+#include <fcntl.h>
+#include <dirent.h>
 
 static u32 currentUID = 0;
 static config_set_t configFiles[CONFIG_INDEX_COUNT];
@@ -83,13 +81,13 @@ static int splitAssignment(char *line, char *key, size_t keymax, char *val, size
 
     if (eqpos) {
         // copy the name and the value
-        size_t keylen = min(keymax, eqpos - line);
+        size_t keylen = MIN(keymax, eqpos - line);
 
         strncpy(key, line, keylen);
 
         eqpos++;
 
-        size_t vallen = min(valmax, strlen(line) - (eqpos - line));
+        size_t vallen = MIN(valmax, strlen(line) - (eqpos - line));
         strncpy(val, eqpos, vallen);
     }
 
@@ -167,7 +165,7 @@ char *configGetDir(void)
     static char path[256];
 
     if (!strncmp(cfgDevice, "mc", 2))
-        snprintf(path, sizeof(path), "mc%d:OPL/", getmcID() & 1);
+        snprintf(path, sizeof(path), "mc%d:OPL/", sbGetmcID() & 1);
     else
         snprintf(path, sizeof(path), "%s", cfgDevice);
 
@@ -408,10 +406,10 @@ static int configReadLegacyIP(void)
     config_set_t *configSet;
     char temp[16];
 
-    int fd = openFile(legacyNetConfigPath, O_RDONLY);
+    int fd = sbOpenFile(legacyNetConfigPath, O_RDONLY);
     if (fd >= 0) {
         char ipconfig[256];
-        int size = getFileSize(fd);
+        int size = sbGetFileSize(fd);
         read(fd, &ipconfig, size);
         close(fd);
 
@@ -470,7 +468,7 @@ static int configReadFileBuffer(file_buffer_t *fileBuffer, config_set_t *configS
     char prefix[CONFIG_KEY_NAME_LEN];
     memset(prefix, 0, sizeof(prefix));
 
-    while (readFileBuffer(fileBuffer, &line)) {
+    while (sbReadFileBuffer(fileBuffer, &line)) {
         lineno++;
 
         char key[CONFIG_KEY_NAME_LEN], val[CONFIG_KEY_VALUE_LEN];
@@ -507,7 +505,7 @@ static int configReadFileBuffer(file_buffer_t *fileBuffer, config_set_t *configS
 int configReadBuffer(config_set_t *configSet, const void *buffer, int size)
 {
     int ret;
-    file_buffer_t *fileBuffer = openFileBufferBuffer(0, buffer, size);
+    file_buffer_t *fileBuffer = sbOpenFileBufferBuffer(0, buffer, size);
     if (!fileBuffer) {
         configSet->modified = 0;
         return 0;
@@ -515,14 +513,14 @@ int configReadBuffer(config_set_t *configSet, const void *buffer, int size)
 
     ret = configReadFileBuffer(fileBuffer, configSet);
 
-    closeFileBuffer(fileBuffer);
+    sbCloseFileBuffer(fileBuffer);
     return ret;
 }
 
 int configRead(config_set_t *configSet)
 {
     int ret;
-    file_buffer_t *fileBuffer = openFileBuffer(configSet->filename, O_RDONLY, 0, 4096);
+    file_buffer_t *fileBuffer = sbOpenFileBuffer(configSet->filename, O_RDONLY, 0, 4096);
     if (!fileBuffer) {
         LOG("CONFIG No file %s.\n", configSet->filename);
         configSet->modified = 0;
@@ -531,14 +529,14 @@ int configRead(config_set_t *configSet)
 
     ret = configReadFileBuffer(fileBuffer, configSet);
 
-    closeFileBuffer(fileBuffer);
+    sbCloseFileBuffer(fileBuffer);
     return ret;
 }
 
 int configWrite(config_set_t *configSet)
 {
     if (configSet->modified) {
-        file_buffer_t *fileBuffer = openFileBuffer(configSet->filename, O_WRONLY | O_CREAT | O_TRUNC, 0, 4096);
+        file_buffer_t *fileBuffer = sbOpenFileBuffer(configSet->filename, O_WRONLY | O_CREAT | O_TRUNC, 0, 4096);
         if (fileBuffer) {
             char line[512];
 
@@ -547,14 +545,14 @@ int configWrite(config_set_t *configSet)
             while (cur) {
                 if ((cur->key[0] != '\0') && (cur->key[0] != '#')) {
                     snprintf(line, sizeof(line), "%s=%s\r\n", cur->key, cur->val); // add windows CR+LF (0x0D 0x0A)
-                    writeFileBuffer(fileBuffer, line, strlen(line));
+                    sbWriteFileBuffer(fileBuffer, line, strlen(line));
                 }
 
                 // and advance
                 cur = cur->next;
             }
 
-            closeFileBuffer(fileBuffer);
+            sbCloseFileBuffer(fileBuffer);
             configSet->modified = 0;
             bgmUnMute();
             return 1;
@@ -564,9 +562,9 @@ int configWrite(config_set_t *configSet)
     return 1;
 }
 
-int configGetStat(config_set_t *configSet, iox_stat_t *stat)
+int configGetStat(config_set_t *configSet, struct stat *st)
 {
-    return (fileXioGetStat(configSet->filename, stat) >= 0 ? 1 : 0);
+    return (stat(configSet->filename, st) >= 0 ? 1 : 0);
 }
 
 void configClear(config_set_t *configSet)

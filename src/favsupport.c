@@ -10,6 +10,7 @@
 #include "include/lang.h"
 #include "include/themes.h"
 #include "include/favsupport.h"
+#include <malloc.h>
 
 static int favItemCount = 0;
 

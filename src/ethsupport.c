@@ -12,6 +12,13 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include <ps2smb.h>
+#include <ps2ips.h>
+#include <netman.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioDevctl(ethBase, SMB_***)
@@ -294,8 +301,6 @@ static int ethLoadModules(void)
         LOG("[NETMAN]:\n");
         if (sysLoadModuleBuffer(&netman_irx, size_netman_irx, 0, NULL) >= 0) {
             NetManInit();
-            LOG("[SMSUTILS]:\n");
-            sysLoadModuleBuffer(&smsutils_irx, size_smsutils_irx, 0, NULL);
             LOG("[SMAP]:\n");
             if (sysLoadModuleBuffer(&smap_irx, size_smap_irx, 0, NULL) >= 0) {
                 // Before the network stack is loaded, attempt to set the link settings in order to avoid needing double-initialization of the IF.
@@ -739,7 +744,7 @@ static int ethGetImage(item_list_t *itemList, char *folder, int isRelative, char
         snprintf(path, sizeof(path), "%s%s\\%s_%s", ethPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1);
+    return texDiscoverLoad(resultTex, path, -1, 0);
 }
 
 static int ethGetTextId(item_list_t *itemList)

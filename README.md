@@ -2,7 +2,7 @@
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
-Copyright 2025-2026, Wolf3s, Ripto and chasebocamp<br/>
+Copyright 2025-Present, Wolf3s, Ripto and chasebocamp<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
@@ -10,30 +10,43 @@ Review the LICENSE file for further details.
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
 
-
 ## Introduction
 
 Double Unofficial Open PS2 Loader (wOPL) is a 100% Open source game and application loader based on [OPL](https://github.com/ps2homebrew/Open-PS2-Loader) for
 the PS2 and PS3 units. This version uses features that at the moment are not merged upstream and unique.
+
+<details>
+  <summary> <b> Changes in wOPL </b> </summary>
+<p>
+
+* Removal of UDPBD since there are not much users using this
+* Add a easter egg when booting on wOPL
+* Code cleanups/fixes and compiler warning fixes
+* Gui improvements
+* Art tar archive support
+</p>
+</details>
+
 <details>
   <summary> <b> Changes in uOPL </b> </summary>
 <p>
 
-  * uOPL uses a slightly older build environment in an attempt to increase stability, more akin to OPL r2049
-  * Multi USB works without issues (workaround)
-  * ATA HDD support ala grimdoomers fork
-  * UDPBD support (as a build variant) ala tihmstar & el_isra forks (untested) - likely needs more work and testers to confirm
-  * Favourites Menu Page (R3 Toggle's Favorite Marker)
-  * Optional per-game settings for Neutrino core loading for alternative compatibility on the fly
-  * Additional Mode 7 ala Neutrino (works with both Neutrino and OPL core)
-  * Legacy apps paths with `mass:` work
-  * Two new built in themes `<uOPL>` & `<uOPL-CF>`
-  * Additional theme options
-  * Debug builds have the option to send LOGs to a BDM device
-  * Disable all button added for cheats selection menu
-  * Cancel pending ART requests at launch (should stop a crash that occurs when traversing the games list quickly and suddenly launching a title)
+* uOPL uses a slightly older build environment in an attempt to increase stability, more akin to OPL r2049
+* Multi USB works without issues (workaround)
+* ATA HDD support ala grimdoomers fork
+* UDPBD support (as a build variant) ala tihmstar & el_isra forks (untested) - likely needs more work and testers to confirm
+* Favourites Menu Page (R3 Toggle's Favorite Marker)
+* Optional per-game settings for Neutrino core loading for alternative compatibility on the fly
+* Additional Mode 7 ala Neutrino (works with both Neutrino and OPL core)
+* Legacy apps paths with `mass:` work
+* Two new built in themes `<uOPL>` & `<uOPL-CF>`
+* Additional theme options
+* Debug builds have the option to send LOGs to a BDM device
+* Disable all button added for cheats selection menu
+* Cancel pending ART requests at launch (should stop a crash that occurs when traversing the games list quickly and suddenly launching a title)
 
 ### Neutrino Support
+
 Neutrino needs to be stored on either `mc0:NEUTRINO/neutrino.elf` or `mc1:NEUTRINO/neutrino.elf` with the usual setup of `config` and `modules` subfolders.<br>
 In game settings you will find an option `Loader Core` with the options of `<OPL>` or `Neutrino`<br><br>
 Supported devices: `USB` `MX4SIO` `HDD (ATA)` `iLink` `UDPBD - untested` `HDD (APA) - untested (seems hit & miss for some games)`<br><br>
@@ -43,17 +56,19 @@ Neutrino does not support:<br>
 Get [Neutrino](https://github.com/rickgaiser/neutrino/releases)
 
 ### Additional Theme Options
+
 These are all optional and will use default values if omitted.
 
-| Key                         | Description                                                                                                          |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `wsX`                       | Sets theme element posX position in widescreen (avoids the need for seperate 4:3 and 16:9 theme cfgs)                |
-| `skip`                      | If enabled will skip rendering of StaticImage types if there is no currently selected item                           |
-| `reflection`                | If enabled will render a reflection of GameImage or Coverflow types (not recommended for faked perspective/3D images)   |
-| `plasma_blend_color`        | Optional secondary blend colour for plasma (now you can mix bg & blend colour, previously it was only bg & black)    |
-| `Coverflow`                 | New type will render 3 covers at a time, works with overlays and reflection etc                                      |
-| `aligned=2`                 | New value for "aligned" to right justify                                                                             |
-| `use_settings_bg=1`         | If enabled all menus will display `settings_bg.png` from your theme instead of traditional plasma for the background |
+
+| Key                  | Description                                                                                                           |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `wsX`                | Sets theme element posX position in widescreen (avoids the need for seperate 4:3 and 16:9 theme cfgs)                 |
+| `skip`               | If enabled will skip rendering of StaticImage types if there is no currently selected item                            |
+| `reflection`         | If enabled will render a reflection of GameImage or Coverflow types (not recommended for faked perspective/3D images) |
+| `plasma_blend_color` | Optional secondary blend colour for plasma (now you can mix bg & blend colour, previously it was only bg & black)     |
+| `Coverflow`          | New type will render 3 covers at a time, works with overlays and reflection etc                                       |
+| `aligned=2`          | New value for "aligned" to right justify                                                                              |
+| `use_settings_bg=1`  | If enabled all menus will display`settings_bg.png` from your theme instead of traditional plasma for the background   |
 
 <img src="previews/uOPL.png" height="300" />
 <img src="previews/uOPL-CF.png" height="300" />
@@ -68,13 +83,14 @@ These are all optional and will use default values if omitted.
 Double Unofficial Open PS2 Loader bundle included several types of the same wOPL version. These
 types come with more or fewer features included.
 
-| Type (can be a combination) | Description                                                                             |
-| --------------------------- | --------------------------------------------------------------------------------------- |
-| `Release`                   | Regular wOPL release with GSM, IGS, PADEMU, VMC, PS2RD Cheat Engine & Parental Controls.|
-| `DTL_T10000`                | wOPL for TOOLs (DevKit PS2)                                                             |
-| `IGS`                       | wOPL with InGame Screenshot feature.                                                    |
-| `PADEMU`                    | wOPL with Pad Emulation for DS3 & DS4.                                                  |
-| `RTL`                       | wOPL with the right to left language support.                                           |
+
+| Type (can be a combination) | Description                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `Release`                   | Regular wOPL release with GSM, IGS, PADEMU, VMC, PS2RD Cheat Engine & Parental Controls. |
+| `DTL_T10000`                | wOPL for TOOLs (DevKit PS2)                                                              |
+| `IGS`                       | wOPL with InGame Screenshot feature.                                                     |
+| `PADEMU`                    | wOPL with Pad Emulation for DS3 & DS4.                                                   |
+| `RTL`                       | wOPL with the right to left language support.                                            |
 
 </p>
 </details>
@@ -83,24 +99,25 @@ types come with more or fewer features included.
   <summary> <b> How to use </b> </summary>
 <p>
 
-U-OPL uses the following directory tree structure across HDD, SMB, and
+W-OPL uses the following directory tree structure across HDD, SMB, and
 USB modes:
 
-| Folder | Description                                          | Modes       |
-| ------ | ---------------------------------------------------- | ----------- |
-| `CD`   | for games on CD media - i.e. blue-bottom discs       | USB and SMB |
+
+| Folder | Description                                                  | Modes       |
+| -------- | -------------------------------------------------------------- | ------------- |
+| `CD`   | for games on CD media - i.e. blue-bottom discs               | USB and SMB |
 | `DVD`  | for DVD5 and DVD9 images (if filesystem supports +4gb files) | USB and SMB |
-| `VMC`  | for Virtual Memory Card images - from 8MB up to 64MB | all         |
-| `CFG`  | for saving per-game configuration files              | all         |
-| `ART`  | for game art images                                  | all         |
-| `THM`  | for themes support                                   | all         |
-| `LNG`  | for translation support                              | all         |
-| `CHT`  | for cheats files                                     | all         |
+| `VMC`  | for Virtual Memory Card images - from 8MB up to 64MB         | all         |
+| `CFG`  | for saving per-game configuration files                      | all         |
+| `ART`  | for game art images                                          | all         |
+| `THM`  | for themes support                                           | all         |
+| `LNG`  | for translation support                                      | all         |
+| `CHT`  | for cheats files                                             | all         |
 
 U-OPL will automatically create the above directory structure the first time you launch it and enable your favorite device.
 
-For HDD (APA) users, OPL will read `hdd0:__common/OPL/conf_hdd.cfg` for the config entry `hdd_partition` to use as your OPL partition.
-If not found a config file, a 128Mb `+OPL` partition will be created. You can edit the config if you wish to use/create a different partition.
+For HDD (APA) users, OPL will read `hdd0:__common/wOPL/conf_hdd.cfg` for the config entry `hdd_partition` to use as your OPL partition.
+If not found a config file, a 128Mb `+wOPL` partition will be created. You can edit the config if you wish to use/create a different partition.
 All partitions created by OPL will be 128Mb (it is not recommended to enlarge partitions as it will break LBAs, instead remove and recreate manually with uLaunchELF at a larger size if needed).
 
 </p>
@@ -109,14 +126,12 @@ All partitions created by OPL will be 128Mb (it is not recommended to enlarge pa
 <details>
   <summary> <b> USB/MX4SIO/iLink/HDD (ATA) </b> </summary>
 
-
 Game files should be *ideally* defragmented either file by file or by whole drive.
 Games larger than 4GB must be stored on a device formatted with exFAT, or if the device is using FAT32, the USBExtreme format must be used (see OPLUtil or USBUtil programs).
 We do **not** recommend using any defrag programs. The best way for defragmenting - copy all files to pc, format USB, copy all files back.
 Repeat it once you faced defragmenting problem again.
 
 > NOTE: partial file fragmentation is supported (up to 64 fragments!) since OPL v1.2.0 - rev1893
-
 
 </p>
 </details>
@@ -138,8 +153,8 @@ are supported using the folder structure above.
 <p>
 
 For PS2, 48-bit LBA internal HDDs up to 2TB are supported. HDD should be
-formatted with the APA partition scheme. OPL will create the `+OPL` partition on the HDD.
-To avoid this, you can create a text file at the location `hdd0:__common:pfs:OPL/conf_hdd.txt`
+formatted with the APA partition scheme. wOPL will create the `+wOPL` partition on the HDD.
+To avoid this, you can create a text file at the location `hdd0:__common:pfs:wOPL/conf_hdd.txt`
 that contains the preferred partition name (for example `__common`).
 
 </p>
@@ -149,17 +164,16 @@ that contains the preferred partition name (for example `__common`).
   <summary> <b> Cheats </b> </summary>
 <p>
 
-OPL accepts `.cht` files in PS2RD format. Each cheat file corresponds to a specific game and must be stored in the `CHT` directory on your device.
+wOPL accepts `.cht` files in PS2RD format. Each cheat file corresponds to a specific game and must be stored in the `CHT` directory on your device.
 Cheats are structured as hexadecimal codes, with proper headers as descriptions to identify their function.
 You can activate cheats via OPL's graphical interface. Navigate to a games settings, enable cheats and select the desired mode.
 
 ### cheat modes
 
-  * Auto Select Cheats:  
-This mode will enable and apply all cheat codes in your `.cht` file to your game automatically.
-
-  * Select Game Cheats:  
-When enabled a cheat selection menu will appear when you launch a game. You can navigate the menu and disable undesired cheats for this launch session. `Mastercode`s cannot be disabled as they are required for any other cheats to be applied.
+* Auto Select Cheats:
+  This mode will enable and apply all cheat codes in your `.cht` file to your game automatically.
+* Select Game Cheats:
+  When enabled a cheat selection menu will appear when you launch a game. You can navigate the menu and disable undesired cheats for this launch session. `Mastercode`s cannot be disabled as they are required for any other cheats to be applied.
 
 </p>
 </details>
@@ -168,7 +182,7 @@ When enabled a cheat selection menu will appear when you launch a game. You can 
   <summary> <b> NBD Server </b> </summary>
 <p>
 
-OPL now uses an [NBD](https://en.wikipedia.org/wiki/Network_block_device) server to share the internal hard drive, instead of HDL server.
+wOPL now uses an [NBD](https://en.wikipedia.org/wiki/Network_block_device) server to share the internal hard drive, instead of HDL server.
 NBD is [formally documented](https://github.com/NetworkBlockDevice/nbd/blob/master/doc/proto.md) and developed as a collaborative open standard.
 
 The current implementation of the server is based on [lwNBD](https://github.com/bignaux/lwNBD), go there to contribute on the NBD code itself.
@@ -176,22 +190,22 @@ The current implementation of the server is based on [lwNBD](https://github.com/
 The main advantage of using NBD is that the client will expose the drive to your operating system in a similar way as a directly attached drive.
 This means that any utility that worked with the drive when it was directly attached should work the same way with NBD.
 
-OPL currently only supports exporting (sharing out) the PS2's drive.
+wOPL currently only supports exporting (sharing out) the PS2's drive.
 
 You can use `hdl-dump`, `pfs-shell`, or even directly edit the disk in a hex editor.
 
 For example, to use `hdl_dump` to install a game to the HDD:
 
-  * Connect with your choosen client (OS specific)
-  * Run `hdl_dump inject_dvd ps2/nbd "Test Game" ./TEST.ISO`
-  * Disconnect the client.
+* Connect with your choosen client (OS specific)
+* Run `hdl_dump inject_dvd ps2/nbd "Test Game" ./TEST.ISO`
+* Disconnect the client.
 
 To use the NBD server in wOPL:
 
-  * Grab the latest beta version - go to the [Releases](https://github.com/NathanNeurotic/wOPL/releases) section and grab the one at the top.
-  * Ensure OPL is configured with an IP address (either static or DHCP).
-  * Open the menu and select "Start NBD server". Once it's ready, it should update the screen to say "NBD Server running..."
-  * Now you can connect with any of the following NBD clients.
+* Grab the latest beta version - go to the [Releases](https://github.com/NathanNeurotic/wOPL/releases) section and grab the one at the top.
+* Ensure OPL is configured with an IP address (either static or DHCP).
+* Open the menu and select "Start NBD server". Once it's ready, it should update the screen to say "NBD Server running..."
+* Now you can connect with any of the following NBD clients.
 
 ### nbd-client
 
@@ -279,13 +293,13 @@ As of version 1.2.0, compressed ISO files in ZSO format is supported by wOPL.
 To handle ZSO files, a python script (ziso.py) is included in the pc folder of this repository.
 It requires Python 3 and the LZ4 library:
 
-  ```sh
+```sh
 pip install lz4
 ```
 
 To compress an ISO file to ZSO:
 
-  ```sh
+```sh
 python ziso.py -c 2 "input.iso" "output.zso"
 ```
 
@@ -316,7 +330,7 @@ To run w-OPL, you need an entry point for running PS2 titles. You can use everyt
   <summary> <b> Some notes for DEVS </b> </summary>
 <p>
 
-Open PS2 Loader needs the [**latest PS2SDK**](https://github.com/ps2dev/ps2sdk)
+Double Unofficial Open PS2 Loader needs the [**latest PS2SDK**](https://github.com/ps2dev/ps2sdk)
 
 Quick build commands:
 
@@ -341,21 +355,13 @@ Useful CMake targets: `release`, `clean`, `rebuild`, `debug`, `iopcore_debug`, `
 </details>
 
 <details>
-  <summary> <b> w-OPL Archive </b> </summary>
-<p>
-
-Since 05/07/2021 every w-OPL build dispatched to the release section of this repository will be uploaded to a [mega account](https://mega.nz/folder/Ndwi1bAK#oLWNhH_g-h0p4BoT4c556A). You can access the archive by clicking the mega badge on top of this readme
-
-</p>
-</details>
-
-<details>
   <summary> <b> Frequent Issues </b> </summary>
 <p>
 
 ### w-OPL Freezes on logo or grey screen
 
- Sometimes w-OPL freezes when loading config files made by older w-OPL builds.
+Sometimes w-OPL freezes when loading config files made by older w-OPL builds.
+
 > hold __`START`__ while w-OPL initializes to make it skip the config loading, then, you can save your own settings.
 > fixing the issue.
 

@@ -19,7 +19,7 @@ static IDENTIFY_DEVICE_DATA deviceIdentifyData;
 static int xhddInit(iop_device_t *device)
 {
     // Force atad to initialize the hdd devices.
-    ata_get_devinfo(0);
+    sceAtaInit(0);
 
     return 0;
 }
@@ -38,7 +38,7 @@ static int xhddDevctl(iop_file_t *fd, const char *name, int cmd, void *arg, unsi
 
     switch (cmd) {
         case ATA_DEVCTL_IS_48BIT:
-            return ((devinfo = ata_get_devinfo(fd->unit)) != NULL ? devinfo->lba48 : -1);
+            return ((devinfo = sceAtaInit(fd->unit)) != NULL ? devinfo->lba48 : -1);
 
         case ATA_DEVCTL_SET_TRANSFER_MODE: {
             if (!isHDPro)
@@ -52,7 +52,7 @@ static int xhddDevctl(iop_file_t *fd, const char *name, int cmd, void *arg, unsi
             if (buflen % 512 != 0)
                 return -EINVAL;
 
-            return ata_device_sector_io(fd->unit, buf, 0, buflen / 512, ATA_DIR_READ);
+            return sceAtaDmaTransfer(fd->unit, buf, 0, buflen / 512, ATA_DIR_READ);
         }
 
         case ATA_DEVCTL_GET_HIGHEST_UDMA_MODE: {

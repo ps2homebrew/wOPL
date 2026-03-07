@@ -9,6 +9,8 @@
 #include "include/lang.h"
 #include "include/pad.h"
 #include "include/sound.h"
+#include <stdlib.h>
+#include <math.h>
 
 #define MENU_POS_V      50
 #define HINT_HEIGHT     32
@@ -333,7 +335,7 @@ static image_texture_t *initImageTexture(const char *themePath, config_set_t *th
     if (themePath) {
         char path[256];
         snprintf(path, sizeof(path), "%s%s", themePath, imgName);
-        if (texDiscoverLoad(&texture->source, path, texId) >= 0)
+        if (texDiscoverLoad(&texture->source, path, texId, 0) >= 0)
             ;
         result = 1;
     } else {
@@ -1349,7 +1351,7 @@ static int thmLoadResource(GSTEXTURE *texture, int texId, const char *themePath,
     int success = -1;
 
     if (themePath != NULL)
-        success = texDiscoverLoad(texture, themePath, texId); // only set success here
+        success = texDiscoverLoad(texture, themePath, texId, 0); // only set success here
 
     if ((success < 0) && useDefault)
         texLoadInternal(texture, texId); // we don't mind the result of "default"
@@ -1612,8 +1614,8 @@ static void thmRebuildGuiNames(void)
     guiThemesNames = (const char **)malloc((nThemes + 3) * sizeof(const char *));
 
     // add default internal
-    guiThemesNames[0] = "<uOPL>";
-    guiThemesNames[1] = "<uOPL-CF>";
+    guiThemesNames[0] = "<wOPL>";
+    guiThemesNames[1] = "<wOPL-CF>";
 
     int i = 0;
     for (; i < nThemes; i++) {
@@ -1627,7 +1629,7 @@ int thmAddElements(char *path, const char *separator, int forceRefresh)
 {
     int result, i;
 
-    result = listDir(path, separator, THM_MAX_FILES - nThemes, &thmReadEntry);
+    result = sbListDir(path, separator, THM_MAX_FILES - nThemes, &thmReadEntry);
     nThemes += result;
     thmRebuildGuiNames();
 

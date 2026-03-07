@@ -27,7 +27,7 @@ I_mmce_read_offset
 I_mmce_write_offset
 #endif
 #ifdef HDD_DRIVER
-I_ata_device_sector_io
+I_sceAtaDmaTransfer
 #endif
 #ifdef SMB_DRIVER
 I_smb_OpenAndX
@@ -52,17 +52,14 @@ I_sceSifCheckInit
 I_sceSifDmaStat
 sifman_IMPORTS_end
 
-smsutils_IMPORTS_start
-I_mips_memset
-I_mips_memcpy
-smsutils_IMPORTS_end
-
 stdio_IMPORTS_start
 I_printf
 stdio_IMPORTS_end
 
 sysclib_IMPORTS_start
 I_prnt
+I_memset
+I_memcpy
 I_strcmp
 sysclib_IMPORTS_end
 

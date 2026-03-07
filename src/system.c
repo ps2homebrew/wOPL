@@ -28,6 +28,17 @@
 #include "include/pggsm.h"
 #include "include/cheatman.h"
 #include "include/xparam.h"
+#include <fcntl.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <libpwroff.h>
+#include <loadfile.h>
+#include <sifrpc.h>
+#include <iopcontrol.h>
+#include <iopheap.h>
+#include <kernel.h>
+#include <sbv_patches.h>
+
 
 #ifdef PADEMU
 #include <libds34bt.h>
@@ -395,11 +406,6 @@ void sysExecExit(void)
 #define CORE_IRX_MX4SIO 0x100
 
 #define CORE_IRX_MMCE 0x200
-
-#ifdef UDPBD
-#define CORE_IRX_UDPBD 0x400
-#endif
-
 typedef struct
 {
     char *game;
@@ -485,10 +491,6 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         modules |= CORE_IRX_MX4SIO;
     else if (!strcmp(mode_str, "BDM_ATA_MODE"))
         modules |= CORE_IRX_HDD;
-#ifdef UDPBD
-    else if (!strcmp(mode_str, "BDM_UDP_MODE"))
-        modules |= CORE_IRX_UDPBD;
-#endif
     else if (!strcmp(mode_str, "ETH_MODE"))
         modules |= CORE_IRX_ETH | CORE_IRX_SMB;
     else if (!strcmp(mode_str, "HDD_MODE"))
@@ -552,12 +554,6 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         irxptr_tab[modcount].info = size_mx4sio_bd_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MX4SIOBD);
         irxptr_tab[modcount++].ptr = (void *)&mx4sio_bd_irx;
     }
-#ifdef UDPBD
-    if (modules & CORE_IRX_UDPBD) {
-        irxptr_tab[modcount].info = size_smap_udpbd_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_SMAP);
-        irxptr_tab[modcount++].ptr = (void *)&smap_udpbd_irx;
-    }
-#endif
     if (modules & CORE_IRX_ETH) {
         irxptr_tab[modcount].info = size_smap_ingame_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_SMAP);
         irxptr_tab[modcount++].ptr = (void *)&smap_ingame_irx;
@@ -601,10 +597,8 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     }
 #elif defined(TTY_UDP)
     if (modules & CORE_IRX_DEBUG) {
-#ifndef UDPBD
         irxptr_tab[modcount].info = size_udptty_ingame_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_UDPTTY);
         irxptr_tab[modcount++].ptr = (void *)&udptty_ingame_irx;
-#endif
         irxptr_tab[modcount].info = size_ioptrap_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_IOPTRAP);
         irxptr_tab[modcount++].ptr = (void *)&ioptrap_irx;
     }
@@ -851,17 +845,8 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
     void *eeloadCopy, *initUserMemory;
     struct GsmConfig_t gsm_config;
 
-#ifdef UDPBD
-    if (ethGetNetConfig(local_ip_address, local_netmask, local_gateway) < 0) {
-        for (int i = 0; i < 4; i++) {
-            local_ip_address[i] = ps2_ip[i];
-            local_netmask[i] = ps2_netmask[i];
-            local_gateway[i] = ps2_gateway[i];
-        }
-    }
-#else
     ethGetNetConfig(local_ip_address, local_netmask, local_gateway);
-#endif
+
 #if (!defined(__DEBUG) && !defined(_DTL_T10000))
     AddHistoryRecordUsingFullPath(filename);
 #endif

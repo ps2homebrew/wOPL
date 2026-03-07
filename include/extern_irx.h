@@ -18,10 +18,6 @@ IMPORT_BIN2C(bdm_cdvdman_irx);
 
 IMPORT_BIN2C(bdm_mcemu_irx);
 
-#ifdef UDPBD
-IMPORT_BIN2C(bdm_udp_cdvdman_irx);
-#endif
-
 IMPORT_BIN2C(bdmevent_irx);
 
 IMPORT_BIN2C(bdmfs_fatfs_irx);
@@ -128,10 +124,6 @@ IMPORT_BIN2C(smap_irx);
 
 IMPORT_BIN2C(smap_ingame_irx);
 
-#ifdef UDPBD
-IMPORT_BIN2C(smap_udpbd_irx);
-#endif
-
 IMPORT_BIN2C(smb_mcemu_irx);
 
 IMPORT_BIN2C(smb_cdvdman_irx);
@@ -139,8 +131,6 @@ IMPORT_BIN2C(smb_cdvdman_irx);
 IMPORT_BIN2C(smbinit_irx);
 
 IMPORT_BIN2C(smbman_irx);
-
-IMPORT_BIN2C(smsutils_irx);
 
 IMPORT_BIN2C(tifinet_irx);
 

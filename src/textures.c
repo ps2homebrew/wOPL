@@ -2,7 +2,10 @@
 #include "include/textures.h"
 #include "include/util.h"
 #include "include/ioman.h"
+#include "include/art_tar.h"
 #include <png.h>
+#include <fcntl.h>
+#include <malloc.h>
 
 extern void *load0_png;
 extern void *load1_png;
@@ -17,9 +20,6 @@ extern void *usb_bd_png;
 extern void *ilk_bd_png;
 extern void *m4s_bd_png;
 extern void *hdd_bd_png;
-#ifdef UDPBD
-extern void *udp_bd_png;
-#endif
 extern void *mmce_png;
 extern void *hdd_png;
 extern void *eth_png;
@@ -150,13 +150,8 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {ILINK_ICON, "ilk_bd", &ilk_bd_png},
     {MX4SIO_ICON, "m4s_bd", &m4s_bd_png},
     {HDD_BD_ICON, "hdd_bd", &hdd_bd_png},
-#ifdef UDPBD
-    {UDP_BD_ICON, "udp_bd", &udp_bd_png},
-#endif
     {MMCE_ICON, "mmce", &mmce_png},
     {HDD_ICON, "hdd", &hdd_png},
-    {ETH_ICON, "eth", &eth_png},
-    {APP_ICON, "app", &app_png},
     {FAV_ICON, "fav", &fav_png},
     {FAV_MARK, "fav_mark", &fav_mark_png},
     {INDEX_0, "Index_0", &Index_0_png},
@@ -266,16 +261,17 @@ static int texSizeValidate(int width, int height, u8 psm)
 
 static void texPrepare(GSTEXTURE *texture)
 {
-    texture->Width = 0;                 // Must be set by loader
-    texture->Height = 0;                // Must be set by loader
-    texture->PSM = GS_PSM_CT24;         // Must be set by loader
-    texture->ClutPSM = 0;               // Default, can be set by loader
-    texture->TBW = 0;                   // gsKit internal value
-    texture->Mem = NULL;                // Must be allocated by loader
-    texture->Clut = NULL;               // Default, can be set by loader
-    texture->Vram = 0;                  // VRAM allocation handled by texture manager
-    texture->VramClut = 0;              // VRAM allocation handled by texture manager
-    texture->Filter = GS_FILTER_LINEAR; // Default
+    texture->Width = 0;                              // Must be set by loader
+    texture->Height = 0;                             // Must be set by loader
+    texture->PSM = GS_PSM_CT24;                      // Must be set by loader
+    texture->ClutPSM = 0;                            // Default, can be set by loader
+    texture->TBW = 0;                                // gsKit internal value
+    texture->Mem = NULL;                             // Must be allocated by loader
+    texture->Clut = NULL;                            // Default, can be set by loader
+    texture->Vram = 0;                               // VRAM allocation handled by texture manager
+    texture->VramClut = 0;                           // VRAM allocation handled by texture manager
+    texture->Filter = GS_FILTER_LINEAR;              // Default
+    texture->ClutStorageMode = GS_CLUT_STORAGE_CSM1; // Default
 
     // Do not load the texture to VRAM directly, only load it to EE RAM
     texture->Delayed = 1;
@@ -429,7 +425,7 @@ static void texReadData(GSTEXTURE *texture, png_structp pngPtr, png_infop infoPt
     png_read_end(pngPtr, NULL);
 }
 
-static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
+static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int archived)
 {
     texPrepare(texture);
     png_structp pngPtr = NULL;
@@ -438,8 +434,15 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
     png_rw_ptr readFunction = NULL;
     void *PngFileBufferPtr;
     void *pFileBuffer = NULL;
-
-    if (filePath) {
+    if (archived) {
+        pFileBuffer = getFileFromTar(filePath);
+        if (!pFileBuffer) {
+            return ERR_BAD_FILE;
+        }
+        PngFileBufferPtr = pFileBuffer;
+        readData = &PngFileBufferPtr;
+        readFunction = &texReadMemFunction;
+    } else if (filePath) {
         int fd = open(filePath, O_RDONLY, 0);
         if (fd < 0)
             return ERR_BAD_FILE;
@@ -509,7 +512,9 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
     png_set_filler(pngPtr, 0xff, PNG_FILLER_AFTER);
     png_read_update_info(pngPtr, infoPtr);
 
+    // clang-format off
     void (*texPngReadPixels)(GSTEXTURE * texture, png_bytep * rowPointers, size_t size);
+    // clang-format on
     switch (png_get_color_type(pngPtr, infoPtr)) {
         case PNG_COLOR_TYPE_RGB_ALPHA:
             texture->PSM = GS_PSM_CT32;
@@ -559,17 +564,17 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId)
     return texEnd(pngPtr, infoPtr, pFileBuffer, 0);
 }
 
-static int texLoad(GSTEXTURE *texture, const char *filePath)
+static int texLoad(GSTEXTURE *texture, const char *filePath, int archived)
 {
-    return texLoadAll(texture, filePath, -1);
+    return texLoadAll(texture, filePath, -1, archived);
 }
 
 int texLoadInternal(GSTEXTURE *texture, int texId)
 {
-    return texLoadAll(texture, NULL, texId);
+    return texLoadAll(texture, NULL, texId, 0);
 }
 
-int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId)
+int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archived)
 {
     char filePath[256];
 
@@ -580,11 +585,17 @@ int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId)
     else
         snprintf(filePath, sizeof(filePath), "%s.%s", path, "png");
 
-    int fd = open(filePath, O_RDONLY);
-    if (fd > 0) {
-        // File found, load it
-        close(fd);
-        return (texLoad(texture, filePath) >= 0) ? 0 : ERR_BAD_FILE;
+    if (archived) {
+        if (findTarEntry(filePath) != NULL) {
+            return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
+        }
+    } else {
+        int fd = open(filePath, O_RDONLY);
+        if (fd > 0) {
+            // File found, load it
+            close(fd);
+            return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
+        }
     }
 
     return ERR_BAD_FILE;

@@ -24,6 +24,10 @@
 #include "include/guigame.h"
 #include "include/tetris.h"
 
+#include <malloc.h>
+#include <math.h>
+#include <kernel.h>
+
 #include <limits.h>
 #include <stdlib.h>
 #include <libvux.h>
@@ -146,6 +150,7 @@ void guiInit(void)
     gBackgroundTex.Vram = 0;
     gBackgroundTex.VramClut = 0;
     gBackgroundTex.Clut = NULL;
+    gBackgroundTex.ClutStorageMode = GS_CLUT_STORAGE_CSM1;
 
     // Precalculate the values for the perlin noise plasma
     int i;
@@ -200,8 +205,8 @@ void guiEndFrame(void)
 
 void guiShowAbout()
 {
-    char wOPLVersion[48];
-    char wOPLBuildDetails[40];
+    char wOPLVersion[128];
+    char wOPLBuildDetails[96];
 
     snprintf(wOPLVersion, sizeof(wOPLVersion), "Double Unofficial Open PS2 Loader %s", WOPL_VERSION);
     diaSetLabel(diaAbout, ABOUT_TITLE, wOPLVersion);
@@ -450,18 +455,12 @@ static void guiShowBlockDeviceConfig(void)
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, gEnableMX4SIO);
     diaSetEnabled(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, !gHDDStartMode);
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, gEnableUDPBD);
-#endif
 
     ret = diaExecuteDialog(diaBlockDevicesConfig, -1, 1, NULL);
     if (ret) {
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEILK, &gEnableILK);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, &gEnableMX4SIO);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, &gEnableUDPBD);
-#endif
     }
 }
 
@@ -756,6 +755,7 @@ reselect_video_mode:
     diaSetInt(diaUIConfig, UICFG_AUTOREFRESH, gAutoRefresh);
     diaSetInt(diaUIConfig, UICFG_NOTIFICATIONS, gEnableNotifications);
     diaSetInt(diaUIConfig, UICFG_COVERART, gEnableArt);
+    diaSetInt(diaUIConfig, UICFG_ARCHIVEDART, gEnableArchivedArt);
     diaSetInt(diaUIConfig, UICFG_WIDESCREEN, gWideScreen);
     diaSetInt(diaUIConfig, UICFG_VMODE, gVMode);
     diaSetInt(diaUIConfig, UICFG_XOFF, gXOff);
@@ -777,6 +777,7 @@ reselect_video_mode:
         diaGetInt(diaUIConfig, UICFG_AUTOREFRESH, &gAutoRefresh);
         diaGetInt(diaUIConfig, UICFG_NOTIFICATIONS, &gEnableNotifications);
         diaGetInt(diaUIConfig, UICFG_COVERART, &gEnableArt);
+        diaGetInt(diaUIConfig, UICFG_ARCHIVEDART, &gEnableArchivedArt);
         diaGetInt(diaUIConfig, UICFG_WIDESCREEN, &gWideScreen);
         diaGetInt(diaUIConfig, UICFG_VMODE, &gVMode);
         diaGetInt(diaUIConfig, UICFG_XOFF, &gXOff);
@@ -1381,7 +1382,7 @@ void guiDrawBGPlasma()
 
     pery = ymax;
     rmInvalidateTexture(&gBackgroundTex);
-    rmDrawPixmap(&gBackgroundTex, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
+    rmSetBackground(&gBackgroundTex);
 }
 
 int guiDrawBGSettings(void)

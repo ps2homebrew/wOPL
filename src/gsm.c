@@ -20,6 +20,8 @@
 #include "../ee_core/include/coreconfig.h"
 
 #include "include/pggsm.h"
+#include <fcntl.h>
+#include <stdlib.h>
 
 static int gEnableGSM;   // Enables GSM - 0 for Off, 1 for On
 static int gGSMVMode;    // See the related predef_vmode

@@ -38,13 +38,21 @@
 #include "include/tetris.h"
 #include "include/xparam.h"
 
-// FIXME: We should not need this function.
-//        Use newlib's 'stat' to get GMT time.
-#define NEWLIB_PORT_AWARE
-#include <fileXio_rpc.h> // iox_stat_t
-int configGetStat(config_set_t *configSet, iox_stat_t *stat);
-
 #include <unistd.h>
+#include <osd_config.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <malloc.h>
+#include <usbhdfsd-common.h>
+#include <libmc.h>
+#include <libpad.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
+
+#define NEWLIB_PORT_AWARE
+#include <fileXio_rpc.h> // fileXioDopen, fileXioIoctl2, fileXioDclose
+
 #ifdef PADEMU
 #include <libds34bt.h>
 #include <libds34usb.h>
@@ -150,13 +158,11 @@ int gMMCEEnableGameID;
 int gEnableILK;
 int gEnableMX4SIO;
 int gEnableBdmHDD;
-#ifdef UDPBD
-int gEnableUDPBD;
-#endif
 int gAutosort;
 int gAutoRefresh;
 int gEnableNotifications;
 int gEnableArt;
+int gEnableArchivedArt;
 int gWideScreen;
 int gVMode; // 0 - Auto, 1 - PAL, 2 - NTSC
 int gXOff;
@@ -753,7 +759,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
     char appsPath[128];
 
     snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
-    fd = openFile(appsPath, O_RDONLY);
+    fd = sbOpenFile(appsPath, O_RDONLY);
     if (fd >= 0) {
         appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
         close(fd);
@@ -766,7 +772,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
             char *prefix = listSupport->itemGetPrefix(listSupport);
             snprintf(appsPath, sizeof(appsPath), "%sconf_apps.cfg", prefix);
 
-            fd = openFile(appsPath, O_RDONLY);
+            fd = sbOpenFile(appsPath, O_RDONLY);
             if (fd >= 0) {
                 appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
                 close(fd);
@@ -795,7 +801,7 @@ config_set_t *oplGetLegacyAppsInfo(char *name)
             char *prefix = listSupport->itemGetPrefix(listSupport);
             snprintf(appsPath, sizeof(appsPath), "%sCFG%s%s.cfg", prefix, i == ETH_MODE ? "\\" : "/", name);
 
-            fd = openFile(appsPath, O_RDONLY);
+            fd = sbOpenFile(appsPath, O_RDONLY);
             if (fd >= 0) {
                 appConfig = configAlloc(0, NULL, appsPath);
                 close(fd);
@@ -1059,6 +1065,7 @@ static void _loadConfig()
             configGetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, &gEnableNotifications);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, &gEnableArt);
+            configGetInt(configOPL, CONFIG_OPL_ENABLE_ARCHIVEDART, &gEnableArchivedArt);
             configGetInt(configOPL, CONFIG_OPL_WIDESCREEN, &gWideScreen);
 
             if (!(getKeyPressed(KEY_TRIANGLE) && getKeyPressed(KEY_CROSS))) {
@@ -1119,9 +1126,6 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, &gEnableILK);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-            configGetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, &gEnableUDPBD);
-#endif
             configGetInt(configOPL, CONFIG_OPL_SFX, &gEnableSFX);
             configGetInt(configOPL, CONFIG_OPL_BOOT_SND, &gEnableBootSND);
             configGetInt(configOPL, CONFIG_OPL_BGM, &gEnableBGM);
@@ -1255,6 +1259,7 @@ static void _saveConfig()
         configSetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, gEnableNotifications);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, gEnableArt);
+        configSetInt(configOPL, CONFIG_OPL_ENABLE_ARCHIVEDART, gEnableArchivedArt);
         configSetInt(configOPL, CONFIG_OPL_WIDESCREEN, gWideScreen);
         configSetInt(configOPL, CONFIG_OPL_VMODE, gVMode);
         configSetInt(configOPL, CONFIG_OPL_XOFF, gXOff);
@@ -1294,9 +1299,6 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, gEnableILK);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, gEnableMX4SIO);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-        configSetInt(configOPL, CONFIG_OPL_ENABLE_UDPBD, gEnableUDPBD);
-#endif
         configSetInt(configOPL, CONFIG_OPL_SFX, gEnableSFX);
         configSetInt(configOPL, CONFIG_OPL_BOOT_SND, gEnableBootSND);
         configSetInt(configOPL, CONFIG_OPL_BGM, gEnableBGM);
@@ -1336,7 +1338,7 @@ static void _saveConfig()
 
     char *path = configGetDir();
     if (!strncmp(path, "mc", 2)) {
-        checkMCFolder();
+        sbCheckMCFolder();
         configPrepareNotifications(gBaseMCDir);
     }
 
@@ -1355,7 +1357,9 @@ void applyConfig(int themeID, int langID, int skipDeviceRefresh)
 
     guiSetFrameHook(&menuUpdateHook);
 
+    guiLock();
     int changed = rmSetMode(0);
+    guiUnlock();
     if (changed) {
         bgmMute();
         // reinit the graphics...
@@ -1460,7 +1464,8 @@ static void compatUpdate(item_list_t *support, unsigned char mode, config_set_t 
     s8 ConnMode, hasMtime;
     char *HttpBuffer;
     int i, count, HttpSocket, result, retries, ConfigSource;
-    iox_stat_t stat;
+    struct stat st;
+    struct tm *timeinfo;
     u8 mtime[6];
     char device, uri[64];
     const char *startup;
@@ -1511,14 +1516,16 @@ static void compatUpdate(item_list_t *support, unsigned char mode, config_set_t 
                     if (itemConfig != NULL) {
                         ConfigSource = CONFIG_SOURCE_DEFAULT;
                         if ((mode & COMPAT_UPD_MODE_UPD_USR) || !configGetInt(itemConfig, CONFIG_ITEM_CONFIGSOURCE, &ConfigSource) || ConfigSource != CONFIG_SOURCE_USER) {
-                            if (!(mode & COMPAT_UPD_MODE_NO_MTIME) && (ConfigSource == CONFIG_SOURCE_DLOAD) && configGetStat(itemConfig, &stat)) { // Only perform a stat operation for downloaded setting files.
+                            if (!(mode & COMPAT_UPD_MODE_NO_MTIME) && (ConfigSource == CONFIG_SOURCE_DLOAD) && configGetStat(itemConfig, &st)) { // Only perform a stat operation for downloaded setting files.
+                                timeinfo = localtime(&st.st_mtime);
                                 if (!(mode & COMPAT_UPD_MODE_MTIME_GMT)) {
-                                    clock.second = itob(stat.mtime[1]);
-                                    clock.minute = itob(stat.mtime[2]);
-                                    clock.hour = itob(stat.mtime[3]);
-                                    clock.day = itob(stat.mtime[4]);
-                                    clock.month = itob(stat.mtime[5]);
-                                    clock.year = itob((stat.mtime[6] | ((unsigned short int)stat.mtime[7] << 8)) - 2000);
+
+                                    clock.second = itob(timeinfo->tm_sec);
+                                    clock.minute = itob(timeinfo->tm_min);
+                                    clock.hour = itob(timeinfo->tm_hour);
+                                    clock.day = itob(timeinfo->tm_mday);
+                                    clock.month = itob(timeinfo->tm_mon);
+                                    clock.year = itob(timeinfo->tm_year - 2000);
                                     configConvertToGmtTime(&clock);
 
                                     mtime[0] = btoi(clock.year);      // Year
@@ -1528,12 +1535,12 @@ static void compatUpdate(item_list_t *support, unsigned char mode, config_set_t 
                                     mtime[4] = btoi(clock.minute);    // Minute
                                     mtime[5] = btoi(clock.second);    // Second
                                 } else {
-                                    mtime[0] = (stat.mtime[6] | ((unsigned short int)stat.mtime[7] << 8)) - 2000; // Year
-                                    mtime[1] = stat.mtime[5] - 1;                                                 // Month
-                                    mtime[2] = stat.mtime[4] - 1;                                                 // Day
-                                    mtime[3] = stat.mtime[3];                                                     // Hour
-                                    mtime[4] = stat.mtime[2];                                                     // Minute
-                                    mtime[5] = stat.mtime[1];                                                     // Second
+                                    mtime[0] = clock.year - 2000; // Year
+                                    mtime[1] = clock.month - 1;   // Month
+                                    mtime[2] = clock.day - 1;     // Day
+                                    mtime[3] = clock.hour;        // Hour
+                                    mtime[4] = clock.minute;      // Minute
+                                    mtime[5] = clock.second;      // Second
                                 }
                                 hasMtime = 1;
 
@@ -1854,17 +1861,17 @@ void setDefaultColors(void)
     gDefaultTextColor[1] = 0x5C;
     gDefaultTextColor[2] = 0x5C;
 
-    gDefaultSelTextColor[0] = 0x00;
-    gDefaultSelTextColor[1] = 0x00;
-    gDefaultSelTextColor[2] = 0x00;
+    gDefaultSelTextColor[0] = 0xFF;
+    gDefaultSelTextColor[1] = 0xFF;
+    gDefaultSelTextColor[2] = 0xFF;
 
-    gDefaultUITextColor[0] = 0x00;
-    gDefaultUITextColor[1] = 0x00;
-    gDefaultUITextColor[2] = 0x00;
+    gDefaultUITextColor[0] = 0xFF;
+    gDefaultUITextColor[1] = 0xFF;
+    gDefaultUITextColor[2] = 0xFF;
 
-    gDefaultPlasmaBlendColor[0] = 0x00;
-    gDefaultPlasmaBlendColor[1] = 0x00;
-    gDefaultPlasmaBlendColor[2] = 0x00;
+    gDefaultPlasmaBlendColor[0] = 0xFF;
+    gDefaultPlasmaBlendColor[1] = 0xFF;
+    gDefaultPlasmaBlendColor[2] = 0xFF;
 }
 
 static void setDefaults(void)
@@ -1931,6 +1938,7 @@ static void setDefaults(void)
     gETHPrefix[0] = '\0';
     gEnableNotifications = 0;
     gEnableArt = 1;
+    gEnableArchivedArt = 1;
     gWideScreen = 0;
     gEnableSFX = 0;
     gEnableBootSND = 0;
@@ -1960,9 +1968,6 @@ static void setDefaults(void)
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
-#ifdef UDPBD
-    gEnableUDPBD = 0;
-#endif
 
     frameCounter = 0;
 
@@ -2071,9 +2076,6 @@ static void miniInit(int mode)
         gEnableILK = 1; // iLink will break pcsx2 however.
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;
-#ifdef UDPBD
-        gEnableUDPBD = 1; // likely not enough
-#endif
         bdmLoadModules();
         delay(6); // Wait for the device to be detected.
     } else if (mode == HDD_MODE) {

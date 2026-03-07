@@ -15,9 +15,6 @@ enum INTERNAL_TEXTURE {
     ILINK_ICON,
     MX4SIO_ICON,
     HDD_BD_ICON,
-#ifdef UDPBD
-    UDP_BD_ICON,
-#endif
     HDD_ICON,
     ETH_ICON,
     APP_ICON,
@@ -115,7 +112,7 @@ enum INTERNAL_TEXTURE {
 
 int texLookupInternalTexId(const char *name);
 int texLoadInternal(GSTEXTURE *texture, int texId);
-int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId);
+int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archived);
 void texFree(GSTEXTURE *texture);
 
 #endif

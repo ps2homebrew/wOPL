@@ -84,7 +84,6 @@ BlankSlotList[func_002187e8() % BlankSlots]
 #define OSD_HISTORY_GET_MONTH(datestamp)        ((datestamp) >> 5 & 0xF)
 #define OSD_HISTORY_GET_DATE(datestamp)         ((datestamp)&0x1F)
 #define OSD_HISTORY_SET_DATE(year, month, date) (((unsigned short int)(year)) << 9 | ((unsigned short int)(month)&0xF) << 5 | ((date)&0x1F))
-
 struct HistoryEntry
 {
     char name[16];

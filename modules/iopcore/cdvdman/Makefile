@@ -1,4 +1,4 @@
-IOP_OBJS = cdvdman.o ioops.o ncmd.o scmd.o searchfile.o streaming.o ioplib_util.o smsutils.o imports.o exports.o ../../isofs/zso.o ../../isofs/lz4.o
+IOP_OBJS = cdvdman.o ioops.o ncmd.o scmd.o searchfile.o streaming.o ioplib_util.o imports.o exports.o ../../isofs/zso.o ../../isofs/lz4.o
 USE_DEV9 ?= 0
 
 ifeq ($(USE_HDD),1)
@@ -24,17 +24,6 @@ IOP_BIN  = mmce_cdvdman.irx
 IOP_OBJS_DIR = obj.mmce/
 IOP_OBJS += device-mmce.o
 IOP_CFLAGS += -DMMCE_DRIVER
-ifeq ($(IOPCORE_DEBUG),1)
-USE_DEV9 = 1
-endif
-endif
-
-ifeq ($(USE_UDPBD),1)
-IOP_BIN  = bdm_udp_cdvdman.irx
-IOP_OBJS_DIR = obj.bdm/
-IOP_OBJS += device-bdm.o
-IOP_CFLAGS += -DBDM_DRIVER
-IOP_LIBS += -L$(PS2SDK)/iop/lib -lbdm
 ifeq ($(IOPCORE_DEBUG),1)
 USE_DEV9 = 1
 endif

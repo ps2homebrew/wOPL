@@ -4,6 +4,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <stdio.h>
+#include <dirent.h>
 #include <unistd.h>
 #ifdef __EESIO_DEBUG
 #include <sio.h>

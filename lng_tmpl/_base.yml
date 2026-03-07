@@ -150,6 +150,8 @@ gui_strings:
   string: No controller detected, waiting...
 - label: COVERART
   string: Cover Art
+- label: ARCHIVEDART
+  string: Archived Art
 - label: WIDE_SCREEN
   string: Widescreen
 - label: POWEROFF
@@ -710,8 +712,6 @@ gui_strings:
   string: Patch IOP Buffer Overrun
 - label: DISABLE_ALL
   string: Disable All
-- label: UDPBD_GAMES
-  string: UDPBD Games
 - label: MMCE
   string: MMCE
 - label: MMCE_GAMES
