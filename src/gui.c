@@ -216,20 +216,12 @@ void guiShowAbout()
 #ifdef __RTL
                                                          " - RTL"
 #endif
-#ifdef IGS
-                                                         " - IGS %s"
-#endif
 #ifdef PADEMU
                                                          " - PADEMU"
 #endif
              // Version numbers
              ,
-             GSM_VERSION
-#ifdef IGS
-             ,
-             IGS_VERSION
-#endif
-    );
+             GSM_VERSION);
     diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, wOPLBuildDetails);
 
     diaSetSecretHandler(tetrisSecretHandler);

@@ -27,11 +27,9 @@ EXTRAVERSION = beta
 # Check if EXTRA_FEATURES is set, default to 0
 EXTRA_FEATURES ?= 0
 
-# Set RTL and IGS based on EXTRA_FEATURES, but allow user overrides
+# Set RTL based on EXTRA_FEATURES, but allow user overrides
 #Enables/disables Right-To-Left (RTL) language support
 RTL ?= $(EXTRA_FEATURES)
-#Enables/disables In Game Screenshot (IGS). NB: It depends on GSM and IGR to work
-IGS ?= $(EXTRA_FEATURES)
 
 #Enables/disables pad emulator
 PADEMU ?= 1
@@ -151,13 +149,6 @@ ifeq ($(DTL_T10000),1)
   UDNL_OUT = $(PS2SDK)/iop/irx/udnl-t300.irx
 else
   UDNL_OUT = $(PS2SDK)/iop/irx/udnl.irx
-endif
-
-ifeq ($(IGS),1)
-  EE_CFLAGS += -DIGS
-  IGS_FLAGS = IGS=1
-else
-  IGS_FLAGS = IGS=0
 endif
 
 ifeq ($(PADEMU),1)
@@ -400,7 +391,7 @@ $(EE_VPKD).ZIP: $(EE_VPKD).ELF DETAILED_CHANGELOG CREDITS LICENSE README.md
 
 ee_core/ee_core.elf: ee_core
 	echo "-EE core"
-	$(MAKE) $(IGS_FLAGS) $(PADEMU_FLAGS) $(EECORE_EXTRA_FLAGS) -C $<
+	$(MAKE) $(PADEMU_FLAGS) $(EECORE_EXTRA_FLAGS) -C $<
 
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
