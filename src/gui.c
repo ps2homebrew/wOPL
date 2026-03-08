@@ -17,7 +17,6 @@
 #include "include/config.h"
 #include "include/system.h"
 #include "include/ethsupport.h"
-#include "include/compatupd.h"
 #include "include/pggsm.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
@@ -316,125 +315,6 @@ static void guiShowNotifications(void)
             guiResetNotifications();
             showPartPopup = 0;
             showCfgPopup = 0;
-        }
-    }
-}
-
-static int guiNetCompatUpdRefresh(int modified)
-{
-    int result;
-    unsigned int done, total;
-
-    if ((result = oplGetUpdateGameCompatStatus(&done, &total)) == OPL_COMPAT_UPDATE_STAT_WIP) {
-        diaSetInt(diaNetCompatUpdate, NETUPD_PROGRESS, (done == 0 || total == 0) ? 0 : (int)((float)done / total * 100.0f));
-    }
-
-    return result;
-}
-
-static void guiShowNetCompatUpdateResult(int result)
-{
-    switch (result) {
-        case OPL_COMPAT_UPDATE_STAT_DONE:
-            // Completed with no errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_DONE), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_ERROR:
-            // Completed with errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_FAILED), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_CONN_ERROR:
-            // Completed with errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_CONN_FAILED), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_ABORTED:
-            // User-aborted.
-            guiMsgBox(_l(_STR_NET_UPDATE_CANCELLED), 0, NULL);
-            break;
-    }
-}
-
-void guiShowNetCompatUpdate(void)
-{
-    int ret, UpdateAll;
-    u8 done, started;
-    void *UpdateFunction;
-
-    diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_START, 1);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_CANCEL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_LBL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_PERC_LBL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS, 0);
-    diaSetInt(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 0);
-    diaSetEnabled(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 1);
-
-    done = 0;
-    started = 0;
-    UpdateFunction = NULL;
-    while (!done) {
-        ret = diaExecuteDialog(diaNetCompatUpdate, -1, 1, UpdateFunction);
-        switch (ret) {
-            case NETUPD_BTN_START:
-                if (guiMsgBox(_l(_STR_CONFIRMATION_SETTINGS_UPDATE), 1, NULL)) {
-                    guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-
-                    if ((ret = ethLoadInitModules()) == 0) {
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_START, 0);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_CANCEL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_LBL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_PERC_LBL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS, 1);
-                        diaSetEnabled(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 0);
-
-                        diaGetInt(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, &UpdateAll);
-                        oplUpdateGameCompat(UpdateAll);
-                        UpdateFunction = &guiNetCompatUpdRefresh;
-                        started = 1;
-                    } else {
-                        ethDisplayErrorStatus();
-                    }
-                }
-                break;
-            case UIID_BTN_CANCEL: // If the user pressed the cancel button.
-            case NETUPD_BTN_CANCEL:
-                if (started) {
-                    if (guiMsgBox(_l(_STR_CONFIRMATION_CANCEL_UPDATE), 1, NULL)) {
-                        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-                        oplAbortUpdateGameCompat();
-                        // The process truly ends when the UI callback gets the update from the worker thread that the process has ended.
-                    }
-                } else {
-                    done = 1;
-                    started = 0;
-                }
-                break;
-            default:
-                guiShowNetCompatUpdateResult(ret);
-                done = 1;
-                started = 0;
-                UpdateFunction = NULL;
-                break;
-        }
-    }
-}
-
-void guiShowNetCompatUpdateSingle(int id, item_list_t *support, config_set_t *configSet)
-{
-    int ConfigSource, result;
-
-    ConfigSource = CONFIG_SOURCE_DEFAULT;
-    configGetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, &ConfigSource);
-
-    if (guiMsgBox(_l(_STR_CONFIRMATION_SETTINGS_UPDATE), 1, NULL)) {
-        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-
-        if ((ethLoadInitModules()) == 0) {
-            if ((result = oplUpdateGameCompatSingle(id, support, configSet)) == OPL_COMPAT_UPDATE_STAT_DONE) {
-                configSetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_DLOAD);
-            }
-            guiShowNetCompatUpdateResult(result);
-        } else {
-            ethDisplayErrorStatus();
         }
     }
 }

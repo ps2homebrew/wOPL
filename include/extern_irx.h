@@ -52,8 +52,6 @@ IMPORT_BIN2C(hdd_mcemu_irx);
 
 IMPORT_BIN2C(hdpro_atad_irx);
 
-IMPORT_BIN2C(httpclient_irx);
-
 IMPORT_BIN2C(IEEE1394_bd_irx);
 
 IMPORT_BIN2C(iLinkman_irx);

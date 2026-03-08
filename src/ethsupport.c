@@ -24,7 +24,6 @@
 #include <fileXio_rpc.h> // fileXioDevctl(ethBase, SMB_***)
 
 #include "include/nbns.h"
-#include "httpclient.h"
 
 #define ETH_MODE_UPDATE_DELAY 300
 
@@ -310,10 +309,7 @@ static int ethLoadModules(void)
                 if (sysLoadModuleBuffer(&ps2ip_irx, size_ps2ip_irx, 0, NULL) >= 0) {
                     LOG("[PS2IPS]:\n");
                     sysLoadModuleBuffer(&ps2ips_irx, size_ps2ips_irx, 0, NULL);
-                    LOG("[HTTPCLIENT]:\n");
-                    sysLoadModuleBuffer(&httpclient_irx, size_httpclient_irx, 0, NULL);
                     ps2ip_init();
-                    HttpInit();
 
                     LOG("ETHSUPPORT Modules loaded\n");
                     return 0;
@@ -334,7 +330,6 @@ void ethDeinitModules(void)
         if (ethInitSemaID >= 0)
             WaitSema(ethInitSemaID);
 
-        HttpDeinit();
         nbnsDeinit();
         NetManDeinit();
         ethModulesLoaded = 0;

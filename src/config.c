@@ -392,15 +392,6 @@ int configRemoveKey(config_set_t *configSet, const char *key)
     return 1;
 }
 
-void configMerge(config_set_t *dest, const config_set_t *source)
-{
-    struct config_value_t *val;
-
-    for (val = source->head; val != NULL; val = val->next) {
-        configSetStr(dest, val->key, val->val);
-    }
-}
-
 static int configReadLegacyIP(void)
 {
     config_set_t *configSet;
@@ -560,11 +551,6 @@ int configWrite(config_set_t *configSet)
         return 0;
     }
     return 1;
-}
-
-int configGetStat(config_set_t *configSet, struct stat *st)
-{
-    return (stat(configSet->filename, st) >= 0 ? 1 : 0);
 }
 
 void configClear(config_set_t *configSet)
