@@ -10,7 +10,6 @@
 #include "include/pad.h"
 #include "include/config.h"
 #include "include/ethsupport.h"
-#include "include/compatupd.h"
 #include "include/cheatman.h"
 #include "include/system.h"
 #include "include/guigame.h"
@@ -972,9 +971,6 @@ void guiGameShowCompatConfig(int id, item_list_t *support, config_set_t *configS
                 guiMsgBox(_l(_STR_ERROR_LOADING_ID), 0, NULL);
         }
 
-        if (result == COMPAT_DL_DEFAULTS)
-            guiShowNetCompatUpdateSingle(id, support, configSet);
-
         diaGetInt(diaCompatConfig, COMPAT_LOADER, &coreLoader);
         diaGetInt(diaCompatConfig, COMPAT_DMA, &dmaMode);
         diaGetString(diaCompatConfig, COMPAT_GAMEID, hexid, sizeof(hexid));
@@ -1454,10 +1450,6 @@ void guiGameLoadConfig(item_list_t *support, config_set_t *configSet)
     configSource[0] = '\0';
     configSourceID = CONFIG_SOURCE_DEFAULT;
     configGetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, &configSourceID);
-    if (configSourceID == CONFIG_SOURCE_USER)
-        snprintf(configSource, sizeof(configSource), _l(_STR_CUSTOMIZED_SETTINGS));
-    else if (configSourceID == CONFIG_SOURCE_DLOAD)
-        snprintf(configSource, sizeof(configSource), _l(_STR_DOWNLOADED_DEFAULTS));
 
     dmaMode = 7; // defaulting to UDMA 4
     if (support->flags & MODE_FLAG_COMPAT_DMA) {

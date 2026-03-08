@@ -30,7 +30,6 @@ enum MENU_IDs {
     MENU_OSD_LANGUAGE_SETTINGS,
     MENU_PARENTAL_LOCK,
     MENU_NET_CONFIG,
-    MENU_NET_UPDATE,
     MENU_START_NBD,
     MENU_ABOUT,
     MENU_SAVE_CHANGES,
@@ -238,7 +237,6 @@ static void menuInitMainMenu(void)
     submenuAppendItem(&mainMenu, -1, NULL, MENU_OSD_LANGUAGE_SETTINGS, _STR_OSD_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG, NULL);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_UPDATE, _STR_NET_UPDATE, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES, NULL);
@@ -960,9 +958,6 @@ void menuHandleInputMenu()
         } else if (id == MENU_NET_CONFIG) {
             if (menuCheckParentalLock() == 0)
                 guiShowNetConfig();
-        } else if (id == MENU_NET_UPDATE) {
-            if (menuCheckParentalLock() == 0)
-                guiShowNetCompatUpdate();
         } else if (id == MENU_START_NBD) {
             if (menuCheckParentalLock() == 0)
                 handleLwnbdSrv();

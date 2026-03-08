@@ -80,14 +80,14 @@ endif
 
 FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o zso.o lz4.o \
-		appsupport.o favsupport.o gui.o guigame.o textures.o art_tar.o opl.o atlas.o nbns.o httpclient.o gsm.o cheatman.o sound.o ps2cnf.o
+		appsupport.o favsupport.o gui.o guigame.o textures.o art_tar.o opl.o atlas.o nbns.o gsm.o cheatman.o sound.o ps2cnf.o
 
 IOP_OBJS =	iomanx.o filexio.o ps2fs.o usbd.o bdmevent.o \
 		bdm.o bdmfs_fatfs.o usbmass_bd.o usbmass_bd_single.o iLinkman.o IEEE1394_bd.o mx4sio_bd.o \
 		ps2atad.o hdpro_atad.o poweroff.o ps2hdd.o xhdd.o genvmc.o lwnbdsvr.o \
 		ps2dev9.o ps2ip.o smap.o isofs.o nbns-iop.o \
 		sio2man.o padman.o mcman.o mcserv.o \
-		httpclient-iop.o netman.o ps2ips.o \
+		netman.o ps2ips.o \
 		bdm_mcemu.o hdd_mcemu.o smb_mcemu.o \
 		iremsndpatch.o apemodpatch.o f2techioppatch.o cleareffects.o resetspu.o patch_membo.o\
 		libsd.o audsrv.o
@@ -316,8 +316,6 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/network/smbinit clean
 	echo " -nbns"
 	$(MAKE) -C modules/network/nbns clean
-	echo " -httpclient"
-	$(MAKE) -C modules/network/httpclient clean
 	echo " -xhdd"
 	$(MAKE) -C modules/hdd/xhdd clean
 	echo " -mcemu"
@@ -696,12 +694,6 @@ modules/network/nbns/nbns.irx: modules/network/nbns
 
 $(EE_ASM_DIR)nbns-iop.c: modules/network/nbns/nbns.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ nbns_irx
-
-modules/network/httpclient/httpclient.irx: modules/network/httpclient
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)httpclient-iop.c: modules/network/httpclient/httpclient.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ httpclient_irx
 
 $(EE_ASM_DIR)iomanx.c: $(PS2SDK)/iop/irx/iomanX.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_irx
