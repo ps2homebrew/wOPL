@@ -19,10 +19,10 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout default branch (uOPL-1-release)
+      - name: Checkout default branch (wOPL-base)
         uses: actions/checkout@v4
         with:
-          ref: uOPL-1-release
+          ref: wOPL-base
           fetch-depth: 0
 
       - name: Compute total downloads + write badges/downloads.json
@@ -56,7 +56,7 @@ jobs:
             // https://shields.io/endpoint
             const badge = {
               schemaVersion: 1,
-              label: "UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:",
+              label: "DOUBLE UNOFFICIAL OPEN PS2 LOADER | TOTAL DOWNLOADS:",
               message: String(total),          // FULL NUMBER
               labelColor: "faf9f6",
               color: "blue"
@@ -73,7 +73,7 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          base: uOPL-1-release
+          base: wOPL-base
           branch: bot/downloads-badge
           delete-branch: false
           title: "chore(badges): update downloads badge"
