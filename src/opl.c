@@ -589,11 +589,11 @@ void initSupport(item_list_t *itemList, int mode, int force_reinit)
 static void initAllSupport(int force_reinit)
 {
     bdmEnumerateDevices();
-    initSupport(mmceGetObject(0), MMCE_MODE, force_reinit);
     initSupport(ethGetObject(0), ETH_MODE, force_reinit || (gNetworkStartup >= ERROR_ETH_SMB_CONN));
     initSupport(hddGetObject(0), HDD_MODE, force_reinit);
     initSupport(appGetObject(0), APP_MODE, force_reinit);
     initSupport(favGetObject(0), FAV_MODE, force_reinit);
+    initSupport(mmceGetObject(0), MMCE_MODE, force_reinit);
 }
 
 static void deinitAllSupport(int exception, int modeSelected)
