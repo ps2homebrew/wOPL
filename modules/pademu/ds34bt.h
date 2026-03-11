@@ -10,17 +10,6 @@
 
 typedef struct
 {
-    int devId;
-    int hid_sema;
-    int controlEndp;
-    int interruptEndp;
-    int inEndp;
-    int outEndp;
-    u8 status;
-} bt_device;
-
-typedef struct
-{
     u16 hci_handle;     // hci connection handle
     u16 control_scid;   // Channel endpoint on command destination
     u16 interrupt_scid; // Channel endpoint on interrupt destination
@@ -198,10 +187,6 @@ enum eL2CAP {
 #define l2cap_command_channel   ((l2cap_buf[6] | (l2cap_buf[7] << 8)) == control_dcid)
 
 int ds34bt_init(u8 pads, u8 options);
-int ds34bt_get_status(int port);
 void ds34bt_reset();
-int ds34bt_get_data(u8 *dst, int size, int port);
-void ds34bt_set_rumble(u8 lrum, u8 rrum, int port);
-void ds34bt_set_mode(int mode, int lock, int port);
 
 #endif

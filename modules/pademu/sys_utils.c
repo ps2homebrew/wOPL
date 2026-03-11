@@ -6,8 +6,10 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "loadcore.h"
 #include "pademu.h"
+
+/* prototype for LOADCORE's function */
+void *QueryLibraryEntryTable(iop_library_t *lib);
 
 //---------------------------------------------------------------------------
 /* Returns a pointer to a library entry table */

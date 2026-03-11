@@ -22,8 +22,6 @@ IMPORT_BIN2C(bdmevent_irx);
 
 IMPORT_BIN2C(bdmfs_fatfs_irx);
 
-IMPORT_BIN2C(bt_pademu_irx);
-
 IMPORT_BIN2C(cdvdfsv_irx);
 
 IMPORT_BIN2C(cleareffects_irx);
@@ -92,6 +90,8 @@ IMPORT_BIN2C(f2techioppatch_irx);
 
 IMPORT_BIN2C(padman_irx);
 
+IMPORT_BIN2C(pademu_irx);
+
 IMPORT_BIN2C(patch_membo_irx);
 
 IMPORT_BIN2C(poweroff_irx);
@@ -145,8 +145,6 @@ IMPORT_BIN2C(usbd_irx);
 IMPORT_BIN2C(usbmass_bd_irx);
 
 IMPORT_BIN2C(usbmass_bd_single_irx);
-
-IMPORT_BIN2C(usb_pademu_irx);
 
 IMPORT_BIN2C(xhdd_irx);
 

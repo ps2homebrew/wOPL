@@ -12,7 +12,10 @@
 #include "thbase.h"
 #include "thsemap.h"
 #include "ds34bt.h"
+#include "sys_utils.h"
 #include "padmacro.h"
+#include "pademu.h"
+#include "ds34.h"
 
 #define MODNAME "DS34BT"
 
@@ -31,8 +34,15 @@ static void bt_config_set(int result, int count, void *arg);
 static UsbDriver bt_driver = {NULL, NULL, "ds34bt", bt_probe, bt_connect, bt_disconnect};
 static bt_device bt_dev = {-1, -1, -1, -1, -1, -1, DS34BT_STATE_USB_DISCONNECTED};
 
+
 static void ds34pad_clear(int pad);
 static void ds34pad_init();
+static int ds34bt_get_status(struct pad_funcs *pf);
+static int ds34bt_get_model(struct pad_funcs *pf, int port);
+static int ds34bt_get_data(struct pad_funcs *pf, u8 *dst, int size, int port);
+static void ds34bt_set_rumble(struct pad_funcs *pf, u8 lrum, u8 rrum);
+static void ds34bt_set_mode(struct pad_funcs *pf, int mode, int lock);
+
 
 static int bt_probe(int devId)
 {
@@ -177,6 +187,7 @@ static int bt_disconnect(int devId)
     return 0;
 }
 
+
 #define OUTPUT_01_REPORT_SIZE 48
 static const u8 hid_cmd_payload_led_arguments[] = {0xff, 0x27, 0x10, 0x00, 0x32};
 
@@ -286,6 +297,7 @@ static u8 g_press_emu = 0;
 static u8 enable_fake = 0;
 
 static ds34bt_pad_t ds34pad[MAX_PADS];
+static struct pad_funcs padf[MAX_PADS];
 
 static void hci_event_cb(int resultCode, int bytes, void *arg);
 static void l2cap_event_cb(int resultCode, int bytes, void *arg);
@@ -319,23 +331,19 @@ static int HCI_Command(int nbytes, u8 *dataptr)
     return sceUsbdControlTransfer(bt_dev.controlEndp, REQ_HCI_OUT, HCI_COMMAND_REQ, 0, 0, nbytes, dataptr, NULL, NULL);
 }
 
-static void hci_print_bd_addr(const u8 *addr)
-{
-    int i;
-
-    for (i = 0; i < 6; i++) {
-        //DPRINTF("0x%02X", addr[i]);
-        DPRINTF("%02X", addr[i]);
-        if (i < 5)
-            DPRINTF(":");
-    }
-}
-
 static int hci_reset()
 {
+    int pad = 0;
     hci_cmd_buf[0] = HCI_OCF_RESET;
     hci_cmd_buf[1] = HCI_OGF_CTRL_BBAND;
     hci_cmd_buf[2] = 0x00; // Parameter Total Length = 0
+
+    padf[pad].priv = &ds34pad[pad];
+    padf[pad].get_status = ds34bt_get_status;
+    padf[pad].get_model = ds34bt_get_model;
+    padf[pad].get_data = ds34bt_get_data;
+    padf[pad].set_rumble = ds34bt_set_rumble;
+    padf[pad].set_mode = ds34bt_set_mode;
 
     return HCI_Command(3, hci_cmd_buf);
 }
@@ -443,6 +451,17 @@ static int hci_link_key_request_reply(u8 *bdaddr)
     return HCI_Command(9 + sizeof(link_key), hci_cmd_buf);
 }
 
+static void print_bd_addr(const u8 *addr)
+{
+    int i;
+    for (i = 0; i < 6; i++) {
+        // DPRINTF("0x%02X", addr[i]);
+        DPRINTF("%02X", addr[i]);
+        if (i < 5)
+            DPRINTF(":");
+    }
+}
+
 static void HCI_event_task(int result)
 {
     int i, pad;
@@ -451,6 +470,11 @@ static void HCI_event_task(int result)
         /*  buf[0] = Event Code                            */
         /*  buf[1] = Parameter Total Length                */
         /*  buf[n] = Event Parameters based on each event  */
+
+        // Ignore this packet
+        if (hci_buf[0] == HCI_EVENT_NUM_COMPLETED_PKT)
+            return;
+
         DPRINTF("HCI event = 0x%02X \n", hci_buf[0]);
         switch (hci_buf[0]) { // switch on event type
             case HCI_EVENT_COMMAND_COMPLETE:
@@ -487,7 +511,7 @@ static void HCI_event_task(int result)
                 if (!hci_buf[2]) { // check if connected OK
                     DPRINTF("\t Connection_Handle 0x%02X \n", hci_buf[3] | ((hci_buf[4] & 0x0F) << 8));
                     DPRINTF("\t Requested by BD_ADDR: \n\t");
-                    hci_print_bd_addr(&hci_buf[5]);
+                    print_bd_addr(&hci_buf[5]);
                     DPRINTF("\n");
                     for (i = 0; i < MAX_PADS; i++) {
                         if (memcmp(ds34pad[i].bdaddr, hci_buf + 5, 6) == 0) {
@@ -527,6 +551,7 @@ static void HCI_event_task(int result)
                         break;
                     }
                 }
+                pademu_disconnect(&padf[i]);
                 ds34pad_clear(i);
                 break;
 
@@ -578,7 +603,7 @@ static void HCI_event_task(int result)
 
             case HCI_EVENT_CONNECT_REQUEST:
                 DPRINTF("HCI Connection Requested by BD_ADDR: \n\t");
-                hci_print_bd_addr(&hci_buf[2 + i]);
+                print_bd_addr(&hci_buf[2]);
                 DPRINTF("\n\t Link = 0x%02X \n", hci_buf[11]);
                 DPRINTF("\t Class = 0x%02X 0x%02X 0x%02X \n", hci_buf[8], hci_buf[9], hci_buf[10]);
                 for (i = 0; i < MAX_PADS; i++) { // find free slot
@@ -620,7 +645,7 @@ static void HCI_event_task(int result)
                 DPRINTF("HCI Role Change Event: \n");
                 DPRINTF("\t Status = 0x%02X \n", hci_buf[2]);
                 DPRINTF("\t BD_ADDR: ");
-                hci_print_bd_addr(&hci_buf[3 + 1]);
+                print_bd_addr(&hci_buf[3]);
                 DPRINTF("\n\t Role 0x%02X \n", hci_buf[9]);
                 break;
 
@@ -636,7 +661,7 @@ static void HCI_event_task(int result)
 
             case HCI_EVENT_LINK_KEY_REQUEST:
                 DPRINTF("HCI Link Key Request Event by BD_ADDR: \n\t");
-                hci_print_bd_addr(&hci_buf[2 + i]);
+                print_bd_addr(&hci_buf[2]);
                 DPRINTF("\n");
                 hci_link_key_request_reply(hci_buf + 2);
                 break;
@@ -702,18 +727,15 @@ static void hci_event_cb(int resultCode, int bytes, void *arg)
 
 static int L2CAP_Command(u16 handle, u16 scid, u8 *data, u8 length)
 {
-    // HCI ACL header
     l2cap_cmd_buf[0] = (u8)(handle & 0xff); // HCI handle with PB,BC flag
     l2cap_cmd_buf[1] = (u8)(((handle >> 8) & 0x0f) | 0x20);
     l2cap_cmd_buf[2] = (u8)((4 + length) & 0xff); // HCI ACL total data length
     l2cap_cmd_buf[3] = (u8)((4 + length) >> 8);
-    // L2CAP 'header'
     l2cap_cmd_buf[4] = (u8)(length & 0xff); // L2CAP header: Length
     l2cap_cmd_buf[5] = (u8)(length >> 8);
     l2cap_cmd_buf[6] = (u8)(scid & 0xff); // L2CAP header: Channel ID
-    l2cap_cmd_buf[7] = (u8)(scid >> 8); // L2CAP Signalling channel over ACL-U logical link
+    l2cap_cmd_buf[7] = (u8)(scid >> 8);   // L2CAP Signalling channel over ACL-U logical link
 
-    // L2CAP 'command'
     memcpy(&l2cap_cmd_buf[8], data, length);
 
     // output on endpoint 2
@@ -954,6 +976,7 @@ static int L2CAP_event_task(int result, int bytes)
                             DelayThread(CMD_DELAY);
                             hid_LEDRumbleCommand(ds34pad[pad].oldled, 0, 0, pad);
                             pad_status_set(DS34BT_STATE_RUNNING, pad);
+                            pademu_connect(&padf[pad]);
                         }
                         ds34pad[pad].btn_delay = 0xFF;
                         break;
@@ -1248,54 +1271,69 @@ static void hid_readReport(u8 *data, int bytes, int pad_idx)
 /* DS34BT Commands                                          */
 /************************************************************/
 
-void ds34bt_set_rumble(u8 lrum, u8 rrum, int port)
+static void ds34bt_set_rumble(struct pad_funcs *pf, u8 lrum, u8 rrum)
 {
+    ds34bt_pad_t *pad = pf->priv;
+
     WaitSema(bt_dev.hid_sema);
 
-    ds34pad[port].update_rum = 1;
-    ds34pad[port].lrum = lrum;
-    ds34pad[port].rrum = rrum;
+    if ((pad->lrum != lrum) || (pad->rrum != rrum)) {
+        pad->lrum = lrum;
+        pad->rrum = rrum;
+        pad->update_rum = 1;
+    }
 
     SignalSema(bt_dev.hid_sema);
 }
 
-int ds34bt_get_data(u8 *dst, int size, int port)
+static int ds34bt_get_data(struct pad_funcs *pf, u8 *dst, int size, int port)
 {
+    ds34bt_pad_t *pad = pf->priv;
     int ret;
 
     WaitSema(bt_dev.hid_sema);
 
-    memcpy(dst, ds34pad[port].data, size);
-    ret = ds34pad[port].analog_btn & 1;
+    memcpy(dst, pad->data, size);
+    ret = pad->analog_btn & 1;
 
     SignalSema(bt_dev.hid_sema);
 
     return ret;
 }
 
-void ds34bt_set_mode(int mode, int lock, int port)
+static void ds34bt_set_mode(struct pad_funcs *pf, int mode, int lock)
 {
+    ds34bt_pad_t *pad = pf->priv;
+
     WaitSema(bt_dev.hid_sema);
 
     if (lock == 3)
-        ds34pad[port].analog_btn = 3;
+        pad->analog_btn = 3;
     else
-        ds34pad[port].analog_btn = mode;
+        pad->analog_btn = mode;
 
     SignalSema(bt_dev.hid_sema);
 }
 
-int ds34bt_get_status(int port)
+static int ds34bt_get_status(struct pad_funcs *pf)
 {
+    ds34bt_pad_t *pad = pf->priv;
     int ret;
 
     WaitSema(bt_dev.hid_sema);
 
-    ret = ds34pad[port].status;
+    ret = pad->status;
 
     SignalSema(bt_dev.hid_sema);
 
     return ret;
+}
+
+static int ds34bt_get_model(struct pad_funcs *pf, int port)
+{
+    (void)port;
+    (void)pf;
+    return 3;
 }
 
 int ds34bt_init(u8 pads, u8 options)
