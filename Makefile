@@ -27,11 +27,9 @@ EXTRAVERSION = beta
 # Check if EXTRA_FEATURES is set, default to 0
 EXTRA_FEATURES ?= 0
 
-# Set RTL and IGS based on EXTRA_FEATURES, but allow user overrides
+# Set RTL based on EXTRA_FEATURES, but allow user overrides
 #Enables/disables Right-To-Left (RTL) language support
 RTL ?= $(EXTRA_FEATURES)
-#Enables/disables In Game Screenshot (IGS). NB: It depends on GSM and IGR to work
-IGS ?= $(EXTRA_FEATURES)
 
 #Enables/disables pad emulator
 PADEMU ?= 1
@@ -80,26 +78,26 @@ endif
 
 FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o zso.o lz4.o \
-		appsupport.o favsupport.o gui.o guigame.o textures.o art_tar.o opl.o atlas.o nbns.o httpclient.o gsm.o cheatman.o sound.o ps2cnf.o
+		appsupport.o mmcesupport.o favsupport.o gui.o guigame.o vmc_groups.o textures.o art_tar.o opl.o atlas.o nbns.o gsm.o cheatman.o sound.o ps2cnf.o
 
 IOP_OBJS =	iomanx.o filexio.o ps2fs.o usbd.o bdmevent.o \
 		bdm.o bdmfs_fatfs.o usbmass_bd.o usbmass_bd_single.o iLinkman.o IEEE1394_bd.o mx4sio_bd.o \
 		ps2atad.o hdpro_atad.o poweroff.o ps2hdd.o xhdd.o genvmc.o lwnbdsvr.o \
 		ps2dev9.o ps2ip.o smap.o isofs.o nbns-iop.o \
-		sio2man.o padman.o mcman.o mcserv.o \
-		httpclient-iop.o netman.o ps2ips.o \
-		bdm_mcemu.o hdd_mcemu.o smb_mcemu.o \
+		sio2man.o padman.o mcman.o mcserv.o mmceman.o mmcedrv.o mmceigr.o \
+		netman.o ps2ips.o \
+		bdm_mcemu.o mmce_mcemu.o hdd_mcemu.o smb_mcemu.o \
 		iremsndpatch.o apemodpatch.o f2techioppatch.o cleareffects.o resetspu.o patch_membo.o\
 		libsd.o audsrv.o
 
 EECORE_OBJS = ee_core.o ioprp.o util.o \
 		udnl.o imgdrv.o eesync.o \
 		bdm_cdvdman.o bdm_ata_cdvdman.o IOPRP_img.o smb_cdvdman.o \
-		hdd_cdvdman.o hdd_hdpro_cdvdman.o cdvdfsv.o \
+		hdd_cdvdman.o mmce_cdvdman.o hdd_hdpro_cdvdman.o cdvdfsv.o \
 		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o
 
 PNG_ASSETS = load0 load1 load2 load3 load4 load5 load6 load7 usb usb_bd ilk_bd \
-	m4s_bd hdd_bd hdd eth app fav fav_mark cross triangle circle square select start left right \
+	m4s_bd hdd_bd hdd eth app fav mmce fav_mark cross triangle circle square select start left right \
 	settings_bg info cover disc screen ELF HDL ISO ZSO UL APPS CD DVD Aspect_s Aspect_w Aspect_w1 \
 	Aspect_w2 Device_1 Device_2 Device_3 Device_4 Device_5 Device_6 Device_all Rating_0 \
 	Rating_1 Rating_2 Rating_3 Rating_4 Rating_5 Scan_240p Scan_240p1 Scan_480i Scan_480p \
@@ -151,13 +149,6 @@ ifeq ($(DTL_T10000),1)
   UDNL_OUT = $(PS2SDK)/iop/irx/udnl-t300.irx
 else
   UDNL_OUT = $(PS2SDK)/iop/irx/udnl.irx
-endif
-
-ifeq ($(IGS),1)
-  EE_CFLAGS += -DIGS
-  IGS_FLAGS = IGS=1
-else
-  IGS_FLAGS = IGS=0
 endif
 
 ifeq ($(PADEMU),1)
@@ -286,6 +277,7 @@ clean:	download_lwNBD
 	echo " -cdvdman"
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_BDM_ATA=1 clean
+	$(MAKE) -C modules/iopcore/cdvdman USE_MMCE=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_SMB=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDD=1 clean
 	$(MAKE) -C modules/iopcore/cdvdman USE_HDPRO=1 clean
@@ -316,12 +308,11 @@ clean:	download_lwNBD
 	$(MAKE) -C modules/network/smbinit clean
 	echo " -nbns"
 	$(MAKE) -C modules/network/nbns clean
-	echo " -httpclient"
-	$(MAKE) -C modules/network/httpclient clean
 	echo " -xhdd"
 	$(MAKE) -C modules/hdd/xhdd clean
 	echo " -mcemu"
 	$(MAKE) -C modules/mcemu USE_BDM=1 clean
+	$(MAKE) -C modules/mcemu USE_MMCE=1 clean
 	$(MAKE) -C modules/mcemu USE_HDD=1 clean
 	$(MAKE) -C modules/mcemu USE_SMB=1 clean
 	echo " -genvmc"
@@ -400,13 +391,22 @@ $(EE_VPKD).ZIP: $(EE_VPKD).ELF DETAILED_CHANGELOG CREDITS LICENSE README.md
 
 ee_core/ee_core.elf: ee_core
 	echo "-EE core"
-	$(MAKE) $(IGS_FLAGS) $(PADEMU_FLAGS) $(EECORE_EXTRA_FLAGS) -C $<
+	$(MAKE) $(PADEMU_FLAGS) $(EECORE_EXTRA_FLAGS) -C $<
 
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
 
 $(EE_ASM_DIR)udnl.c: $(UDNL_OUT) | $(EE_ASM_DIR)
 	$(BIN2C) $(UDNL_OUT) $@ udnl_irx
+
+$(EE_ASM_DIR)mmceman.c: $(PS2SDK)/iop/irx/mmceman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
+
+$(EE_ASM_DIR)mmcedrv.c: $(PS2SDK)/iop/irx/mmcedrv.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
+
+$(EE_ASM_DIR)mmceigr.c: $(PS2SDK)/iop/irx/mmceigr.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
 
 modules/iopcore/imgdrv/imgdrv.irx: modules/iopcore/imgdrv
 	$(MAKE) -C $<
@@ -428,6 +428,12 @@ modules/iopcore/cdvdman/bdm_ata_cdvdman.irx: modules/iopcore/cdvdman
 
 $(EE_ASM_DIR)bdm_ata_cdvdman.c: modules/iopcore/cdvdman/bdm_ata_cdvdman.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ bdm_ata_cdvdman_irx
+
+modules/iopcore/cdvdman/mmce_cdvdman.irx: modules/iopcore/cdvdman
+	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_MMCE=1 -C $< all
+
+$(EE_ASM_DIR)mmce_cdvdman.c: modules/iopcore/cdvdman/mmce_cdvdman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_irx
 
 modules/iopcore/cdvdman/smb_cdvdman.irx: modules/iopcore/cdvdman
 	$(MAKE) $(CDVDMAN_PS2LOGO_FLAGS) $(CDVDMAN_DEBUG_FLAGS) USE_SMB=1 -C $< all
@@ -493,6 +499,12 @@ modules/mcemu/bdm_mcemu.irx: modules/mcemu
 	$(MAKE) $(MCEMU_DEBUG_FLAGS) $(PADEMU_FLAGS) USE_BDM=1 -C $< all
 
 $(EE_ASM_DIR)bdm_mcemu.c: modules/mcemu/bdm_mcemu.irx
+	$(BIN2C) $< $@ $(*F)_irx
+
+modules/mcemu/mmce_mcemu.irx: modules/mcemu
+	$(MAKE) $(MCEMU_DEBUG_FLAGS) $(PADEMU_FLAGS) USE_MMCE=1 -C $< all
+
+$(EE_ASM_DIR)mmce_mcemu.c: modules/mcemu/mmce_mcemu.irx
 	$(BIN2C) $< $@ $(*F)_irx
 
 modules/mcemu/hdd_mcemu.irx: modules/mcemu
@@ -697,12 +709,6 @@ modules/network/nbns/nbns.irx: modules/network/nbns
 $(EE_ASM_DIR)nbns-iop.c: modules/network/nbns/nbns.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ nbns_irx
 
-modules/network/httpclient/httpclient.irx: modules/network/httpclient
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)httpclient-iop.c: modules/network/httpclient/httpclient.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ httpclient_irx
-
 $(EE_ASM_DIR)iomanx.c: $(PS2SDK)/iop/irx/iomanX.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_irx
 
@@ -816,13 +822,13 @@ LANG_COMPILER = lang_compiler.py
 languages: $(ENGLISH_TEMPLATE_YML) $(TRANSLATIONS_YML) $(ENGLISH_LNG) $(TRANSLATIONS_LNG) $(INTERNAL_LANGUAGE_C) $(INTERNAL_LANGUAGE_H)
 
 download_lng:
-	sh $(GITHUB_WORKSPACE)/download_lng.sh
+	sh download_lng.sh
 
 download_lwNBD:
-	sh $(GITHUB_WORKSPACE)/download_lwNBD.sh
+	sh download_lwNBD.sh
 
 download_cfla:
-	sh $(GITHUB_WORKSPACE)/download_cfla.sh
+	sh download_cfla.sh
 
 $(TRANSLATIONS_LNG): $(LNG_DIR)lang_%.lng: $(LNG_SRC_DIR)%.yml $(BASE_LANGUAGE) $(LANG_COMPILER)
 	python3 $(LANG_COMPILER) --make_lng --base $(BASE_LANGUAGE) --translation $< $@

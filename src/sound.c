@@ -11,6 +11,11 @@
 #include "include/opl.h"
 #include "include/ioman.h"
 #include "include/themes.h"
+#include <fcntl.h>
+#include <dirent.h>
+#include <malloc.h>
+#include <kernel.h>
+#include <errno.h>
 
 // Silence unused variable warnings from vorbisfile.h
 static ov_callbacks OV_CALLBACKS_NOCLOSE __attribute__((unused));

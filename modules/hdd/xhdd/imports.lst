@@ -1,8 +1,15 @@
 atad_IMPORTS_start
+#ifdef OLD_SDK
 I_ata_get_devinfo
 I_ata_io_start
 I_ata_io_finish
 I_ata_device_sector_io
+#else
+I_sceAtaInit
+I_sceAtaExecCmd
+I_sceAtaWaitResult
+I_sceAtaDmaTransfer
+#endif
 atad_IMPORTS_end
 
 ioman_IMPORTS_start

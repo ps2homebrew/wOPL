@@ -99,7 +99,7 @@ types come with more or fewer features included.
   <summary> <b> How to use </b> </summary>
 <p>
 
-U-OPL uses the following directory tree structure across HDD, SMB, and
+W-OPL uses the following directory tree structure across HDD, SMB, and
 USB modes:
 
 
@@ -116,8 +116,8 @@ USB modes:
 
 U-OPL will automatically create the above directory structure the first time you launch it and enable your favorite device.
 
-For HDD (APA) users, OPL will read `hdd0:__common/OPL/conf_hdd.cfg` for the config entry `hdd_partition` to use as your OPL partition.
-If not found a config file, a 128Mb `+OPL` partition will be created. You can edit the config if you wish to use/create a different partition.
+For HDD (APA) users, OPL will read `hdd0:__common/wOPL/conf_hdd.cfg` for the config entry `hdd_partition` to use as your OPL partition.
+If not found a config file, a 128Mb `+wOPL` partition will be created. You can edit the config if you wish to use/create a different partition.
 All partitions created by OPL will be 128Mb (it is not recommended to enlarge partitions as it will break LBAs, instead remove and recreate manually with uLaunchELF at a larger size if needed).
 
 </p>
@@ -153,8 +153,8 @@ are supported using the folder structure above.
 <p>
 
 For PS2, 48-bit LBA internal HDDs up to 2TB are supported. HDD should be
-formatted with the APA partition scheme. OPL will create the `+OPL` partition on the HDD.
-To avoid this, you can create a text file at the location `hdd0:__common:pfs:OPL/conf_hdd.txt`
+formatted with the APA partition scheme. wOPL will create the `+wOPL` partition on the HDD.
+To avoid this, you can create a text file at the location `hdd0:__common:pfs:wOPL/conf_hdd.txt`
 that contains the preferred partition name (for example `__common`).
 
 </p>
@@ -164,7 +164,7 @@ that contains the preferred partition name (for example `__common`).
   <summary> <b> Cheats </b> </summary>
 <p>
 
-OPL accepts `.cht` files in PS2RD format. Each cheat file corresponds to a specific game and must be stored in the `CHT` directory on your device.
+wOPL accepts `.cht` files in PS2RD format. Each cheat file corresponds to a specific game and must be stored in the `CHT` directory on your device.
 Cheats are structured as hexadecimal codes, with proper headers as descriptions to identify their function.
 You can activate cheats via OPL's graphical interface. Navigate to a games settings, enable cheats and select the desired mode.
 
@@ -182,7 +182,7 @@ You can activate cheats via OPL's graphical interface. Navigate to a games setti
   <summary> <b> NBD Server </b> </summary>
 <p>
 
-OPL now uses an [NBD](https://en.wikipedia.org/wiki/Network_block_device) server to share the internal hard drive, instead of HDL server.
+wOPL now uses an [NBD](https://en.wikipedia.org/wiki/Network_block_device) server to share the internal hard drive, instead of HDL server.
 NBD is [formally documented](https://github.com/NetworkBlockDevice/nbd/blob/master/doc/proto.md) and developed as a collaborative open standard.
 
 The current implementation of the server is based on [lwNBD](https://github.com/bignaux/lwNBD), go there to contribute on the NBD code itself.
@@ -190,7 +190,7 @@ The current implementation of the server is based on [lwNBD](https://github.com/
 The main advantage of using NBD is that the client will expose the drive to your operating system in a similar way as a directly attached drive.
 This means that any utility that worked with the drive when it was directly attached should work the same way with NBD.
 
-OPL currently only supports exporting (sharing out) the PS2's drive.
+wOPL currently only supports exporting (sharing out) the PS2's drive.
 
 You can use `hdl-dump`, `pfs-shell`, or even directly edit the disk in a hex editor.
 
@@ -330,7 +330,7 @@ To run w-OPL, you need an entry point for running PS2 titles. You can use everyt
   <summary> <b> Some notes for DEVS </b> </summary>
 <p>
 
-Open PS2 Loader needs the [**latest PS2SDK**](https://github.com/ps2dev/ps2sdk)
+Double Unofficial Open PS2 Loader needs the [**latest PS2SDK**](https://github.com/ps2dev/ps2sdk)
 
 Quick build commands:
 
@@ -350,15 +350,6 @@ cmake --build build
 ```
 
 Useful CMake targets: `release`, `clean`, `rebuild`, `debug`, `iopcore_debug`, `ingame_debug`.
-
-</p>
-</details>
-
-<details>
-  <summary> <b> w-OPL Archive </b> </summary>
-<p>
-
-Since 05/07/2021 every w-OPL build dispatched to the release section of this repository will be uploaded to a [mega account](https://mega.nz/folder/Ndwi1bAK#oLWNhH_g-h0p4BoT4c556A). You can access the archive by clicking the mega badge on top of this readme
 
 </p>
 </details>

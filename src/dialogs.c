@@ -167,6 +167,59 @@ struct UIItem diaBlockDevicesConfig[] = {
     // end of dialog
     {UI_TERMINATOR}};
 
+// MMCE Settings Menu
+struct UIItem diaMMCEConfig[] = {
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_MMCE_SETTINGS}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCEMODE}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCEMODE, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_SLOT}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCESLOT, 1, 1, -1, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCEIGR_SLOT}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCEIGRSLOT, 1, 1, _STR_HINT_MMCEIGR_SLOT, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_PREFIX}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_MMCEPREFIX, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_BREAK},
+
+#ifdef __DEBUG
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Send GameID on Launch", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_MMCEGAMEID, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+#endif
+
+    {UI_BREAK},
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_MMCE_ADVANCED}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_WAIT_CYCLES}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCE_WAIT_CYCLES, 1, 1, _STR_HINT_MMCE_WAIT_CYCLES, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_USE_ALARMS}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCE_USE_ALARMS, 1, 1, _STR_HINT_MMCE_USE_ALARMS, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    // buttons
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    // end of dialog
+    {UI_TERMINATOR}};
+
 // Settings Menu
 struct UIItem diaConfig[] = {
     {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_SETTINGS}}},
@@ -414,7 +467,6 @@ struct UIItem diaCompatConfig[] = {
     {UI_BOOL, COMPAT_MODE_BASE + 6, 1, 1, _STR_HINT_MODE7, -10, 0, {.intvalue = {0, 0}}},
     {UI_BREAK},
 
-    {UI_BUTTON, COMPAT_DL_DEFAULTS, 1, 1, -1, 0, 0, {.label = {NULL, _STR_DL_DEFAULTS}}},
     {UI_SPLITTER},
 
     {UI_LABEL, 0, 1, 1, -1, -30, 0, {.label = {NULL, _STR_DMA_MODE}}},
@@ -923,14 +975,6 @@ struct UIItem diaAbout[] = {
 
     {UI_BREAK},
 
-    // Network update
-    {UI_HEADER, 0, 1, 1, -1, 0, 15, {.label = {NULL, _STR_NET_UPDATE}}},
-    {UI_BREAK},
-
-    {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"icyson55", -1}}},
-    {UI_BREAK},
-
     // Build Options
     {UI_BREAK},
     {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_BUILD_DETAILS}}},
@@ -940,31 +984,6 @@ struct UIItem diaAbout[] = {
 
     // buttons
     {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
-    {UI_BREAK},
-
-    // end of dialog
-    {UI_TERMINATOR}};
-
-// Network Update Menu
-struct UIItem diaNetCompatUpdate[] = {
-    {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_NET_UPDATE}}},
-    {UI_SPLITTER},
-
-    {UI_LABEL, NETUPD_OPT_UPD_ALL_LBL, 1, 1, -1, -40, 0, {.label = {NULL, _STR_NET_UPDATE_ALL}}},
-    {UI_SPACER},
-    {UI_BOOL, NETUPD_OPT_UPD_ALL, 0, 1, _STR_NET_UPDATE_HINT, 0, 0, {.intvalue = {0, 0, 0, 1}}},
-    {UI_BREAK},
-
-    {UI_LABEL, NETUPD_PROGRESS_LBL, 1, 1, -1, -40, 0, {.label = {NULL, _STR_VMC_PROGRESS}}},
-    {UI_SPACER},
-    {UI_INT, NETUPD_PROGRESS, 0, 1, -1, 0, 0, {.intvalue = {0, 0, 0, 100}}},
-    {UI_LABEL, NETUPD_PROGRESS_PERC_LBL, 1, 1, -1, 0, 0, {.label = {"%", -1}}},
-    {UI_BREAK},
-
-    // buttons
-    {UI_BUTTON, NETUPD_BTN_START, 1, 1, -1, 0, 0, {.label = {NULL, _STR_START}}},
-    {UI_SPACER},
-    {UI_BUTTON, NETUPD_BTN_CANCEL, 1, 1, -1, 0, 0, {.label = {NULL, _STR_CANCEL}}},
     {UI_BREAK},
 
     // end of dialog

@@ -17,12 +17,15 @@
 #include "include/config.h"
 #include "include/system.h"
 #include "include/ethsupport.h"
-#include "include/compatupd.h"
 #include "include/pggsm.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
 #include "include/guigame.h"
 #include "include/tetris.h"
+
+#include <malloc.h>
+#include <math.h>
+#include <kernel.h>
 
 #include <limits.h>
 #include <stdlib.h>
@@ -146,6 +149,7 @@ void guiInit(void)
     gBackgroundTex.Vram = 0;
     gBackgroundTex.VramClut = 0;
     gBackgroundTex.Clut = NULL;
+    gBackgroundTex.ClutStorageMode = GS_CLUT_STORAGE_CSM1;
 
     // Precalculate the values for the perlin noise plasma
     int i;
@@ -211,20 +215,12 @@ void guiShowAbout()
 #ifdef __RTL
                                                          " - RTL"
 #endif
-#ifdef IGS
-                                                         " - IGS %s"
-#endif
 #ifdef PADEMU
                                                          " - PADEMU"
 #endif
              // Version numbers
              ,
-             GSM_VERSION
-#ifdef IGS
-             ,
-             IGS_VERSION
-#endif
-    );
+             GSM_VERSION);
     diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, wOPLBuildDetails);
 
     diaSetSecretHandler(tetrisSecretHandler);
@@ -323,125 +319,6 @@ static void guiShowNotifications(void)
     }
 }
 
-static int guiNetCompatUpdRefresh(int modified)
-{
-    int result;
-    unsigned int done, total;
-
-    if ((result = oplGetUpdateGameCompatStatus(&done, &total)) == OPL_COMPAT_UPDATE_STAT_WIP) {
-        diaSetInt(diaNetCompatUpdate, NETUPD_PROGRESS, (done == 0 || total == 0) ? 0 : (int)((float)done / total * 100.0f));
-    }
-
-    return result;
-}
-
-static void guiShowNetCompatUpdateResult(int result)
-{
-    switch (result) {
-        case OPL_COMPAT_UPDATE_STAT_DONE:
-            // Completed with no errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_DONE), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_ERROR:
-            // Completed with errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_FAILED), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_CONN_ERROR:
-            // Completed with errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_CONN_FAILED), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_ABORTED:
-            // User-aborted.
-            guiMsgBox(_l(_STR_NET_UPDATE_CANCELLED), 0, NULL);
-            break;
-    }
-}
-
-void guiShowNetCompatUpdate(void)
-{
-    int ret, UpdateAll;
-    u8 done, started;
-    void *UpdateFunction;
-
-    diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_START, 1);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_CANCEL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_LBL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_PERC_LBL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS, 0);
-    diaSetInt(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 0);
-    diaSetEnabled(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 1);
-
-    done = 0;
-    started = 0;
-    UpdateFunction = NULL;
-    while (!done) {
-        ret = diaExecuteDialog(diaNetCompatUpdate, -1, 1, UpdateFunction);
-        switch (ret) {
-            case NETUPD_BTN_START:
-                if (guiMsgBox(_l(_STR_CONFIRMATION_SETTINGS_UPDATE), 1, NULL)) {
-                    guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-
-                    if ((ret = ethLoadInitModules()) == 0) {
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_START, 0);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_CANCEL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_LBL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_PERC_LBL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS, 1);
-                        diaSetEnabled(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 0);
-
-                        diaGetInt(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, &UpdateAll);
-                        oplUpdateGameCompat(UpdateAll);
-                        UpdateFunction = &guiNetCompatUpdRefresh;
-                        started = 1;
-                    } else {
-                        ethDisplayErrorStatus();
-                    }
-                }
-                break;
-            case UIID_BTN_CANCEL: // If the user pressed the cancel button.
-            case NETUPD_BTN_CANCEL:
-                if (started) {
-                    if (guiMsgBox(_l(_STR_CONFIRMATION_CANCEL_UPDATE), 1, NULL)) {
-                        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-                        oplAbortUpdateGameCompat();
-                        // The process truly ends when the UI callback gets the update from the worker thread that the process has ended.
-                    }
-                } else {
-                    done = 1;
-                    started = 0;
-                }
-                break;
-            default:
-                guiShowNetCompatUpdateResult(ret);
-                done = 1;
-                started = 0;
-                UpdateFunction = NULL;
-                break;
-        }
-    }
-}
-
-void guiShowNetCompatUpdateSingle(int id, item_list_t *support, config_set_t *configSet)
-{
-    int ConfigSource, result;
-
-    ConfigSource = CONFIG_SOURCE_DEFAULT;
-    configGetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, &ConfigSource);
-
-    if (guiMsgBox(_l(_STR_CONFIRMATION_SETTINGS_UPDATE), 1, NULL)) {
-        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-
-        if ((ethLoadInitModules()) == 0) {
-            if ((result = oplUpdateGameCompatSingle(id, support, configSet)) == OPL_COMPAT_UPDATE_STAT_DONE) {
-                configSetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_DLOAD);
-            }
-            guiShowNetCompatUpdateResult(result);
-        } else {
-            ethDisplayErrorStatus();
-        }
-    }
-}
-
 static void guiShowBlockDeviceConfig(void)
 {
     int ret;
@@ -485,8 +362,10 @@ int guiDeviceTypeToIoMode(int deviceType)
         return HDD_MODE;
     else if (deviceType == 3)
         return APP_MODE;
-    else
+    else if (deviceType == 4)
         return FAV_MODE;
+    else
+        return MMCE_MODE;
 }
 
 int guiIoModeToDeviceType(int ioMode)
@@ -506,6 +385,8 @@ int guiIoModeToDeviceType(int ioMode)
             return 3;
         case FAV_MODE:
             return 4;
+        case MMCE_MODE:
+            return 5;
         default:
             return 0;
     }
@@ -514,7 +395,7 @@ int guiIoModeToDeviceType(int ioMode)
 void guiShowConfig()
 {
     // configure the enumerations
-    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), _l(_STR_APPS), _l(_STR_FAV), NULL};
+    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), _l(_STR_APPS), _l(_STR_FAV), _l(_STR_MMCE), NULL};
     const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
 
     diaSetEnum(diaConfig, CFG_DEFDEVICE, deviceNames);
@@ -586,6 +467,55 @@ void guiShowConfig()
         applyConfig(-1, -1, 0);
         menuReinitMainMenu();
     }
+}
+
+void guiShowMMCEConfig()
+{
+    int ret;
+    const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
+    const char *deviceSlots[] = {"0", "1", _l(_STR_AUTO), NULL};
+    const char *deviceAckWaitCycles[] = {"0", "1", "2", "3", "4", "5", NULL};
+    const char *deviceOnOff[] = {"OFF", "ON", NULL};
+    const char *deviceIGRSlots[] = {"NONE", "0", "1", "BOTH", NULL};
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEMODE, deviceModes);
+    diaSetInt(diaMMCEConfig, CFG_MMCEMODE, gMMCEStartMode);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCESLOT, deviceSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCESLOT, gMMCESlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEIGRSLOT, deviceIGRSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, gMMCEIGRSlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, deviceAckWaitCycles);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, gMMCEAckWaitCycles);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_USE_ALARMS, deviceOnOff);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, gMMCEUseAlarms);
+
+    diaSetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix);
+
+#ifdef __DEBUG
+    diaSetInt(diaMMCEConfig, CFG_MMCEGAMEID, gMMCEEnableGameID);
+#endif
+
+    ret = diaExecuteDialog(diaMMCEConfig, -1, 1, NULL);
+    if (ret) {
+        diaGetInt(diaMMCEConfig, CFG_MMCEMODE, &gMMCEStartMode);
+        diaGetInt(diaMMCEConfig, CFG_MMCESLOT, &gMMCESlot);
+#ifdef __DEBUG
+        diaGetInt(diaMMCEConfig, CFG_MMCEGAMEID, &gMMCEEnableGameID);
+#endif
+        diaGetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, &gMMCEIGRSlot);
+
+        diaGetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
+        diaGetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, &gMMCEUseAlarms);
+
+        diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
+    }
+
+    applyConfig(-1, -1, 0);
+    menuReinitMainMenu();
 }
 
 static int curTheme = -1;

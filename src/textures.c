@@ -4,6 +4,8 @@
 #include "include/ioman.h"
 #include "include/art_tar.h"
 #include <png.h>
+#include <fcntl.h>
+#include <malloc.h>
 
 extern void *load0_png;
 extern void *load1_png;
@@ -18,6 +20,7 @@ extern void *usb_bd_png;
 extern void *ilk_bd_png;
 extern void *m4s_bd_png;
 extern void *hdd_bd_png;
+extern void *mmce_png;
 extern void *hdd_png;
 extern void *eth_png;
 extern void *app_png;
@@ -152,6 +155,7 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {APP_ICON, "app", &app_png},
     {FAV_ICON, "fav", &fav_png},
     {FAV_MARK, "fav_mark", &fav_mark_png},
+    {MMCE_ICON, "mmce", &mmce_png},
     {INDEX_0, "Index_0", &Index_0_png},
     {INDEX_1, "Index_1", &Index_1_png},
     {INDEX_2, "Index_2", &Index_2_png},
@@ -259,16 +263,17 @@ static int texSizeValidate(int width, int height, u8 psm)
 
 static void texPrepare(GSTEXTURE *texture)
 {
-    texture->Width = 0;                 // Must be set by loader
-    texture->Height = 0;                // Must be set by loader
-    texture->PSM = GS_PSM_CT24;         // Must be set by loader
-    texture->ClutPSM = 0;               // Default, can be set by loader
-    texture->TBW = 0;                   // gsKit internal value
-    texture->Mem = NULL;                // Must be allocated by loader
-    texture->Clut = NULL;               // Default, can be set by loader
-    texture->Vram = 0;                  // VRAM allocation handled by texture manager
-    texture->VramClut = 0;              // VRAM allocation handled by texture manager
-    texture->Filter = GS_FILTER_LINEAR; // Default
+    texture->Width = 0;                              // Must be set by loader
+    texture->Height = 0;                             // Must be set by loader
+    texture->PSM = GS_PSM_CT24;                      // Must be set by loader
+    texture->ClutPSM = 0;                            // Default, can be set by loader
+    texture->TBW = 0;                                // gsKit internal value
+    texture->Mem = NULL;                             // Must be allocated by loader
+    texture->Clut = NULL;                            // Default, can be set by loader
+    texture->Vram = 0;                               // VRAM allocation handled by texture manager
+    texture->VramClut = 0;                           // VRAM allocation handled by texture manager
+    texture->Filter = GS_FILTER_LINEAR;              // Default
+    texture->ClutStorageMode = GS_CLUT_STORAGE_CSM1; // Default
 
     // Do not load the texture to VRAM directly, only load it to EE RAM
     texture->Delayed = 1;
@@ -509,7 +514,9 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
     png_set_filler(pngPtr, 0xff, PNG_FILLER_AFTER);
     png_read_update_info(pngPtr, infoPtr);
 
+    // clang-format off
     void (*texPngReadPixels)(GSTEXTURE * texture, png_bytep * rowPointers, size_t size);
+    // clang-format on
     switch (png_get_color_type(pngPtr, infoPtr)) {
         case PNG_COLOR_TYPE_RGB_ALPHA:
             texture->PSM = GS_PSM_CT32;

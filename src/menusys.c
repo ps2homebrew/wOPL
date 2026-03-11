@@ -18,6 +18,9 @@
 #include "include/ioman.h"
 #include "include/sound.h"
 #include <assert.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
 
 enum MENU_IDs {
     MENU_SETTINGS = 0,
@@ -27,8 +30,8 @@ enum MENU_IDs {
     MENU_OSD_LANGUAGE_SETTINGS,
     MENU_PARENTAL_LOCK,
     MENU_NET_CONFIG,
-    MENU_NET_UPDATE,
     MENU_START_NBD,
+    MENU_MMCE_SETTINGS,
     MENU_ABOUT,
     MENU_SAVE_CHANGES,
     MENU_EXIT,
@@ -235,7 +238,7 @@ static void menuInitMainMenu(void)
     submenuAppendItem(&mainMenu, -1, NULL, MENU_OSD_LANGUAGE_SETTINGS, _STR_OSD_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG, NULL);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_UPDATE, _STR_NET_UPDATE, NULL);
+    submenuAppendItem(&mainMenu, -1, NULL, MENU_MMCE_SETTINGS, _STR_MMCE_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES, NULL);
@@ -957,12 +960,12 @@ void menuHandleInputMenu()
         } else if (id == MENU_NET_CONFIG) {
             if (menuCheckParentalLock() == 0)
                 guiShowNetConfig();
-        } else if (id == MENU_NET_UPDATE) {
-            if (menuCheckParentalLock() == 0)
-                guiShowNetCompatUpdate();
         } else if (id == MENU_START_NBD) {
             if (menuCheckParentalLock() == 0)
                 handleLwnbdSrv();
+        } else if (id == MENU_MMCE_SETTINGS) {
+            if (menuCheckParentalLock() == 0)
+                guiShowMMCEConfig();
         } else if (id == MENU_ABOUT) {
             guiShowAbout();
         } else if (id == MENU_SAVE_CHANGES) {
@@ -989,7 +992,7 @@ void menuHandleInputMenu()
 
     if (getKeyOn(KEY_START) || getKeyOn(gSelectButton == KEY_CIRCLE ? KEY_CROSS : KEY_CIRCLE)) {
         // Check if there is anything to show the user, at all.
-        if (gAPPStartMode || gETHStartMode || gBDMStartMode || gHDDStartMode || gFAVStartMode) {
+        if (gAPPStartMode || gETHStartMode || gBDMStartMode || gHDDStartMode || gFAVStartMode || gMMCEStartMode) {
             guiSwitchScreen(GUI_SCREEN_MAIN);
             refreshMenuPosition();
         }

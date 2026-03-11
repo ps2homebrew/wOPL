@@ -25,14 +25,9 @@
 #ifndef _CHEATMAN_H_
 #define _CHEATMAN_H_
 
-#include "opl.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <fcntl.h>
-#include <malloc.h>
-#include <ctype.h>
-#include <string.h>
+#include <tamtypes.h>
+#include "config.h"
+
 
 #define CHEAT_VERSION "0.5.3.7"
 
@@ -71,7 +66,7 @@ extern cheat_entry_t gCheats[MAX_CODES];
 
 void InitCheatsConfig(config_set_t *configSet);
 int GetCheatsEnabled(void);
-const u32 *GetCheatsList(void);
+u32 *GetCheatsList(void);
 int load_cheats(const char *cheatfile);
 void set_cheats_list(void);
 

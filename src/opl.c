@@ -21,7 +21,6 @@
 #include "include/debug.h"
 #include "include/config.h"
 #include "include/util.h"
-#include "include/compatupd.h"
 #include "include/extern_irx.h"
 #include "httpclient.h"
 
@@ -31,6 +30,7 @@
 #include "include/hddsupport.h"
 #include "include/appsupport.h"
 #include "include/favsupport.h"
+#include "include/mmcesupport.h"
 
 #include "include/cheatman.h"
 #include "include/sound.h"
@@ -38,6 +38,17 @@
 #include "include/xparam.h"
 
 #include <unistd.h>
+#include <osd_config.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <malloc.h>
+#include <usbhdfsd-common.h>
+#include <libmc.h>
+#include <libpad.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
+
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioDopen, fileXioIoctl2, fileXioDclose
 
@@ -71,12 +82,6 @@
 
 // App support stuff.
 static unsigned char shouldAppsUpdate;
-
-// Network support stuff.
-#define HTTP_IOBUF_SIZE 512
-static unsigned int CompatUpdateComplete, CompatUpdateTotal;
-static unsigned char CompatUpdateStopFlag, CompatUpdateFlags;
-static short int CompatUpdateStatus;
 
 static void clearIOModuleT(opl_io_module_t *mod)
 {
@@ -134,9 +139,15 @@ int gHDDStartMode;
 int gETHStartMode;
 int gAPPStartMode;
 int gFAVStartMode;
+int gMMCEStartMode;
 int bdmCacheSize;
 int hddCacheSize;
 int smbCacheSize;
+int gMMCEIGRSlot;
+int gMMCESlot;
+int gMMCEAckWaitCycles;
+int gMMCEUseAlarms;
+int gMMCEEnableGameID;
 int gEnableILK;
 int gEnableMX4SIO;
 int gEnableBdmHDD;
@@ -180,6 +191,7 @@ int gDefaultDevice;
 int gEnableWrite;
 char gBDMPrefix[32];
 char gETHPrefix[32];
+char gMMCEPrefix[32];
 int gRememberLastPlayed;
 int KeyPressedOnce;
 int gAutoStartLastPlayed;
@@ -545,6 +557,8 @@ void initSupport(item_list_t *itemList, int mode, int force_reinit)
         startMode = gAPPStartMode;
     else if (mode == FAV_MODE)
         startMode = gFAVStartMode;
+    else if (mode == MMCE_MODE)
+        startMode = gMMCEStartMode;
 
     if (startMode) {
         if (!mod->support) {
@@ -572,6 +586,7 @@ static void initAllSupport(int force_reinit)
     initSupport(hddGetObject(0), HDD_MODE, force_reinit);
     initSupport(appGetObject(0), APP_MODE, force_reinit);
     initSupport(favGetObject(0), FAV_MODE, force_reinit);
+    initSupport(mmceGetObject(0), MMCE_MODE, force_reinit);
 }
 
 static void deinitAllSupport(int exception, int modeSelected)
@@ -737,7 +752,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
     char appsPath[128];
 
     snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
-    fd = openFile(appsPath, O_RDONLY);
+    fd = sbOpenFile(appsPath, O_RDONLY);
     if (fd >= 0) {
         appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
         close(fd);
@@ -750,7 +765,7 @@ config_set_t *oplGetLegacyAppsConfig(void)
             char *prefix = listSupport->itemGetPrefix(listSupport);
             snprintf(appsPath, sizeof(appsPath), "%sconf_apps.cfg", prefix);
 
-            fd = openFile(appsPath, O_RDONLY);
+            fd = sbOpenFile(appsPath, O_RDONLY);
             if (fd >= 0) {
                 appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
                 close(fd);
@@ -779,7 +794,7 @@ config_set_t *oplGetLegacyAppsInfo(char *name)
             char *prefix = listSupport->itemGetPrefix(listSupport);
             snprintf(appsPath, sizeof(appsPath), "%sCFG%s%s.cfg", prefix, i == ETH_MODE ? "\\" : "/", name);
 
-            fd = openFile(appsPath, O_RDONLY);
+            fd = sbOpenFile(appsPath, O_RDONLY);
             if (fd >= 0) {
                 appConfig = configAlloc(0, NULL, appsPath);
                 close(fd);
@@ -1083,6 +1098,7 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_DEFAULT_DEVICE, &gDefaultDevice);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_WRITE, &gEnableWrite);
             configGetInt(configOPL, CONFIG_OPL_HDD_SPINDOWN, &gHDDSpindown);
+            configGetStrCopy(configOPL, CONFIG_OPL_MMCE_PREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
             configGetStrCopy(configOPL, CONFIG_OPL_BDM_PREFIX, gBDMPrefix, sizeof(gBDMPrefix));
             configGetStrCopy(configOPL, CONFIG_OPL_ETH_PREFIX, gETHPrefix, sizeof(gETHPrefix));
             configGetInt(configOPL, CONFIG_OPL_REMEMBER_LAST, &gRememberLastPlayed);
@@ -1092,6 +1108,14 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_ETH_MODE, &gETHStartMode);
             configGetInt(configOPL, CONFIG_OPL_APP_MODE, &gAPPStartMode);
             configGetInt(configOPL, CONFIG_OPL_FAV_MODE, &gFAVStartMode);
+            configGetInt(configOPL, CONFIG_OPL_MMCE_MODE, &gMMCEStartMode);
+            configGetInt(configOPL, CONFIG_OPL_MMCE_SLOT, &gMMCESlot);
+            configGetInt(configOPL, CONFIG_OPL_MMCEIGR_SLOT, &gMMCEIGRSlot);
+#ifdef __DEBUG
+            configGetInt(configOPL, CONFIG_OPL_MMCE_GAMEID, &gMMCEEnableGameID);
+#endif
+            configGetInt(configOPL, CONFIG_OPL_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
+            configGetInt(configOPL, CONFIG_OPL_MMCE_USE_ALARMS, &gMMCEUseAlarms);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, &gEnableILK);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
@@ -1244,6 +1268,7 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_DEFAULT_DEVICE, gDefaultDevice);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_WRITE, gEnableWrite);
         configSetInt(configOPL, CONFIG_OPL_HDD_SPINDOWN, gHDDSpindown);
+        configSetStr(configOPL, CONFIG_OPL_MMCE_PREFIX, gMMCEPrefix);
         configSetStr(configOPL, CONFIG_OPL_BDM_PREFIX, gBDMPrefix);
         configSetStr(configOPL, CONFIG_OPL_ETH_PREFIX, gETHPrefix);
         configSetInt(configOPL, CONFIG_OPL_REMEMBER_LAST, gRememberLastPlayed);
@@ -1253,6 +1278,14 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_ETH_MODE, gETHStartMode);
         configSetInt(configOPL, CONFIG_OPL_APP_MODE, gAPPStartMode);
         configSetInt(configOPL, CONFIG_OPL_FAV_MODE, gFAVStartMode);
+        configSetInt(configOPL, CONFIG_OPL_MMCE_MODE, gMMCEStartMode);
+        configSetInt(configOPL, CONFIG_OPL_MMCE_SLOT, gMMCESlot);
+        configSetInt(configOPL, CONFIG_OPL_MMCEIGR_SLOT, gMMCEIGRSlot);
+#ifdef __DEBUG
+        configSetInt(configOPL, CONFIG_OPL_MMCE_GAMEID, gMMCEEnableGameID);
+#endif
+        configSetInt(configOPL, CONFIG_OPL_MMCE_WAIT_CYCLES, gMMCEAckWaitCycles);
+        configSetInt(configOPL, CONFIG_OPL_MMCE_USE_ALARMS, gMMCEUseAlarms);
         configSetInt(configOPL, CONFIG_OPL_BDM_CACHE, bdmCacheSize);
         configSetInt(configOPL, CONFIG_OPL_HDD_CACHE, hddCacheSize);
         configSetInt(configOPL, CONFIG_OPL_SMB_CACHE, smbCacheSize);
@@ -1298,7 +1331,7 @@ static void _saveConfig()
 
     char *path = configGetDir();
     if (!strncmp(path, "mc", 2)) {
-        checkMCFolder();
+        sbCheckMCFolder();
         configPrepareNotifications(gBaseMCDir);
     }
 
@@ -1310,7 +1343,7 @@ static void _saveConfig()
 
 void applyConfig(int themeID, int langID, int skipDeviceRefresh)
 {
-    if (gDefaultDevice < 0 || gDefaultDevice > FAV_MODE)
+    if (gDefaultDevice < 0 || gDefaultDevice > MMCE_MODE)
         gDefaultDevice = APP_MODE;
 
     guiUpdateScrollSpeed();
@@ -1394,263 +1427,6 @@ int saveConfig(int types, int showUI)
     }
 
     return lscret;
-}
-
-#define COMPAT_UPD_MODE_UPD_USR   1 // Update all records, even those that were modified by the user.
-#define COMPAT_UPD_MODE_NO_MTIME  2 // Do not check the modified time-stamp.
-#define COMPAT_UPD_MODE_MTIME_GMT 4 // Modified time-stamp is in GMT, not JST.
-
-#define EOPLCONNERR 0x4000 // Special error code for connection errors.
-
-static int CompatAttemptConnection(void)
-{
-    unsigned char retries;
-    int HttpSocket;
-
-    for (retries = OPL_COMPAT_HTTP_RETRIES, HttpSocket = -1; !CompatUpdateStopFlag && retries > 0; retries--) {
-        if ((HttpSocket = HttpEstabConnection(OPL_COMPAT_HTTP_HOST, OPL_COMPAT_HTTP_PORT)) >= 0) {
-            break;
-        }
-    }
-
-    return HttpSocket;
-}
-
-static void compatUpdate(item_list_t *support, unsigned char mode, config_set_t *configSet, int id)
-{
-    sceCdCLOCK clock;
-    config_set_t *itemConfig, *downloadedConfig;
-    u16 length;
-    s8 ConnMode, hasMtime;
-    char *HttpBuffer;
-    int i, count, HttpSocket, result, retries, ConfigSource;
-    struct stat st;
-    struct tm *timeinfo;
-    u8 mtime[6];
-    char device, uri[64];
-    const char *startup;
-
-    switch (support->mode) {
-        case BDM_MODE:
-            device = 3;
-            break;
-        case ETH_MODE:
-            mode |= COMPAT_UPD_MODE_MTIME_GMT;
-            device = 2;
-            break;
-        case HDD_MODE:
-            device = 1;
-            break;
-        default:
-            device = -1;
-    }
-
-    if (device < 0) {
-        LOG("CompatUpdate: unrecognized mode: %d\n", support->mode);
-        CompatUpdateStatus = OPL_COMPAT_UPDATE_STAT_ERROR;
-        return; // Shouldn't happen, but what if?
-    }
-
-    result = 0;
-    LOG("CompatUpdate: updating for: device %d game %d\n", device, configSet == NULL ? -1 : id);
-
-    if ((HttpBuffer = memalign(64, HTTP_IOBUF_SIZE)) != NULL) {
-        count = configSet != NULL ? 1 : support->itemGetCount(support);
-
-        if (count > 0) {
-            ConnMode = HTTP_CMODE_PERSISTENT;
-            if ((HttpSocket = CompatAttemptConnection()) >= 0) {
-                // Update compatibility list.
-                for (i = 0; !CompatUpdateStopFlag && result >= 0 && i < count; i++, CompatUpdateComplete++) {
-                    startup = support->itemGetStartup(support, configSet != NULL ? id : i);
-
-                    if (ConnMode == HTTP_CMODE_CLOSED) {
-                        ConnMode = HTTP_CMODE_PERSISTENT;
-                        if ((HttpSocket = CompatAttemptConnection()) < 0) {
-                            result = HttpSocket | EOPLCONNERR;
-                            break;
-                        }
-                    }
-
-                    itemConfig = configSet != NULL ? configSet : support->itemGetConfig(support, i);
-                    if (itemConfig != NULL) {
-                        ConfigSource = CONFIG_SOURCE_DEFAULT;
-                        if ((mode & COMPAT_UPD_MODE_UPD_USR) || !configGetInt(itemConfig, CONFIG_ITEM_CONFIGSOURCE, &ConfigSource) || ConfigSource != CONFIG_SOURCE_USER) {
-                            if (!(mode & COMPAT_UPD_MODE_NO_MTIME) && (ConfigSource == CONFIG_SOURCE_DLOAD) && configGetStat(itemConfig, &st)) { // Only perform a stat operation for downloaded setting files.
-                                timeinfo = localtime(&st.st_mtime);
-                                if (!(mode & COMPAT_UPD_MODE_MTIME_GMT)) {
-
-                                    clock.second = itob(timeinfo->tm_sec);
-                                    clock.minute = itob(timeinfo->tm_min);
-                                    clock.hour = itob(timeinfo->tm_hour);
-                                    clock.day = itob(timeinfo->tm_mday);
-                                    clock.month = itob(timeinfo->tm_mon);
-                                    clock.year = itob(timeinfo->tm_year - 2000);
-                                    configConvertToGmtTime(&clock);
-
-                                    mtime[0] = btoi(clock.year);      // Year
-                                    mtime[1] = btoi(clock.month) - 1; // Month
-                                    mtime[2] = btoi(clock.day) - 1;   // Day
-                                    mtime[3] = btoi(clock.hour);      // Hour
-                                    mtime[4] = btoi(clock.minute);    // Minute
-                                    mtime[5] = btoi(clock.second);    // Second
-                                } else {
-                                    mtime[0] = clock.year - 2000; // Year
-                                    mtime[1] = clock.month - 1;   // Month
-                                    mtime[2] = clock.day - 1;     // Day
-                                    mtime[3] = clock.hour;        // Hour
-                                    mtime[4] = clock.minute;      // Minute
-                                    mtime[5] = clock.second;      // Second
-                                }
-                                hasMtime = 1;
-
-                                LOG("CompatUpdate: LAST MTIME %04u/%02u/%02u %02u:%02u:%02u\n", (unsigned short int)mtime[0] + 2000, mtime[1] + 1, mtime[2] + 1, mtime[3], mtime[4], mtime[5]);
-                            } else {
-                                hasMtime = 0;
-                            }
-
-                            sprintf(uri, OPL_COMPAT_HTTP_URI, startup, device);
-                            for (retries = OPL_COMPAT_HTTP_RETRIES; !CompatUpdateStopFlag && retries > 0; retries--) {
-                                length = HTTP_IOBUF_SIZE;
-                                result = HttpSendGetRequest(HttpSocket, OPL_USER_AGENT, OPL_COMPAT_HTTP_HOST, &ConnMode, hasMtime ? mtime : NULL, uri, HttpBuffer, &length);
-                                if (result >= 0) {
-                                    if (result == 200) {
-                                        if ((downloadedConfig = configAlloc(0, NULL, NULL)) != NULL) {
-                                            configReadBuffer(downloadedConfig, HttpBuffer, length);
-                                            configMerge(itemConfig, downloadedConfig);
-                                            configFree(downloadedConfig);
-                                            configSetInt(itemConfig, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_DLOAD);
-                                            if (!configWrite(itemConfig))
-                                                result = -EIO;
-                                        } else
-                                            result = -ENOMEM;
-                                    }
-
-                                    break;
-                                } else
-                                    result |= EOPLCONNERR;
-
-                                HttpCloseConnection(HttpSocket);
-
-                                LOG("CompatUpdate: Connection lost. Retrying.\n");
-
-                                // Connection lost. Attempt to re-connect.
-                                ConnMode = HTTP_CMODE_PERSISTENT;
-                                if ((HttpSocket = CompatAttemptConnection()) < 0) {
-                                    result = HttpSocket | EOPLCONNERR;
-                                    break;
-                                }
-                            }
-
-                            LOG("CompatUpdate %d. %d, %s: %s %d\n", i + 1, device, startup, ConnMode == HTTP_CMODE_CLOSED ? "CLOSED" : "PERSISTENT", result);
-                        } else {
-                            LOG("CompatUpdate: skipping %s\n", startup);
-                        }
-
-                        if (configSet == NULL) // Do not free what is not ours.
-                            configFree(itemConfig);
-                    } else {
-                        // Can't do anything because the config file cannot be opened/created.
-                        LOG("CompatUpdate: skipping %s (no config)\n", startup);
-                    }
-
-                    if (ConnMode == HTTP_CMODE_CLOSED)
-                        HttpCloseConnection(HttpSocket);
-                }
-
-                if (ConnMode == HTTP_CMODE_PERSISTENT)
-                    HttpCloseConnection(HttpSocket);
-            } else {
-                result = HttpSocket | EOPLCONNERR;
-            }
-        }
-
-        free(HttpBuffer);
-    } else {
-        result = -ENOMEM;
-    }
-
-    if (CompatUpdateStopFlag)
-        CompatUpdateStatus = OPL_COMPAT_UPDATE_STAT_ABORTED;
-    else {
-        if (result >= 0)
-            CompatUpdateStatus = OPL_COMPAT_UPDATE_STAT_DONE;
-        else {
-            CompatUpdateStatus = (result & EOPLCONNERR) ? OPL_COMPAT_UPDATE_STAT_CONN_ERROR : OPL_COMPAT_UPDATE_STAT_ERROR;
-        }
-    }
-    LOG("CompatUpdate: completed with status %d\n", CompatUpdateStatus);
-}
-
-static void compatDeferredUpdate(void *data)
-{
-    opl_io_module_t *mod = &list_support[*(short int *)data];
-
-    compatUpdate(mod->support, CompatUpdateFlags, NULL, -1);
-}
-
-int oplGetUpdateGameCompatStatus(unsigned int *done, unsigned int *total)
-{
-    *done = CompatUpdateComplete;
-    *total = CompatUpdateTotal;
-    return CompatUpdateStatus;
-}
-
-void oplAbortUpdateGameCompat(void)
-{
-    CompatUpdateStopFlag = 1;
-    ioRemoveRequests(IO_COMPAT_UPDATE_DEFFERED);
-}
-
-void oplUpdateGameCompat(int UpdateAll)
-{
-    int i, started, count;
-
-    CompatUpdateTotal = 0;
-    CompatUpdateComplete = 0;
-    CompatUpdateStopFlag = 0;
-    CompatUpdateFlags = UpdateAll ? (COMPAT_UPD_MODE_NO_MTIME | COMPAT_UPD_MODE_UPD_USR) : 0;
-    CompatUpdateStatus = OPL_COMPAT_UPDATE_STAT_WIP;
-
-    // Schedule compatibility updates of all the list handlers
-    for (i = 0, started = 0; i < MODE_COUNT; i++) {
-        if (list_support[i].support && list_support[i].support->enabled && !(list_support[i].support->flags & MODE_FLAG_NO_UPDATE) && (count = list_support[i].support->itemGetCount(list_support[i].support)) > 0) {
-            CompatUpdateTotal += count;
-            ioPutRequest(IO_COMPAT_UPDATE_DEFFERED, &list_support[i].support->mode);
-            started++;
-
-            LOG("CompatUpdate: started for mode %d (%d games)\n", list_support[i].support->mode, count);
-        }
-    }
-
-    if (started < 1) // Nothing done
-        CompatUpdateStatus = OPL_COMPAT_UPDATE_STAT_DONE;
-}
-
-static int CompatUpdSingleID, CompatUpdSingleStatus;
-static item_list_t *CompatUpdSingleSupport;
-static config_set_t *CompatUpdSingleConfigSet;
-
-static void _updateCompatSingle(void)
-{
-    compatUpdate(CompatUpdSingleSupport, COMPAT_UPD_MODE_UPD_USR, CompatUpdSingleConfigSet, CompatUpdSingleID);
-    CompatUpdSingleStatus = 0;
-}
-
-int oplUpdateGameCompatSingle(int id, item_list_t *support, config_set_t *configSet)
-{
-    CompatUpdateStopFlag = 0;
-    CompatUpdateStatus = OPL_COMPAT_UPDATE_STAT_WIP;
-    CompatUpdateTotal = 1;
-    CompatUpdateComplete = 0;
-    CompatUpdSingleID = id;
-    CompatUpdSingleSupport = support;
-    CompatUpdSingleConfigSet = configSet;
-    CompatUpdSingleStatus = 1;
-
-    guiHandleDeferedIO(&CompatUpdSingleStatus, _l(_STR_PLEASE_WAIT), IO_CUSTOM_SIMPLEACTION, &_updateCompatSingle);
-
-    return CompatUpdateStatus;
 }
 
 // ----------------------------------------------------------
@@ -1821,9 +1597,9 @@ void setDefaultColors(void)
     gDefaultTextColor[1] = 0x5C;
     gDefaultTextColor[2] = 0x5C;
 
-    gDefaultSelTextColor[0] = 0xFF;
-    gDefaultSelTextColor[1] = 0xFF;
-    gDefaultSelTextColor[2] = 0xFF;
+    gDefaultSelTextColor[0] = 0x2a;
+    gDefaultSelTextColor[1] = 0x2a;
+    gDefaultSelTextColor[2] = 0x2a;
 
     gDefaultUITextColor[0] = 0xFF;
     gDefaultUITextColor[1] = 0xFF;
@@ -1893,6 +1669,7 @@ static void setDefaults(void)
     gRememberLastPlayed = 0;
     gAutoStartLastPlayed = 9;
     gSelectButton = KEY_CIRCLE; // Default to Japan.
+    gMMCEPrefix[0] = '\0';
     gBDMPrefix[0] = '\0';
     gETHPrefix[0] = '\0';
     gEnableNotifications = 0;
@@ -1914,6 +1691,15 @@ static void setDefaults(void)
     gETHStartMode = START_MODE_DISABLED;
     gAPPStartMode = START_MODE_DISABLED;
     gFAVStartMode = START_MODE_DISABLED;
+    gMMCEStartMode = START_MODE_DISABLED;
+
+    gMMCESlot = 2; // Default to first Auto slot
+    gMMCEIGRSlot = 3;
+#ifdef __DEBUG
+    gMMCEEnableGameID = 1;
+#endif
+    gMMCEAckWaitCycles = 5;
+    gMMCEUseAlarms = 1;
 
     gEnableILK = 0;
     gEnableMX4SIO = 0;
@@ -1954,9 +1740,6 @@ static void init(void)
     startPads();
 
     bdmInitSemaphore();
-
-    // compatibility update handler
-    ioRegisterHandler(IO_COMPAT_UPDATE_DEFFERED, &compatDeferredUpdate);
 
     // handler for deffered menu updates
     ioRegisterHandler(IO_MENU_UPDATE_DEFFERED, &menuDeferredUpdate);
@@ -2053,8 +1836,11 @@ static void miniInit(int mode)
             if (mode == BDM_MODE) {
                 configGetStrCopy(configOPL, CONFIG_OPL_BDM_PREFIX, gBDMPrefix, sizeof(gBDMPrefix));
                 configGetInt(configOPL, CONFIG_OPL_BDM_CACHE, &bdmCacheSize);
-            } else if (mode == HDD_MODE)
+            } else if (mode == HDD_MODE) {
                 configGetInt(configOPL, CONFIG_OPL_HDD_CACHE, &hddCacheSize);
+            } else if (mode == MMCE_MODE) {
+                configGetStrCopy(configOPL, CONFIG_OPL_MMCE_PREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
+            }
         }
     }
 }

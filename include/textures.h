@@ -20,6 +20,7 @@ enum INTERNAL_TEXTURE {
     APP_ICON,
     FAV_ICON,
     FAV_MARK,
+    MMCE_ICON,
     INDEX_0,
     INDEX_1,
     INDEX_2,

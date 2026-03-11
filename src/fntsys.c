@@ -11,9 +11,10 @@
 #include "include/utf8.h"
 #include "include/util.h"
 #include "include/atlas.h"
-
+#include <malloc.h>
 #include <sys/types.h>
 #include <ft2build.h>
+#include <kernel.h>
 
 #include FT_FREETYPE_H
 
@@ -238,7 +239,7 @@ static int fntLoadSlot(font_t *font, char *path, int fontSize)
     fntInitSlot(font);
 
     if (path) {
-        buffer = readFile(path, -1, &bufferSize);
+        buffer = sbReadFile(path, -1, &bufferSize);
         if (!buffer) {
             LOG("FNTSYS Font file loading failed: %s\n", path);
             return FNT_ERROR;
@@ -514,7 +515,7 @@ int fntRenderString(int id, int x, int y, short aligned, size_t width, size_t he
 
     if (aligned & ALIGN_HCENTER) {
         if (width) {
-            x -= min(fntCalcDimensions(id, string), width) >> 1;
+            x -= MIN(fntCalcDimensions(id, string), width) >> 1;
         } else {
             x -= fntCalcDimensions(id, string) >> 1;
         }
@@ -640,7 +641,7 @@ int fntRenderString(int id, int x, int y, short aligned, size_t width, size_t he
 
     if (aligned & ALIGN_HCENTER) {
         if (width) {
-            x -= min(fntCalcDimensions(id, string), width) >> 1;
+            x -= MIN(fntCalcDimensions(id, string), width) >> 1;
         } else {
             x -= fntCalcDimensions(id, string) >> 1;
         }

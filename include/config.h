@@ -1,6 +1,8 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#include <sys/stat.h>
+
 // Enum for the different types of config files. Game-specific config files (<game ID>.cfg) will always have an ID of 0.
 enum CONFIG_INDEX {
     CONFIG_INDEX_OPL = 0,
@@ -99,9 +101,17 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ETH_MODE             "eth_mode"
 #define CONFIG_OPL_APP_MODE             "app_mode"
 #define CONFIG_OPL_FAV_MODE             "fav_mode"
+#define CONFIG_OPL_MMCE_MODE            "mmce_mode"
 #define CONFIG_OPL_BDM_CACHE            "bdm_cache"
 #define CONFIG_OPL_HDD_CACHE            "hdd_cache"
 #define CONFIG_OPL_SMB_CACHE            "smb_cache"
+#define CONFIG_OPL_MMCE_PREFIX          "mmce_prefix"
+#define CONFIG_OPL_MMCE_SLOT            "mmce_slot"
+#define CONFIG_OPL_MMCEIGR_SLOT         "mmceigr_slot"
+#define CONFIG_OPL_MMCE_GAMEID          "mmce_gameid"
+#define CONFIG_OPL_MMCE_WAIT_CYCLES     "mmce_wait_cylces"
+#define CONFIG_OPL_MMCE_USE_ALARMS      "mmce_use_alarms"
+#define CONFIG_OPL_ENABLE_USB           "enable_usb"
 #define CONFIG_OPL_ENABLE_ILINK         "enable_ilink"
 #define CONFIG_OPL_ENABLE_MX4SIO        "enable_mx4sio"
 #define CONFIG_OPL_ENABLE_BDMHDD        "enable_bdm_hdd"
@@ -171,7 +181,6 @@ int configGetInt(config_set_t *configSet, const char *key, int *value);
 int configSetColor(config_set_t *configSet, const char *key, unsigned char *color);
 int configGetColor(config_set_t *configSet, const char *key, unsigned char *color);
 int configRemoveKey(config_set_t *configSet, const char *key);
-void configMerge(config_set_t *dest, const config_set_t *source);
 
 void configGetDiscIDBinary(config_set_t *configSet, void *dst);
 
@@ -179,7 +188,6 @@ int configRead(config_set_t *configSet);
 int configReadBuffer(config_set_t *configSet, const void *buffer, int size);
 int configReadMulti(int types);
 int configWrite(config_set_t *configSet);
-int configGetStat(config_set_t *configSet, struct stat *st);
 int configWriteMulti(int types);
 void configClear(config_set_t *configSet);
 

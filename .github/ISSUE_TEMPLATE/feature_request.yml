@@ -9,7 +9,7 @@ body:
       label: Checks
       description: "Check before posting"
       options:
-        - label: I have checked existing [__OPL feature requests__](https://github.com/ps2homebrew/Open-PS2-Loader/issues?q=is%3Aissue+is%3Aopen+%5BFR%5D) for duplicates and found none
+        - label: I have checked existing [__wOPL feature requests__](https://github.com/NathanNeurotic/wOPL/issues) for duplicates and found none
 
   - type: textarea
     id: explanation

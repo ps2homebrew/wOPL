@@ -2,6 +2,7 @@
 #define __HDD_SUPPORT_H
 
 #include "include/iosupport.h"
+#include <hdd-ioctl.h>
 
 #define HDL_GAME_NAME_MAX 64
 

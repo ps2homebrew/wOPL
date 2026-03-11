@@ -11,6 +11,8 @@
 #include "include/ethsupport.h"
 #include "include/hddsupport.h"
 
+#include <fcntl.h>
+#include <stdlib.h>
 #include <elf-loader.h>
 
 #define APP_MODE_UPDATE_DELAY 240
@@ -85,7 +87,7 @@ static float appGetELFSize(char *path)
         return 0.0f;
     }
 
-    size = getFileSize(fd);
+    size = sbGetFileSize(fd);
     close(fd);
 
     // Return size in MiB

@@ -14,6 +14,11 @@
 #include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/mcemu.h"
+#include <malloc.h>
+#include <dirent.h>
+#include <libcdvd.h>
+#include <kernel.h>
+#include "opl-hdd-ioctl.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioFormat, fileXioMount, fileXioUmount, fileXioDevctl
@@ -250,12 +255,13 @@ static int hddWriteSectors(u32 lba, u32 nsectors, const void *buf)
     return 0;
 }
 
-static struct GameDataEntry
+struct GameDataEntry
 {
     u32 lba, size;
     struct GameDataEntry *next;
     char id[APA_IDMAX + 1];
-};
+} GameDataEntry;
+
 static void hddFreeHDLGamelist(hdl_games_list_t *game_list)
 {
     if (game_list->games != NULL) {

@@ -12,7 +12,9 @@
 // should allow us to decompress all data with only 2 IO calls at most.
 #define ZISO_IDX_MAX_ENTRIES 257
 
+#ifndef MIN
 #define MIN(x, y) ((x < y) ? x : y)
+#endif
 
 // CSO Header (same for ZSO)
 typedef struct
