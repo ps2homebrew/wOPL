@@ -24,6 +24,18 @@ static struct pad_funcs *padf[MAX_PORTS];
 
 #endif
 
+#ifdef USE_XBOX360
+
+#include "xbox360usb.h"
+
+#endif
+
+#ifdef USE_XBOXONE
+
+#include "xboxoneusb.h"
+
+#endif
+
 #define MODNAME "pademu"
 IRX_ID(MODNAME, 1, 1);
 
@@ -143,7 +155,12 @@ int _start(int argc, char *argv[])
 #ifdef USB
     ds34usb_init(pad_enable, pad_options);
 #endif
-
+#ifdef USE_XBOX360
+    xbox360usb_init(pad_enable, pad_options);
+#endif
+#ifdef USE_XBOXONE
+    xboxoneusb_init(pad_enable, pad_options);
+#endif
     return MODULE_RESIDENT_END;
 }
 
@@ -188,6 +205,12 @@ void _exit(int mode)
 #endif
 #ifdef USB
     ds34usb_reset();
+#endif
+#ifdef USE_XBOX360
+    xbox360usb_reset();
+#endif
+#ifdef USE_XBOXONE
+    xboxoneusb_reset();
 #endif
 }
 

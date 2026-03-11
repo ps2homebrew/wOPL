@@ -12,6 +12,16 @@ IOP_CFLAGS += -DBT
 IOP_OBJS += ds34bt.o
 endif
 
+ifeq ($(USE_XBOX360),1)
+IOP_CFLAGS += -DUSE_XBOX360
+IOP_OBJS += xbox360usb.o
+endif
+
+ifeq ($(USE_XBOXONE),1)
+IOP_CFLAGS += -DUSE_XBOXONE
+IOP_OBJS += xboxoneusb.o
+endif
+
 ifeq ($(VMC),1)
 IOP_CFLAGS += -DVMC
 endif
