@@ -117,7 +117,9 @@ typedef struct _McImageSpec
     char fname[64]; /* Vmc file name (memorycard?.bin) */
     u16 fid;        /* SMB Vmc file id */
 #endif
-
+#ifdef MMCE_DRIVER
+    int fd; /* fd used with MMCE */
+#endif
     int flags;    /* Memory Card Flags */
     McSpec cspec; /* Memory Card Spec */
 } McImageSpec;

@@ -362,8 +362,10 @@ int guiDeviceTypeToIoMode(int deviceType)
         return HDD_MODE;
     else if (deviceType == 3)
         return APP_MODE;
-    else
+    else if (deviceType == 4)
         return FAV_MODE;
+    else
+        return MMCE_MODE;
 }
 
 int guiIoModeToDeviceType(int ioMode)
@@ -383,6 +385,8 @@ int guiIoModeToDeviceType(int ioMode)
             return 3;
         case FAV_MODE:
             return 4;
+        case MMCE_MODE:
+            return 5;
         default:
             return 0;
     }
@@ -391,7 +395,7 @@ int guiIoModeToDeviceType(int ioMode)
 void guiShowConfig()
 {
     // configure the enumerations
-    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), _l(_STR_APPS), _l(_STR_FAV), NULL};
+    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), _l(_STR_APPS), _l(_STR_FAV), _l(_STR_MMCE), NULL};
     const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
 
     diaSetEnum(diaConfig, CFG_DEFDEVICE, deviceNames);
@@ -463,6 +467,55 @@ void guiShowConfig()
         applyConfig(-1, -1, 0);
         menuReinitMainMenu();
     }
+}
+
+void guiShowMMCEConfig()
+{
+    int ret;
+    const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
+    const char *deviceSlots[] = {"0", "1", _l(_STR_AUTO), NULL};
+    const char *deviceAckWaitCycles[] = {"0", "1", "2", "3", "4", "5", NULL};
+    const char *deviceOnOff[] = {"OFF", "ON", NULL};
+    const char *deviceIGRSlots[] = {"NONE", "0", "1", "BOTH", NULL};
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEMODE, deviceModes);
+    diaSetInt(diaMMCEConfig, CFG_MMCEMODE, gMMCEStartMode);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCESLOT, deviceSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCESLOT, gMMCESlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEIGRSLOT, deviceIGRSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, gMMCEIGRSlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, deviceAckWaitCycles);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, gMMCEAckWaitCycles);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_USE_ALARMS, deviceOnOff);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, gMMCEUseAlarms);
+
+    diaSetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix);
+
+#ifdef __DEBUG
+    diaSetInt(diaMMCEConfig, CFG_MMCEGAMEID, gMMCEEnableGameID);
+#endif
+
+    ret = diaExecuteDialog(diaMMCEConfig, -1, 1, NULL);
+    if (ret) {
+        diaGetInt(diaMMCEConfig, CFG_MMCEMODE, &gMMCEStartMode);
+        diaGetInt(diaMMCEConfig, CFG_MMCESLOT, &gMMCESlot);
+#ifdef __DEBUG
+        diaGetInt(diaMMCEConfig, CFG_MMCEGAMEID, &gMMCEEnableGameID);
+#endif
+        diaGetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, &gMMCEIGRSlot);
+
+        diaGetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
+        diaGetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, &gMMCEUseAlarms);
+
+        diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
+    }
+
+    applyConfig(-1, -1, 0);
+    menuReinitMainMenu();
 }
 
 static int curTheme = -1;

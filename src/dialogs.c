@@ -167,6 +167,59 @@ struct UIItem diaBlockDevicesConfig[] = {
     // end of dialog
     {UI_TERMINATOR}};
 
+// MMCE Settings Menu
+struct UIItem diaMMCEConfig[] = {
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_MMCE_SETTINGS}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCEMODE}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCEMODE, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_SLOT}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCESLOT, 1, 1, -1, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCEIGR_SLOT}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCEIGRSLOT, 1, 1, _STR_HINT_MMCEIGR_SLOT, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_PREFIX}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_MMCEPREFIX, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_BREAK},
+
+#ifdef __DEBUG
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Send GameID on Launch", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_MMCEGAMEID, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+#endif
+
+    {UI_BREAK},
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_MMCE_ADVANCED}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_WAIT_CYCLES}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCE_WAIT_CYCLES, 1, 1, _STR_HINT_MMCE_WAIT_CYCLES, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_MMCE_USE_ALARMS}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MMCE_USE_ALARMS, 1, 1, _STR_HINT_MMCE_USE_ALARMS, 0, 0, {.intvalue = {0, 0, 0, 1}}},
+    {UI_BREAK},
+
+    // buttons
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    // end of dialog
+    {UI_TERMINATOR}};
+
 // Settings Menu
 struct UIItem diaConfig[] = {
     {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_SETTINGS}}},

@@ -18,6 +18,7 @@
 #include "include/ioman.h"
 #include "include/ioprp.h"
 #include "include/bdmsupport.h"
+#include "include/mmcesupport.h"
 #include "include/OSDHistory.h"
 #include "include/renderman.h"
 #include "include/extern_irx.h"
@@ -404,6 +405,7 @@ void sysExecExit(void)
 #define CORE_IRX_ILINK  0x80
 #define CORE_IRX_MX4SIO 0x100
 
+#define CORE_IRX_MMCE 0x200
 typedef struct
 {
     char *game;
@@ -491,8 +493,10 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         modules |= CORE_IRX_HDD;
     else if (!strcmp(mode_str, "ETH_MODE"))
         modules |= CORE_IRX_ETH | CORE_IRX_SMB;
-    else
+    else if (!strcmp(mode_str, "HDD_MODE"))
         modules |= CORE_IRX_HDD;
+    else if (!strcmp(mode_str, "MMCE_MODE"))
+        modules |= CORE_IRX_MMCE;
 
     irxtable = (irxtab_t *)ModuleStorage;
     irxptr_tab = (irxptr_t *)((unsigned char *)irxtable + sizeof(irxtab_t));
@@ -512,6 +516,12 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     irxptr_tab[modcount++].ptr = (void *)&imgdrv_irx;
     irxptr_tab[modcount].info = size_resetspu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_RESETSPU);
     irxptr_tab[modcount++].ptr = (void *)&resetspu_irx;
+
+    // Load MMCEIGR module (~1.4KB) on reset if bootcard switch is enabled for either slot
+    if (gMMCEIGRSlot != 0) {
+        irxptr_tab[modcount].info = size_mmceigr_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MMCEIGR);
+        irxptr_tab[modcount++].ptr = (void *)&mmceigr_irx;
+    }
 
     irxptr_tab[modcount].info = size_patch_membo_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MODE7);
     irxptr_tab[modcount++].ptr = (void *)&patch_membo_irx;
@@ -558,6 +568,11 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     if (modules & CORE_IRX_VMC) {
         irxptr_tab[modcount].info = size_mcemu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MCEMU);
         irxptr_tab[modcount++].ptr = (void *)mcemu_irx;
+    }
+
+    if (modules & CORE_IRX_MMCE) {
+        irxptr_tab[modcount].info = size_mmcedrv_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MMCEDRV);
+        irxptr_tab[modcount++].ptr = (void *)mmcedrv_irx;
     }
 
 #ifdef PADEMU
@@ -922,6 +937,9 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
 
     strncpy(config->ExitPath, gExitPath, CORE_EXIT_PATH_MAX_LEN);
     strncpy(config->GameModeDesc, mode_str, CORE_GAME_MODE_DESC_MAX_LEN);
+
+    // MMCEIGR Settings
+    config->MMCEIGRSettings = gMMCEIGRSlot;
 
     config->EnableDebug = gEnableDebug;
     config->HDDSpindown = gHDDSpindown;
