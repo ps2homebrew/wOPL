@@ -142,7 +142,7 @@ static int usb_connect(int devId)
     if (device->idProduct == DS3_PID) {
         ds34pad[pad].type = DS3;
         epCount = interface->bNumEndpoints - 1;
-    } else if (device->idProduct == DS4_PID) {
+    } else if (device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM) {
         ds34pad[pad].type = DS4;
         epCount = 20; // ds4 v2 returns interface->bNumEndpoints as 0
     } else if (device->idProduct == DS5_PID) {
