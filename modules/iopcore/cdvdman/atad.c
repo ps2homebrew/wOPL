@@ -88,7 +88,7 @@ typedef struct _ata_cmd_info
 } ata_cmd_info_t;
 
 #define ata_cmd_command_mask      0x1f
-#define ata_cmd_command_bits(x)   ((x)&ata_cmd_command_mask)
+#define ata_cmd_command_bits(x)   ((x) & ata_cmd_command_mask)
 #define ata_cmd_flag_write_twice  0x80
 #define ata_cmd_flag_use_timeout  0x40
 #define ata_cmd_flag_dir          0x20 // DMA direction: read from RAM if set, write to to RAM if unset.
@@ -110,7 +110,7 @@ static const ata_cmd_info_t ata_cmd_table[] = {
 };
 #define ATA_CMD_TABLE_SIZE (sizeof ata_cmd_table / sizeof(ata_cmd_info_t))
 
-/* This is the state info tracked between ata_io_start() and ata_io_finish().  */
+/* This is the state info tracked between sceAtaExecCmd() and sceAtaWaitResult().  */
 struct
 {
     union
@@ -177,14 +177,14 @@ int atad_start(void)
     }
 
     /* In v1.04, PIO mode 0 was set here. In late versions, it is set in ata_init_devices(). */
-    dev9RegisterIntrCb(1, &ata_intr_cb);
-    dev9RegisterIntrCb(0, &ata_intr_cb);
+    SpdRegisterIntrHandler(1, &ata_intr_cb);
+    SpdRegisterIntrHandler(0, &ata_intr_cb);
 #ifndef ATA_GAMESTAR_WORKAROUND
     dev9RegisterPreDmaCb(0, &ata_pre_dma_cb);
     dev9RegisterPostDmaCb(0, &ata_post_dma_cb);
 #endif // ATA_GAMESTAR_WORKAROUND
     /* Register this at the last position, as it should be the last thing done before shutdown. */
-    dev9RegisterShutdownCb(15, &ata_shutdown_cb);
+    Dev9RegisterPowerOffHandler(15, &ata_shutdown_cb);
 
     iop_sema_t smp;
     smp.initial = 1;
@@ -216,7 +216,7 @@ int atad_start(void)
 static int ata_intr_cb(int flag)
 {
     if (flag != 1) { /* New card, invalidate device info.  */
-        dev9IntrDisable(SPD_INTR_ATA);
+        SpdIntrDisable(SPD_INTR_ATA);
         iSetEventFlag(ata_evflg, ATA_EV_COMPLETE);
     }
 
@@ -309,7 +309,7 @@ static unsigned find_ata_cmd(u16 command)
  * bits in the 2nd write pass. The LBA bits within the device field are not used
  * in either write pass.
  */
-int ata_io_start(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, u16 lcyl, u16 hcyl, u16 select, u16 command)
+int sceAtaExecCmd(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, u16 lcyl, u16 hcyl, u16 select, u16 command)
 {
     USE_ATA_REGS;
     int res;
@@ -350,7 +350,7 @@ int ata_io_start(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, 
 
     /* Enable the command completion interrupt.  */
     if (ata_cmd_command_bits(type) == 1)
-        dev9IntrEnable(SPD_INTR_ATA0);
+        SpdIntrEnable(SPD_INTR_ATA0);
 
     /* Finally!  We send off the ATA command with arguments.  */
     ata_hwport->r_control = !ata_cmd_flag_is_set(type, ata_cmd_flag_use_timeout) << 1;
@@ -380,7 +380,7 @@ int ata_io_start(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector, 
     ata_hwport->r_command = command & 0xff;
 
     /* Turn on the LED.  */
-    dev9LEDCtl(1);
+    SpdSetLED(1);
 
     return 0;
 }
@@ -400,7 +400,7 @@ static inline int ata_dma_complete(void *buf, int blkcount, int dir)
             if ((dma_stat = SPD_REG16(0x38) & 0x1f))
                 goto next_transfer;
 
-        dev9IntrEnable(SPD_INTR_ATA);
+        SpdIntrDisable(SPD_INTR_ATA);
         /* Wait for the previous transfer to complete or a timeout.  */
         WaitEventFlag(ata_evflg, ATA_EV_TIMEOUT | ATA_EV_COMPLETE, WEF_CLEAR | WEF_OR, &bits);
 
@@ -429,7 +429,7 @@ static inline int ata_dma_complete(void *buf, int blkcount, int dir)
     next_transfer:
         count = (blkcount < dma_stat) ? blkcount : dma_stat;
         nbytes = count * 512;
-        if ((res = dev9DmaTransfer(0, buf, (nbytes << 9) | 32, dir)) < 0)
+        if ((res = SpdDmaTransfer(0, buf, (nbytes << 9) | 32, dir)) < 0)
             return res;
 
         buf = (void *)((u8 *)buf + nbytes);
@@ -440,7 +440,7 @@ static inline int ata_dma_complete(void *buf, int blkcount, int dir)
 }
 
 /* Export 7 */
-int ata_io_finish(void)
+int sceAtaWaitResult(void)
 {
     USE_SPD_REGS;
     USE_ATA_REGS;
@@ -469,7 +469,7 @@ int ata_io_finish(void)
             if ((stat = SPD_REG16(SPD_R_INTR_STAT) & 0x01))
                 break;
         if (!stat) {
-            dev9IntrEnable(SPD_INTR_ATA0);
+            SpdIntrEnable(SPD_INTR_ATA0);
             WaitEventFlag(ata_evflg, ATA_EV_TIMEOUT | ATA_EV_COMPLETE, WEF_CLEAR | WEF_OR, &bits);
             if (bits & ATA_EV_TIMEOUT) {
                 M_PRINTF("Error: ATA timeout on DMA completion.\n");
@@ -503,7 +503,7 @@ finish:
     /* The command has completed (with an error or not), so clean things up.  */
     CancelAlarm(&ata_alarm_cb, NULL);
     /* Turn off the LED.  */
-    dev9LEDCtl(0);
+    SpdSetLED(0);
 
     if (res)
         M_PRINTF("error: ATA failed, %d\n", res);
@@ -512,12 +512,12 @@ finish:
 }
 
 /* Export 17 */
-int ata_device_flush_cache(int device)
+int sceAtaFlushCache(int device)
 {
     int res;
 
-    if (!(res = ata_io_start(NULL, 1, 0, 0, 0, 0, 0, (device << 4) & 0xffff, lba_48bit ? ATA_C_FLUSH_CACHE_EXT : ATA_C_FLUSH_CACHE)))
-        res = ata_io_finish();
+    if (!(res = sceAtaExecCmd(NULL, 1, 0, 0, 0, 0, 0, (device << 4) & 0xffff, lba_48bit ? ATA_C_FLUSH_CACHE_EXT : ATA_C_FLUSH_CACHE)))
+        res = sceAtaWaitResult();
 
     return res;
 }
@@ -568,7 +568,7 @@ int ata_device_sector_io_internal(int device, void *buf, u64 lba, u32 nsectors, 
             ata_set_dir(dir);
 #endif // ATA_GAMESTAR_WORKAROUND
 
-            if ((res = ata_io_start(buf, len, 0, len, sector, lcyl, hcyl, select, command)) != 0)
+            if ((res = sceAtaExecCmd(buf, len, 0, len, sector, lcyl, hcyl, select, command)) != 0)
                 break;
 
 #ifndef ATA_GAMESTAR_WORKAROUND
@@ -576,7 +576,7 @@ int ata_device_sector_io_internal(int device, void *buf, u64 lba, u32 nsectors, 
             ata_set_dir(dir);
 #endif // ATA_GAMESTAR_WORKAROUND
 
-            res = ata_io_finish();
+            res = sceAtaWaitResult();
 
             /* In v1.04, this was not done. Neither was there a mechanism to retry if a non-permanent error occurs. */
             SPD_REG16(SPD_R_IF_CTRL) &= ~SPD_IF_DMA_ENABLE;
@@ -596,7 +596,7 @@ int ata_device_sector_io_internal(int device, void *buf, u64 lba, u32 nsectors, 
 }
 
 /* Export 4 */
-ata_devinfo_t *ata_get_devinfo(int device)
+ata_devinfo_t *sceAtaInit(int device)
 {
     return &atad_devinfo;
 }
@@ -619,8 +619,8 @@ static void ata_set_dir(int dir)
 
 static void ata_shutdown_cb(void)
 {
-    if (!ata_io_start(NULL, 1, 0, 0, 0, 0, 0, 0, ATA_C_STANDBY_IMMEDIATE))
-        ata_io_finish();
+    if (!sceAtaExecCmd(NULL, 1, 0, 0, 0, 0, 0, 0, ATA_C_STANDBY_IMMEDIATE))
+        sceAtaWaitResult();
 }
 #ifdef USE_BDM_ATA
 static int ata_device_standby_immediate(int device)
@@ -664,4 +664,3 @@ static int ata_bd_stop(struct block_device *bd)
     return 0;
 }
 #endif
-
