@@ -13,6 +13,7 @@
 #define DS4_PID_SLIM        0x09CC // PS4 Slim Controller
 #define GUITAR_HERO_PS3_PID 0x0100 // PS3 Guitar Hero Guitar
 #define ROCK_BAND_PS3_PID   0x0200 // PS3 Rock Band Guitar
+#define DS5_PID             0x0CE6 // PS5 DualSense Controller
 
 // NOTE: struct member prefixed with "n" means it's active-low (i.e. value of 0 indicates button is pressed, value 1 is released)
 enum DS2ButtonBitNumber {
@@ -282,6 +283,61 @@ struct ds4report
 
 } __attribute__((packed));
 
+struct ds5report
+{
+    uint8_t ReportID;
+    uint8_t LeftStickX;
+    uint8_t LeftStickY;
+    uint8_t RightStickX;
+    uint8_t RightStickY;
+    uint8_t PressureL2;
+    uint8_t PressureR2;
+    uint8_t Counter1;
+    uint8_t Dpad       : 4;
+    uint8_t Square     : 1;
+    uint8_t Cross      : 1;
+    uint8_t Circle     : 1;
+    uint8_t Triangle   : 1;
+    uint8_t L1         : 1;
+    uint8_t R1         : 1;
+    uint8_t L2         : 1;
+    uint8_t R2         : 1;
+    uint8_t Create     : 1;
+    uint8_t Option     : 1;
+    uint8_t L3         : 1;
+    uint8_t R3         : 1;
+    uint8_t PSButton   : 1;
+    uint8_t TPad       : 1;
+    uint8_t Microphone : 1;
+    uint8_t Reserved2  : 1; // UNK1
+    uint8_t Reserved3  : 4; // DualSense Edge buttons
+    uint8_t Reserved4;      // UNK2
+    uint32_t Counter2;      // UNK_COUNTER
+    int16_t GyroX;
+    int16_t GyroY;
+    int16_t GyroZ;
+    int16_t AccelX;
+    int16_t AccelY;
+    int16_t AccelZ;
+    uint32_t SensorTimestamp;
+    uint8_t Temperature;
+    uint32_t Finger1ID      : 7;  // counter
+    uint32_t nFinger1Active : 1;  // 0 - active, 1 - unactive
+    uint32_t Finger1X       : 12; // finger 1 coordinates resolution 1920x943
+    uint32_t Finger1Y       : 12;
+    uint32_t Finger2ID      : 7;
+    uint32_t nFinger2Active : 1;
+    uint32_t Finger2X       : 12; // finger 2 coordinates resolution 1920x943
+    uint32_t Finger2Y       : 12;
+    uint8_t Reserved7[12];   // Adaptive triggers
+    uint8_t Battery     : 4; // battery level from 0x0 to 0x0F
+    uint8_t Power       : 4; // from 0x0 to 0xA - charging, 0xB - charged
+    uint8_t Reserved8   : 4; // PowerState
+    uint8_t Usb_plugged : 1;
+    uint8_t Reserved9   : 3;
+    uint8_t Reserved10[9];
+} __attribute__((packed));
+
 /**
  * Translate DS3 pad data into DS2 pad data.
  * @param in DS3 report
@@ -307,5 +363,15 @@ void translate_pad_guitar(const struct ds3guitarreport *in, struct ds2report *ou
  * NOTE: if set to 1, ds4report must be large enough for that data to be read!
  */
 void translate_pad_ds4(const struct ds4report *in, struct ds2report *out, uint8_t have_touchpad);
+
+/**
+ * Translate DS5 pad data into DS2 pad data.
+ * @param in DS5 report
+ * @param out DS2 report
+ * @param have_touchpad set to 1 if input report has touchpad data
+ * NOTE: if set to 1, ds5report must be large enough for that data to be read!
+ */
+void translate_pad_ds5(const struct ds5report *in, struct ds2report *out, uint8_t have_touchpad);
+
 
 #endif

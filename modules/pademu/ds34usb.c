@@ -101,7 +101,7 @@ static int usb_probe(int devId)
         return 1;
     }
 
-    if (device->idVendor == DS34_VID && (device->idProduct == DS3_PID || device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM))
+    if (device->idVendor == DS34_VID && (device->idProduct == DS3_PID || device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM || device->idProduct == DS5_PID))
         return 1;
 
     return 0;
@@ -142,15 +142,18 @@ static int usb_connect(int devId)
     if (device->idProduct == DS3_PID) {
         ds34pad[pad].type = DS3;
         epCount = interface->bNumEndpoints - 1;
+    } else if (device->idProduct == DS4_PID) {
+        ds34pad[pad].type = DS4;
+        epCount = 20; // ds4 v2 returns interface->bNumEndpoints as 0
+    } else if (device->idProduct == DS5_PID) {
+        ds34pad[pad].type = DS5;
+        epCount = 20; // ds5 v2 returns interface->bNumEndpoints as 0
     } else if (device->idProduct == GUITAR_HERO_PS3_PID) {
         ds34pad[pad].type = GUITAR_GH;
         epCount = interface->bNumEndpoints - 1;
     } else if (device->idProduct == ROCK_BAND_PS3_PID) {
         ds34pad[pad].type = GUITAR_RB;
         epCount = interface->bNumEndpoints - 1;
-    } else {
-        ds34pad[pad].type = DS4;
-        epCount = 20; // ds4 v2 returns interface->bNumEndpoints as 0
     }
 
     endpoint = (UsbEndpointDescriptor *)sceUsbdScanStaticDescriptor(devId, NULL, USB_DT_ENDPOINT);
@@ -258,7 +261,7 @@ static void usb_config_set(int result, int count, void *arg)
         DelayThread(10000);
         led[0] = led_patterns[pad][1];
         led[3] = 0;
-    } else if (ds34pad[pad].type == DS4) {
+    } else if (ds34pad[pad].type == DS4 || ds34pad[pad].type == DS5) {
         led[0] = rgbled_patterns[pad][1][0];
         led[1] = rgbled_patterns[pad][1][1];
         led[2] = rgbled_patterns[pad][1][2];
@@ -374,6 +377,37 @@ static void readReport(u8 *data, int pad_idx)
                 pad->oldled[3] = 1;
             else
                 pad->oldled[3] = 0;
+        } else if (pad->type == DS5) {
+            struct ds5report *report;
+            report = (struct ds5report *)data;
+            translate_pad_ds5(report, &pad->ds2, 1);
+            padMacroPerform(&pad->ds2, report->PSButton);
+
+            if (report->PSButton) {                                    // display battery level
+                if (report->Create && (pad->btn_delay == MAX_DELAY)) { // PS + Create
+                    if (pad->analog_btn < 2)                           // unlocked mode
+                        pad->analog_btn = !pad->analog_btn;
+
+                    pad->oldled[0] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][0];
+                    pad->oldled[1] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][1];
+                    pad->oldled[2] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][2];
+                    pad->btn_delay = 1;
+                } else {
+                    pad->oldled[0] = (report->Battery * 255) / 15;
+                    pad->oldled[1] = 0;
+                    pad->oldled[2] = 0;
+
+                    if (pad->btn_delay < MAX_DELAY)
+                        pad->btn_delay++;
+                }
+            } else {
+                pad->oldled[0] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][0];
+                pad->oldled[1] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][1];
+                pad->oldled[2] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][2];
+
+                if (pad->btn_delay > 0)
+                    pad->btn_delay--;
+            }
         }
         if (pad->btn_delay > 0) {
             pad->update_rum = 1;
@@ -426,6 +460,24 @@ static int LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
         }
 
         ret = sceUsbdInterruptTransfer(ds34pad[pad].outEndp, usb_buf, 32, usb_cmd_cb, (void *)pad);
+    } else if (ds34pad[pad].type == DS5) {
+        usb_buf[0] = 0x02; // ReportID
+        usb_buf[1] = 0x03; // EnableRumbleEmulation & RumbleUseRumbleNotHaptics
+        usb_buf[2] = 0x17;
+
+        usb_buf[3] = rrum; // light weight
+        usb_buf[4] = lrum; // heavy weight
+
+        usb_buf[39] = 0x07; // AllowLightBrightnessChange & AllowColorLightFadeAnimation & EnableImprovedRumbleEmulation
+        usb_buf[42] = 0x80; // LightFadeAnimation
+        usb_buf[43] = 0xFF; // LightBrightness
+        usb_buf[44] = 0x04; // PlayerLight - - X - -
+
+        usb_buf[45] = led[0]; // r
+        usb_buf[46] = led[1]; // g
+        usb_buf[47] = led[2]; // b
+
+        ret = sceUsbdInterruptTransfer(ds34pad[pad].outEndp, usb_buf, 48, usb_cmd_cb, (void *)pad);
     }
 
     ds34pad[pad].oldled[0] = led[0];
