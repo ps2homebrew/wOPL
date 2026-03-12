@@ -37,7 +37,6 @@ static bt_device bt_dev = {-1, -1, -1, -1, -1, -1, DS34BT_STATE_USB_DISCONNECTED
 
 static void ds34pad_clear(int pad);
 static void ds34pad_init();
-static int ds34bt_get_status(struct pad_funcs *pf);
 static int ds34bt_get_model(struct pad_funcs *pf, int port);
 static int ds34bt_get_data(struct pad_funcs *pf, u8 *dst, int size, int port);
 static void ds34bt_set_rumble(struct pad_funcs *pf, u8 lrum, u8 rrum);
@@ -339,7 +338,6 @@ static int hci_reset()
     hci_cmd_buf[2] = 0x00; // Parameter Total Length = 0
 
     padf[pad].priv = &ds34pad[pad];
-    padf[pad].get_status = ds34bt_get_status;
     padf[pad].get_model = ds34bt_get_model;
     padf[pad].get_data = ds34bt_get_data;
     padf[pad].set_rumble = ds34bt_set_rumble;
@@ -1313,20 +1311,6 @@ static void ds34bt_set_mode(struct pad_funcs *pf, int mode, int lock)
         pad->analog_btn = mode;
 
     SignalSema(bt_dev.hid_sema);
-}
-
-static int ds34bt_get_status(struct pad_funcs *pf)
-{
-    ds34bt_pad_t *pad = pf->priv;
-    int ret;
-
-    WaitSema(bt_dev.hid_sema);
-
-    ret = pad->status;
-
-    SignalSema(bt_dev.hid_sema);
-
-    return ret;
 }
 
 static int ds34bt_get_model(struct pad_funcs *pf, int port)

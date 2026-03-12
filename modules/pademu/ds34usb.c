@@ -580,20 +580,6 @@ void ds34usb_reset()
         usb_release(pad);
 }
 
-static int ds34usb_get_status(struct pad_funcs *pf)
-{
-    ds34usb_device *pad = pf->priv;
-    int ret;
-
-    WaitSema(pad->sema);
-
-    ret = pad->status;
-
-    SignalSema(pad->sema);
-
-    return ret;
-}
-
 static int ds34usb_get_model(struct pad_funcs *pf, int port)
 {
     (void *)port;
@@ -647,7 +633,6 @@ int ds34usb_init(u8 pads, u8 options)
             return 0;
         }
         padf[pad].priv = &ds34pad[pad];
-        padf[pad].get_status = ds34usb_get_status;
         padf[pad].get_model = ds34usb_get_model;
         padf[pad].get_data = ds34usb_get_data;
         padf[pad].set_rumble = ds34usb_set_rumble;

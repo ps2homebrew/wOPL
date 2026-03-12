@@ -328,7 +328,7 @@ clean:	download_lwNBD
 	echo " -ds34bt"
 	$(MAKE) -C modules/ds34bt clean
 	echo " -pademu"
-	$(MAKE) -C modules/pademu USE_BT=1 USE_UBS=1 USE_XBOX360=1 USE_XBOXONE=1 VMC=1 clean
+	$(MAKE) -C modules/pademu USE_BT=1 USE_USB=1 USE_XBOX360=1 USE_XBOXONE=1 VMC=1 clean
 	echo "-pc tools"
 	$(MAKE) -C pc clean
 

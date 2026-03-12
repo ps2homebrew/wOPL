@@ -62,7 +62,6 @@ struct pad_funcs
 {
     // Private driver data
     void *priv;
-    int (*get_status)(struct pad_funcs *pf);
     int (*get_data)(struct pad_funcs *pf, u8 *dst, int size, int port);
     void (*set_rumble)(struct pad_funcs *pf, u8 lrum, u8 rrum);
     void (*set_mode)(struct pad_funcs *pf, int mode, int lock);

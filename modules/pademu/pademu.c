@@ -458,12 +458,6 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
         return;
     }
 
-    if (!(padf[port]->get_status(padf[port]) & PAD_STATE_RUNNING)) {
-        pad[port].lrum = 2;
-        pad[port].rrum = 2;
-        return;
-    }
-
     out[0] = 0xFF;
     out[1] = CONFIG_MODE;
     out[2] = 0x5A;
