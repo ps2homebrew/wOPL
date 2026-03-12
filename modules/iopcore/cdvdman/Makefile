@@ -19,6 +19,14 @@ USE_DEV9 = 1
 endif
 endif
 
+ifeq ($(USE_GAMESTAR),1)
+IOP_BIN  = hdd_gamestar_cdvdman.irx
+IOP_OBJS_DIR = obj.gamestar/
+IOP_OBJS += device-hdd.o atad.o
+IOP_CFLAGS += -DHDD_DRIVER -DATA_GAMESTAR_WORKAROUND
+USE_DEV9 = 1
+endif
+
 ifeq ($(USE_MMCE),1)
 IOP_BIN  = mmce_cdvdman.irx
 IOP_OBJS_DIR = obj.mmce/
