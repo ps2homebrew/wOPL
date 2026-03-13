@@ -2,7 +2,7 @@
 
 ## For translators
 
-All translation files moved to the separate repository: <https://github.com/ps2homebrew/Open-PS2-Loader-lang>\\
+All translation files moved to the separate repository: <https://github.com/NathanNeurotic/Open-PS2-Loader-lang>\\
 Provide your submissions there.\\
 Languages were moved there for reducing commit stress for the main repository.\\
 Check if your `.yml` file has untranslated strings. Example:
@@ -39,7 +39,7 @@ then you should update the base file like:
   string: '%d: Network startup error.'
 ```
 
-After running `make languages` propose your changes into [the language repo](https://github.com/ps2homebrew/Open-PS2-Loader-lang).\\
+After running `make languages` propose your changes into [the language repo](https://github.com/NathanNeurotic/Open-PS2-Loader-lang).\\
 Folder `lng_src` will contain updated files.
 
 It is not recommended to rename or remove already existing strings.\\
