@@ -272,15 +272,17 @@ static void bgmThread(void *arg)
     bgmThreadRunning = 1;
 
     while (!terminateFlag) {
-        SleepThread();
+        WaitSema(outSema);
+        if (terminateFlag)
+            break;
 
-        while (PollSema(outSema) == outSema) {
-            audsrv_wait_audio(BGM_RING_BUFFER_SIZE);
-            audsrv_play_audio(bgmBuffer[rdPtr], BGM_RING_BUFFER_SIZE);
-            rdPtr = (rdPtr + 1) % BGM_RING_BUFFER_COUNT;
+        audsrv_wait_audio(BGM_RING_BUFFER_SIZE);
+        audsrv_play_audio(bgmBuffer[rdPtr], BGM_RING_BUFFER_SIZE);
+        rdPtr = (rdPtr + 1) % BGM_RING_BUFFER_COUNT;
 
-            SignalSema(inSema);
-        }
+
+        SignalSema(inSema);
+        SignalSema(outSema);
     }
 
     audsrv_stop_audio();
@@ -319,15 +321,17 @@ static void bgmIoThread(void *arg)
                 ov_pcm_seek(vorbisFile, 0);
         } while (decodeTotal > 0);
 
+        if (terminateFlag)
+            break;
+
         wrPtr = (wrPtr + partsToRead) % BGM_RING_BUFFER_COUNT;
         for (i = 0; i < partsToRead; i++)
             SignalSema(outSema);
-        WakeupThread(bgmThreadID);
     } while (!terminateFlag && gEnableBGM);
 
     bgmIoThreadRunning = 0;
     terminateFlag = 1;
-    WakeupThread(bgmThreadID);
+    SignalSema(outSema);
 }
 
 static int bgmLoad(void)
