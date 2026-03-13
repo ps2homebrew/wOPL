@@ -425,20 +425,6 @@ void xboxoneusb_reset()
         usb_release(pad);
 }
 
-static int xboxone_get_status(struct pad_funcs *pf)
-{
-    xboxoneusb_device *pad = pf->priv;
-    int ret;
-
-    WaitSema(pad->sema);
-
-    ret = pad->status;
-
-    SignalSema(pad->sema);
-
-    return ret;
-}
-
 static int xboxone_get_model(struct pad_funcs *pf, int port)
 {
 #ifdef WIP /* TODO: Add xbox 360 guitars. */
@@ -496,7 +482,6 @@ int xboxoneusb_init(u8 pads, u8 options)
             return 0;
         }
         padf[pad].priv = &xboxonepad[pad];
-        padf[pad].get_status = xboxone_get_status;
         padf[pad].get_model = xboxone_get_model;
         padf[pad].get_data = xboxone_get_data;
         padf[pad].set_rumble = xboxone_set_rumble;
