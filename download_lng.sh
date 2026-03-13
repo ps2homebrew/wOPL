@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Download languages
-REPO_URL="https://github.com/ps2homebrew/Open-PS2-Loader-lang"
+REPO_URL="https://github.com/NathanNeurotic/Open-PS2-Loader-lang"
 REPO_FOLDER="lng_src"
 BRANCH_NAME="main"
 if test ! -d "$REPO_FOLDER"; then
