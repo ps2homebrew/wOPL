@@ -3,18 +3,6 @@
 
 #include "irx.h"
 
-#include <ds34common.h>
-
-#define DS3       0
-#define DS4       1
-#define DS5       2
-#define GUITAR_GH 3
-#define GUITAR_RB 4
-
-#define MODEL_GUITAR 1
-#define MODEL_PS2    3
-
-#define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
 
 enum eDS34USBStatus {
     DS34USB_STATE_DISCONNECTED = 0x00,

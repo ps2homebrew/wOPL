@@ -3,8 +3,6 @@
 
 #include "irx.h"
 
-#include <ds34common.h>
-
 #define PENDING    1
 #define SUCCESSFUL 0
 

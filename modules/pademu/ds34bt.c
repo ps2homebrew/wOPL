@@ -11,11 +11,12 @@
 #include "usbd_macro.h"
 #include "thbase.h"
 #include "thsemap.h"
+#include "ds34common.h"
 #include "ds34bt.h"
 #include "sys_utils.h"
 #include "padmacro.h"
 #include "pademu.h"
-#include "ds34.h"
+
 
 #define MODNAME "DS34BT"
 

@@ -16,9 +16,14 @@
 #define ROCK_BAND_PS3_PID   0x0200 // PS3 Rock Band Guitar
 #define DS3                 0
 #define DS4                 1
-
+#define DS5       2
+#define GUITAR_GH 3
+#define GUITAR_RB 4
+#define MODEL_GUITAR 1
+#define MODEL_PS2    3
 
 #define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
+#define MAX_PORTS 4
 
 // NOTE: struct member prefixed with "n" means it's active-low (i.e. value of 0 indicates button is pressed, value 1 is released)
 enum DS2ButtonBitNumber {
@@ -375,6 +380,42 @@ enum eHID {
 
     // }}}
 };
+
+typedef struct
+{
+    int devId;
+    int hid_sema;
+    int controlEndp;
+    int interruptEndp;
+    int inEndp;
+    int outEndp;
+    u8 status;
+} bt_device;
+
+typedef struct _usb_ds34
+{
+    int devId;
+    int sema;
+    int cmd_sema;
+    int controlEndp;
+    int interruptEndp;
+    int outEndp;
+    u8 enabled;
+    u8 status;
+    u8 type;      // 0 - ds3, 1 - ds4, 2 - guitar hero guitar, 3 - rock band guitar
+    u8 oldled[4]; // rgb for ds4 and blink
+    u8 lrum;
+    u8 rrum;
+    u8 update_rum;
+    union
+    {
+        struct ds2report ds2;
+        u8 data[18];
+    };
+    u8 analog_btn;
+    u8 btn_delay;
+} ds34usb_device;
+
 
 /**
  * Translate DS3 pad data into DS2 pad data.
