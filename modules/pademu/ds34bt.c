@@ -333,16 +333,9 @@ static int HCI_Command(int nbytes, u8 *dataptr)
 
 static int hci_reset()
 {
-    int pad = 0;
     hci_cmd_buf[0] = HCI_OCF_RESET;
     hci_cmd_buf[1] = HCI_OGF_CTRL_BBAND;
     hci_cmd_buf[2] = 0x00; // Parameter Total Length = 0
-
-    padf[pad].priv = &ds34pad[pad];
-    padf[pad].get_model = ds34bt_get_model;
-    padf[pad].get_data = ds34bt_get_data;
-    padf[pad].set_rumble = ds34bt_set_rumble;
-    padf[pad].set_mode = ds34bt_set_mode;
 
     return HCI_Command(3, hci_cmd_buf);
 }
@@ -602,7 +595,7 @@ static void HCI_event_task(int result)
 
             case HCI_EVENT_CONNECT_REQUEST:
                 DPRINTF("HCI Connection Requested by BD_ADDR: \n\t");
-                print_bd_addr(&hci_buf[2]);
+                print_bd_addr(&hci_buf[2 + i]);
                 DPRINTF("\n\t Link = 0x%02X \n", hci_buf[11]);
                 DPRINTF("\t Class = 0x%02X 0x%02X 0x%02X \n", hci_buf[8], hci_buf[9], hci_buf[10]);
                 for (i = 0; i < MAX_PADS; i++) { // find free slot
@@ -660,7 +653,7 @@ static void HCI_event_task(int result)
 
             case HCI_EVENT_LINK_KEY_REQUEST:
                 DPRINTF("HCI Link Key Request Event by BD_ADDR: \n\t");
-                print_bd_addr(&hci_buf[2]);
+                print_bd_addr(&hci_buf[2 + i]);
                 DPRINTF("\n");
                 hci_link_key_request_reply(hci_buf + 2);
                 break;
@@ -698,6 +691,11 @@ static void ds34pad_clear(int pad)
     ds34pad[pad].data[1] = 0xFF;
     memset(&ds34pad[pad].data[2], 0x7F, 4);
     memset(&ds34pad[pad].data[6], 0x00, 12);
+    padf[pad].priv = &ds34pad[pad];
+    padf[pad].get_model = ds34bt_get_model;
+    padf[pad].get_data = ds34bt_get_data;
+    padf[pad].set_rumble = ds34bt_set_rumble;
+    padf[pad].set_mode = ds34bt_set_mode;
 }
 
 static void ds34pad_init()
@@ -1015,7 +1013,7 @@ static int L2CAP_event_task(int result, int bytes)
                 pad = MAX_PADS;
             }
         } // acl_handle_ok
-    }     // !rcode
+    } // !rcode
 
     return pad;
 }
@@ -1324,6 +1322,7 @@ static int ds34bt_get_model(struct pad_funcs *pf, int port)
 int ds34bt_init(u8 pads, u8 options)
 {
     int ret, i;
+    int pad = 0;
 
     for (i = 0; i < MAX_PADS; i++)
         ds34pad[i].enabled = (pads >> i) & 1;

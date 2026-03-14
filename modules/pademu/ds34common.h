@@ -1,6 +1,7 @@
 #ifndef _DS34COMMON_H_
 #define _DS34COMMON_H_
 #include <stdint.h>
+#include <tamtypes.h>
 
 #define USB_CLASS_WIRELESS_CONTROLLER 0xE0
 #define USB_SUBCLASS_RF_CONTROLLER    0x01
@@ -16,14 +17,14 @@
 #define ROCK_BAND_PS3_PID   0x0200 // PS3 Rock Band Guitar
 #define DS3                 0
 #define DS4                 1
-#define DS5       2
-#define GUITAR_GH 3
-#define GUITAR_RB 4
-#define MODEL_GUITAR 1
-#define MODEL_PS2    3
+#define DS5                 2
+#define GUITAR_GH           3
+#define GUITAR_RB           4
+#define MODEL_GUITAR        1
+#define MODEL_PS2           3
 
 #define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
-#define MAX_PORTS 4
+#define MAX_PORTS       4
 
 // NOTE: struct member prefixed with "n" means it's active-low (i.e. value of 0 indicates button is pressed, value 1 is released)
 enum DS2ButtonBitNumber {

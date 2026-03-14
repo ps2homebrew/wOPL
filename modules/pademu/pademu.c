@@ -80,7 +80,9 @@ static u8 mtap_inited = 0;
 static u8 mtap_slot = 0;
 static u8 mtap_port = 0;
 
+#ifdef VMC
 static int install_sio2hook();
+#endif
 
 static int hookRegisterLibraryEntires(iop_library_t *lib);
 static void hookSio2man25(sio2_transfer_data_t *sd);
@@ -214,6 +216,7 @@ void _exit(int mode)
 #endif
 }
 
+#ifdef VMC
 static int install_sio2hook()
 {
     register void *exp;
@@ -239,6 +242,7 @@ static int install_sio2hook()
 
     return 1;
 }
+#endif
 
 static void InstallSio2manHook(void *exp, int ver)
 {
