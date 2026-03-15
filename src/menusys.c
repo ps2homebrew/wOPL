@@ -826,7 +826,7 @@ void menuSetSelectedItem(menu_item_t *item)
 
 void menuRenderMenu()
 {
-    if (guiDrawBGSettings() == 0)
+    if (guiDrawBGMain() == 0)
         guiDrawBGPlasma();
 
     if (!mainMenu)
@@ -1133,7 +1133,7 @@ void menuHandleInputInfo()
 
 void menuRenderGameMenu()
 {
-    if (guiDrawBGSettings() == 0)
+    if (guiDrawBGMain() == 0)
         guiDrawBGPlasma();
 
     if (!gameMenu)
@@ -1266,7 +1266,7 @@ void menuHandleInputGameMenu()
 
 void menuRenderAppMenu()
 {
-    if (guiDrawBGSettings() == 0)
+    if (guiDrawBGMain() == 0)
         guiDrawBGPlasma();
 
     if (!appMenu)

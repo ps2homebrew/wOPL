@@ -242,20 +242,20 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
     // refresh Hints
     menuRemoveHints(&mod->menuItem);
 
-    menuAddHint(&mod->menuItem, _STR_MENU, START_ICON);
+    menuAddHint(&mod->menuItem, _STR_MENU, BUTTON_START_ICON);
     if (!mod->support->enabled)
-        menuAddHint(&mod->menuItem, _STR_START_DEVICE, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
+        menuAddHint(&mod->menuItem, _STR_START_DEVICE, gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON);
     else {
-        menuAddHint(&mod->menuItem, _STR_RUN, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
+        menuAddHint(&mod->menuItem, _STR_RUN, gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON);
 
         if (gTheme->infoElems.first)
-            menuAddHint(&mod->menuItem, _STR_INFO, SQUARE_ICON);
+            menuAddHint(&mod->menuItem, _STR_INFO, BUTTON_SYMBOL_SQUARE_ICON);
 
         if (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite)
-            menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
+            menuAddHint(&mod->menuItem, _STR_OPTIONS, BUTTON_SYMBOL_TRIANGLE_ICON);
 
-        menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
-        menuAddHint(&mod->menuItem, _STR_FAV_HINT, R3_ICON);
+        menuAddHint(&mod->menuItem, _STR_REFRESH, BUTTON_SELECT_ICON);
+        menuAddHint(&mod->menuItem, _STR_FAV_HINT, BUTTON_STICK_R3_ICON);
     }
 
     // refresh Cache

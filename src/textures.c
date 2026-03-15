@@ -7,42 +7,43 @@
 #include <fcntl.h>
 #include <malloc.h>
 
-extern void *load0_png;
-extern void *load1_png;
-extern void *load2_png;
-extern void *load3_png;
-extern void *load4_png;
-extern void *load5_png;
-extern void *load6_png;
-extern void *load7_png;
-extern void *usb_png; // Leave BDM Icon as usb.png to maintain theme compat
-extern void *usb_bd_png;
-extern void *ilk_bd_png;
-extern void *m4s_bd_png;
-extern void *hdd_bd_png;
-extern void *mmce_png;
-extern void *hdd_png;
-extern void *eth_png;
-extern void *app_png;
-extern void *fav_png;
-extern void *fav_mark_png;
-extern void *Index_0_png;
-extern void *Index_1_png;
-extern void *Index_2_png;
-extern void *Index_3_png;
-extern void *Index_4_png;
+extern void *loading_0_png;
+extern void *loading_1_png;
+extern void *loading_2_png;
+extern void *loading_3_png;
+extern void *loading_4_png;
+extern void *loading_5_png;
+extern void *loading_6_png;
+extern void *loading_7_png;
+extern void *loading_8_png;
+extern void *category_empty_bdm_png; // Leave BDM Icon as usb.png to maintain theme compat
+extern void *category_usb_png;
+extern void *category_ilink_png;
+extern void *category_mx4sio_png;
+extern void *category_hdd_bdm_png;
+extern void *category_hdd_apa_png;
+extern void *category_net_smb_png;
+extern void *category_apps_png;
+extern void *category_fav_png;
+extern void *mark_star_png;
+extern void *category_mmce_png;
+extern void *bdm_index_1_png;
+extern void *bdm_index_2_png;
+extern void *bdm_index_3_png;
+extern void *bdm_index_4_png;
+extern void *bdm_index_5_png;
 
-extern void *R3_png;
-extern void *left_png;
-extern void *right_png;
-extern void *cross_png;
-extern void *triangle_png;
-extern void *circle_png;
-extern void *square_png;
-extern void *select_png;
-extern void *start_png;
-extern void *up_png;
-extern void *down_png;
+extern void *button_stick_r3_png;
+extern void *button_dpad_left_png;
+extern void *button_dpad_right_png;
+extern void *button_dpad_up_png;
+extern void *button_dpad_down_png;
+extern void *button_symbol_cross_png;
+extern void *button_symbol_triangle_png;
+extern void *button_symbol_circle_png;
+extern void *button_symbol_square_png;
+extern void *button_select_png;
+extern void *button_start_png;
 /* currently unused.
 extern void *L1_png;
 extern void *L2_png;
@@ -50,63 +51,64 @@ extern void *L3_png;
 extern void *R1_png;
 extern void *R2_png;*/
 
-extern void *settings_bg_png;
-extern void *info_png;
+extern void *bg_main_png;
+extern void *bg_info_png;
 extern void *cover_png;
 extern void *disc_png;
-extern void *screen_png;
+extern void *screenshot_png;
 
-extern void *ELF_png;
-extern void *HDL_png;
-extern void *ISO_png;
-extern void *ZSO_png;
-extern void *UL_png;
-extern void *APPS_png;
-extern void *CD_png;
-extern void *DVD_png;
-extern void *Aspect_s_png;
-extern void *Aspect_w_png;
-extern void *Aspect_w1_png;
-extern void *Aspect_w2_png;
-extern void *Device_1_png;
-extern void *Device_2_png;
-extern void *Device_3_png;
-extern void *Device_4_png;
-extern void *Device_5_png;
-extern void *Device_6_png;
-extern void *Device_all_png;
-extern void *Rating_0_png;
-extern void *Rating_1_png;
-extern void *Rating_2_png;
-extern void *Rating_3_png;
-extern void *Rating_4_png;
-extern void *Rating_5_png;
-extern void *Scan_240p_png;
-extern void *Scan_240p1_png;
-extern void *Scan_480i_png;
-extern void *Scan_480p_png;
-extern void *Scan_480p1_png;
-extern void *Scan_480p2_png;
-extern void *Scan_480p3_png;
-extern void *Scan_480p4_png;
-extern void *Scan_480p5_png;
-extern void *Scan_576i_png;
-extern void *Scan_576p_png;
-extern void *Scan_720p_png;
-extern void *Scan_1080i_png;
-extern void *Scan_1080i2_png;
-extern void *Scan_1080p_png;
-extern void *Vmode_multi_png;
-extern void *Vmode_ntsc_png;
-extern void *Vmode_pal_png;
+extern void *badge_exec_elf_png;
+extern void *badge_disc_hdl_png;
+extern void *badge_disc_iso_png;
+extern void *badge_disc_zso_png;
+extern void *badge_disc_ul_png;
+extern void *badge_exec_app_png;
+extern void *badge_disc_cd_png;
+extern void *badge_disc_dvd_png;
+extern void *badge_vmode_43_png;
+extern void *badge_vmode_169_png;
+extern void *badge_vmode_169_ps2rd_png;
+extern void *badge_vmode_169_hexiso_png;
+extern void *dev_1_png;
+extern void *dev_2_png;
+extern void *dev_3_png;
+extern void *dev_4_png;
+extern void *dev_5_png;
+extern void *dev_6_png;
+extern void *dev_7_png;
+extern void *dev_8_png;
+extern void *rating_0_png;
+extern void *rating_1_png;
+extern void *rating_2_png;
+extern void *rating_3_png;
+extern void *rating_4_png;
+extern void *rating_5_png;
+extern void *badge_res_240p_png;
+extern void *badge_res_240p_hexiso_png;
+extern void *badge_res_480i_png;
+extern void *badge_res_480p_png;
+extern void *badge_res_480p_xt_png;
+extern void *badge_res_480p_xc_png;
+extern void *badge_res_480p_gsm_png;
+extern void *badge_res_480p_hexiso_png;
+extern void *badge_res_480p_ps2rd_png;
+extern void *badge_res_576i_png;
+extern void *badge_res_576p_gsm_png;
+extern void *badge_res_720p_gsm_png;
+extern void *badge_res_1080i_png;
+extern void *badge_res_1080i_gsm_png;
+extern void *badge_res_1080p_gsm_png; // TODO: Add 1080p support or remove this since gsm doesn´t support 1080p
+extern void *badge_region_multi_png;
+extern void *badge_region_ntsc_png;
+extern void *badge_region_pal_png;
 
 extern void *logo_png;
 extern void *case_png;
 extern void *apps_case_png;
 extern void *plank_png;
-extern void *lm_case_png;
-extern void *lm_apps_case_png;
-extern void *lm_case_shadow_png;
+extern void *discbox_list_games_png;
+extern void *discbox_list_apps_png;
+extern void *discbox_list_shadow_png;
 
 // Not related to screen size, just to limit at some point
 static int maxSize = 720 * 512 * 4;
@@ -137,102 +139,103 @@ typedef struct
 static png_texture_t pngTexture;
 
 static texture_t internalDefault[TEXTURES_COUNT] = {
-    {LOAD0_ICON, "load0", &load0_png},
-    {LOAD1_ICON, "load1", &load1_png},
-    {LOAD2_ICON, "load2", &load2_png},
-    {LOAD3_ICON, "load3", &load3_png},
-    {LOAD4_ICON, "load4", &load4_png},
-    {LOAD5_ICON, "load5", &load5_png},
-    {LOAD6_ICON, "load6", &load6_png},
-    {LOAD7_ICON, "load7", &load7_png},
-    {BDM_ICON, "usb", &usb_png},
-    {USB_ICON, "usb_bd", &usb_bd_png},
-    {ILINK_ICON, "ilk_bd", &ilk_bd_png},
-    {MX4SIO_ICON, "m4s_bd", &m4s_bd_png},
-    {HDD_BD_ICON, "hdd_bd", &hdd_bd_png},
-    {HDD_ICON, "hdd", &hdd_png},
-    {ETH_ICON, "eth", &eth_png},
-    {APP_ICON, "app", &app_png},
-    {FAV_ICON, "fav", &fav_png},
-    {FAV_MARK, "fav_mark", &fav_mark_png},
-    {MMCE_ICON, "mmce", &mmce_png},
-    {INDEX_0, "Index_0", &Index_0_png},
-    {INDEX_1, "Index_1", &Index_1_png},
-    {INDEX_2, "Index_2", &Index_2_png},
-    {INDEX_3, "Index_3", &Index_3_png},
-    {INDEX_4, "Index_4", &Index_4_png},
-    {R3_ICON, "R3", &R3_png},
-    {LEFT_ICON, "left", &left_png},
-    {RIGHT_ICON, "right", &right_png},
-    {CROSS_ICON, "cross", &cross_png},
-    {TRIANGLE_ICON, "triangle", &triangle_png},
-    {CIRCLE_ICON, "circle", &circle_png},
-    {SQUARE_ICON, "square", &square_png},
-    {SELECT_ICON, "select", &select_png},
-    {START_ICON, "start", &start_png},
-    {UP_ICON, "up", &up_png},
-    {DOWN_ICON, "down", &down_png},
+    {LOADING_1_ICON, "loading_1", &loading_1_png},
+    {LOADING_2_ICON, "loading_2", &loading_2_png},
+    {LOADING_3_ICON, "loading_3", &loading_3_png},
+    {LOADING_4_ICON, "loading_4", &loading_4_png},
+    {LOADING_5_ICON, "loading_5", &loading_5_png},
+    {LOADING_6_ICON, "loading_6", &loading_6_png},
+    {LOADING_7_ICON, "loading_7", &loading_7_png},
+    {LOADING_8_ICON, "loading_8", &loading_8_png},
+    {CATEGORY_EMPTY_BDM_ICON, "category_empty_bdm", &category_empty_bdm_png},
+    {CATEGORY_USB_ICON, "category_usb", &category_usb_png},
+    {CATEGORY_ILINK_ICON, "category_ilink", &category_ilink_png},
+    {CATEGORY_MX4SIO_ICON, "category_mx4sio", &category_mx4sio_png},
+    {CATEGORY_HDD_BDM_ICON, "category_hdd_bdm", &category_hdd_bdm_png},
+    {CATEGORY_HDD_APA_ICON, "category_hdd_apa", &category_hdd_apa_png},
+    {CATEGORY_NET_SMB_ICON, "category_net_smb", &category_net_smb_png},
+    {CATEGORY_APPS_ICON, "category_apps", &category_apps_png},
+    {CATEGORY_FAV_ICON, "category_fav", &category_fav_png},
+    {MARK_STAR, "mark_star", &mark_star_png},
+    {CATEGORY_MMCE_ICON, "category_mmce", &category_mmce_png},
+    {BDM_INDEX_1, "bdm_index_1", &bdm_index_1_png},
+    {BDM_INDEX_2, "bdm_index_2", &bdm_index_2_png},
+    {BDM_INDEX_3, "bdm_index_3", &bdm_index_3_png},
+    {BDM_INDEX_4, "bdm_index_4", &bdm_index_4_png},
+    {BDM_INDEX_5, "bdm_index_5", &bdm_index_5_png},
+    {BUTTON_STICK_R3_ICON, "button_stick_r3", &button_stick_r3_png},
+    {BUTTON_DPAD_LEFT_ICON, "button_dpad_left", &button_dpad_left_png},
+    {BUTTON_DPAD_RIGHT_ICON, "button_dpad_right", &button_dpad_right_png},
+    {BUTTON_SYMBOL_CROSS_ICON, "button_symbol_cross", &button_symbol_cross_png},
+    {BUTTON_SYMBOL_TRIANGLE_ICON, "button_symbol_triangle", &button_symbol_triangle_png},
+    {BUTTON_SYMBOL_CIRCLE_ICON, "button_symbol_circle", &button_symbol_circle_png},
+    {BUTTON_SYMBOL_SQUARE_ICON, "button_symbol_square", &button_symbol_square_png},
+    {BUTTON_SELECT_ICON, "button_select", &button_select_png},
+    {BUTTON_START_ICON, "button_start", &button_start_png},
+    {BUTTON_DPAD_UP_ICON, "button_dpad_up", &button_dpad_up_png},
+    {BUTTON_DPAD_DOWN_ICON, "button_dpad_down", &button_dpad_down_png},
     /* currently unused.
     {L1_ICON, "L1", &L1_png},
     {L2_ICON, "L2", &L2_png},
     {L3_ICON, "L3", &L3_png},
     {R1_ICON, "R1", &R1_png},
     {R2_ICON, "R2", &R2_png}, */
-    {SETTINGS_BG, "settings_bg", &settings_bg_png},
-    {INFO_BG, "info", &info_png},
+    {BG_MAIN, "bg_main", &bg_main_png},
+    {BG_INFO, "bg_info", &bg_info_png},
     {COVER_DEFAULT, "cover", &cover_png},
     {DISC_DEFAULT, "disc", &disc_png},
-    {SCREEN_DEFAULT, "screen", &screen_png},
-    {ELF_FORMAT, "ELF", &ELF_png},
-    {HDL_FORMAT, "HDL", &HDL_png},
-    {ISO_FORMAT, "ISO", &ISO_png},
-    {ZSO_FORMAT, "ZSO", &ZSO_png},
-    {UL_FORMAT, "UL", &UL_png},
-    {APP_MEDIA, "APP", &APPS_png},
-    {CD_MEDIA, "CD", &CD_png},
-    {DVD_MEDIA, "DVD", &DVD_png},
-    {ASPECT_STD, "Aspect_s", &Aspect_s_png},
-    {ASPECT_WIDE, "Aspect_w", &Aspect_w_png},
-    {ASPECT_WIDE1, "Aspect_w1", &Aspect_w1_png},
-    {ASPECT_WIDE2, "Aspect_w2", &Aspect_w2_png},
-    {DEVICE_1, "Device_1", &Device_1_png},
-    {DEVICE_2, "Device_2", &Device_2_png},
-    {DEVICE_3, "Device_3", &Device_3_png},
-    {DEVICE_4, "Device_4", &Device_4_png},
-    {DEVICE_5, "Device_5", &Device_5_png},
-    {DEVICE_6, "Device_6", &Device_6_png},
-    {DEVICE_ALL, "Device_all", &Device_all_png},
-    {RATING_0, "Rating_0", &Rating_0_png},
-    {RATING_1, "Rating_1", &Rating_1_png},
-    {RATING_2, "Rating_2", &Rating_2_png},
-    {RATING_3, "Rating_3", &Rating_3_png},
-    {RATING_4, "Rating_4", &Rating_4_png},
-    {RATING_5, "Rating_5", &Rating_5_png},
-    {SCAN_240P, "Scan_240p", &Scan_240p_png},
-    {SCAN_240P1, "Scan_240p1", &Scan_240p1_png},
-    {SCAN_480I, "Scan_480i", &Scan_480i_png},
-    {SCAN_480P, "Scan_480p", &Scan_480p_png},
-    {SCAN_480P1, "Scan_480p1", &Scan_480p1_png},
-    {SCAN_480P2, "Scan_480p2", &Scan_480p2_png},
-    {SCAN_480P3, "Scan_480p3", &Scan_480p3_png},
-    {SCAN_480P4, "Scan_480p4", &Scan_480p4_png},
-    {SCAN_480P5, "Scan_480p5", &Scan_480p5_png},
-    {SCAN_576I, "Scan_576i", &Scan_576i_png},
-    {SCAN_576P, "Scan_576p", &Scan_576p_png},
-    {SCAN_720P, "Scan_720p", &Scan_720p_png},
-    {SCAN_1080I, "Scan_1080i", &Scan_1080i_png},
-    {SCAN_1080I2, "Scan_1080i2", &Scan_1080i2_png},
-    {SCAN_1080P, "Scan_1080p", &Scan_1080p_png},
-    {VMODE_MULTI, "Vmode_multi", &Vmode_multi_png},
-    {VMODE_NTSC, "Vmode_ntsc", &Vmode_ntsc_png},
-    {VMODE_PAL, "Vmode_pal", &Vmode_pal_png},
+    {SCREENSHOT_DEFAULT, "screenshot", &screenshot_png},
+    {BADGE_EXEC_ELF_FORMAT, "badge_exec_elf", &badge_exec_elf_png},
+    {BADGE_DISC_HDL_FORMAT, "badge_disc_hdl", &badge_disc_hdl_png},
+    {BADGE_DISC_ISO_FORMAT, "badge_disc_iso", &badge_disc_iso_png},
+    {BADGE_DISC_ZSO_FORMAT, "badge_disc_zso", &badge_disc_zso_png},
+    {BADGE_DISC_UL_FORMAT, "badge_disc_ul", &badge_disc_ul_png},
+    {BADGE_EXEC_APP_MEDIA, "badge_exec_app", &badge_exec_app_png},
+    {BADGE_DISC_CD_MEDIA, "badge_disc_cd", &badge_disc_cd_png},
+    {BADGE_DISC_DVD_MEDIA, "badge_disc_dvd", &badge_disc_dvd_png},
+    {BADGE_VMODE_43, "badge_vmode_43", &badge_vmode_43_png},
+    {BADGE_VMODE_169, "badge_vmode_169", &badge_vmode_169_png},
+    {BADGE_VMODE_169_PS2RD, "badge_vmode_169_ps2rd", &badge_vmode_169_ps2rd_png},
+    {BADGE_VMODE_169_HEXISO, "badge_vmode_169_hexiso", &badge_vmode_169_hexiso_png},
+    {DEV_1, "dev_1", &dev_1_png},
+    {DEV_2, "dev_2", &dev_2_png},
+    {DEV_3, "dev_3", &dev_3_png},
+    {DEV_4, "dev_4", &dev_4_png},
+    {DEV_5, "dev_5", &dev_5_png},
+    {DEV_6, "dev_6", &dev_6_png},
+    {DEV_7, "dev_7", &dev_7_png},
+    {DEV_8, "dev_8", &dev_8_png},
+    {RATING_0, "rating_0", &rating_0_png},
+    {RATING_1, "rating_1", &rating_1_png},
+    {RATING_2, "rating_2", &rating_2_png},
+    {RATING_3, "rating_3", &rating_3_png},
+    {RATING_4, "rating_4", &rating_4_png},
+    {RATING_5, "rating_5", &rating_5_png},
+    {BADGE_RES_240P, "badge_res_240p", &badge_res_240p_png},
+    {BADGE_RES_240_HEXISO, "badge_res_240p_hexiso", &badge_res_240p_hexiso_png},
+    {BADGE_RES_480I, "badge_res_480i", &badge_res_480i_png},
+    {BADGE_RES_480P, "badge_res_480p", &badge_res_480p_png},
+    {BADGE_RES_480P_XT, "badge_res_480p_xt", &badge_res_480p_xt_png},
+    {BADGE_RES_480P_XC, "badge_res_480p_xc", &badge_res_480p_xc_png},
+    {BADGE_RES_480P_GSM, "badge_res_480p_gsm", &badge_res_480p_gsm_png},
+    {BADGE_RES_480P_PS2RD, "badge_res_480p_ps2rd", &badge_res_480p_ps2rd_png},
+    {BADGE_RES_480P_HEXISO, "badge_res_480p_hexiso", &badge_res_480p_hexiso_png},
+    {BADGE_RES_576I, "badge_res_576i", &badge_res_576i_png},
+    {BADGE_RES_576P_GSM, "badge_res_576p_gsm", &badge_res_576p_gsm_png},
+    {BADGE_RES_720P_GSM, "badge_res_720p_gsm", &badge_res_720p_gsm_png},
+    {BADGE_RES_1080I, "badge_res_1080i", &badge_res_1080i_png},
+    {BADGE_RES_1080I_GSM, "badge_res_1080i_gsm", &badge_res_1080i_gsm_png},
+    {BADGE_RES_1080P_GSM, "badge_res_1080p_gsm", &badge_res_1080p_gsm_png},
+    {BADGE_REGION_MULTI, "badge_region_multi", &badge_region_multi_png},
+    {BADGE_REGION_NTSC, "badge_region_ntsc", &badge_region_ntsc_png},
+    {BADGE_REGION_PAL, "badge_region_pal", &badge_region_pal_png},
     {LOGO_PICTURE, "logo", &logo_png},
     {CASE_OVERLAY, "case", &case_png},
     {APPS_CASE_OVERLAY, "apps_case", &apps_case_png},
     {PLANK, "plank", &plank_png},
-    {LM_CASE_OVERLAY, "lm_case", &lm_case_png},
-    {LM_APPS_CASE_OVERLAY, "lm_apps_case", &lm_apps_case_png},
-    {LM_CASE_SHADOW, "lm_case_shadow", &lm_case_shadow_png},
+    {DISCBOX_LIST_GAMES_OVERLAY, "discbox_list_games", &discbox_list_games_png},
+    {DISCBOX_LIST_APPS_OVERLAY, "discbox_list_apps", &discbox_list_apps_png},
+    {DISCBOX_LIST_SHADOW_OVERLAY, "discbox_list_shadow", &discbox_list_shadow_png},
 };
 
 int texLookupInternalTexId(const char *name)
