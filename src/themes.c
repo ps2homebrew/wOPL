@@ -17,11 +17,11 @@
 #define DECORATOR_SIZE  20
 #define COVERFLOW_COUNT 3
 
-extern const char conf_theme_OPL_cfg;
-extern u16 size_conf_theme_OPL_cfg;
+extern const char conf_theme_wOPL_cfg;
+extern u16 size_conf_theme_wOPL_cfg;
 
-extern const char conf_theme_OPL_CF_cfg;
-extern u16 size_conf_theme_OPL_CF_cfg;
+extern const char conf_theme_wOPL_CF_cfg;
+extern u16 size_conf_theme_wOPL_CF_cfg;
 
 theme_t *gTheme;
 
@@ -821,11 +821,11 @@ static void drawMenuText(struct menu_list *menu, struct submenu_list *item, conf
     int iconOne, iconTwo;
 
     if (gTheme->coverflow != NULL) {
-        iconOne = UP_ICON;
-        iconTwo = DOWN_ICON;
+        iconOne = BUTTON_DPAD_UP_ICON;
+        iconTwo = BUTTON_DPAD_DOWN_ICON;
     } else {
-        iconOne = LEFT_ICON;
-        iconTwo = RIGHT_ICON;
+        iconOne = BUTTON_DPAD_LEFT_ICON;
+        iconTwo = BUTTON_DPAD_RIGHT_ICON;
     }
 
     if (findMenuPrev(menu) != 0)
@@ -915,7 +915,7 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
                 if (itemsList->decoratorImage)
                     favMarkX += DECORATOR_SIZE;
 
-                GSTEXTURE *favMark = thmGetTexture(FAV_MARK);
+                GSTEXTURE *favMark = thmGetTexture(MARK_STAR);
                 if (favMark && favMark->Mem)
                     rmDrawPixmap(favMark, favMarkX + 2, favMarkPosY, ALIGN_NONE, 8, 8, elem->scaled, gDefaultCol);
             }
@@ -982,7 +982,7 @@ static void drawHintText(struct menu_list *menu, struct submenu_list *item, conf
 static void drawInfoHintText(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
     int infoHints[2] = {_STR_RUN, _STR_BACK};
-    int infoIcons[2] = {CIRCLE_ICON, CROSS_ICON};
+    int infoIcons[2] = {BUTTON_SYMBOL_CIRCLE_ICON, BUTTON_SYMBOL_CROSS_ICON};
     int x = elem->posX;
 
     if (elem->aligned)
@@ -1447,17 +1447,17 @@ static void thmLoad(const char *themePath, int themeID)
     newT->appsItemsList = NULL;
     newT->favsItemsList = NULL;
     newT->loadingIcon = NULL;
-    newT->loadingIconCount = LOAD7_ICON - LOAD0_ICON + 1;
+    newT->loadingIconCount = LOADING_7_ICON - LOADING_1_ICON + 1;
     newT->coverflow = NULL;
 
     config_set_t *themeConfig = NULL;
     if (!themePath && themeID == 0) {
         // No theme specified. Prepare and load the default theme.
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_OPL_cfg, size_conf_theme_OPL_cfg);
+        configReadBuffer(themeConfig, &conf_theme_wOPL_cfg, size_conf_theme_wOPL_cfg);
     } else if (!themePath && themeID == 1) {
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_OPL_CF_cfg, size_conf_theme_OPL_CF_cfg);
+        configReadBuffer(themeConfig, &conf_theme_wOPL_CF_cfg, size_conf_theme_wOPL_CF_cfg);
     } else {
         snprintf(path, sizeof(path), "%sconf_theme.cfg", themePath);
         themeConfig = configAlloc(0, NULL, path);
@@ -1566,7 +1566,7 @@ static void thmLoad(const char *themePath, int themeID)
     // First start with busy icon
     const char *themePath_temp = themePath;
     int customBusy = 0;
-    for (i = LOAD0_ICON; i <= LOAD7_ICON; i++) {
+    for (i = LOADING_1_ICON; i <= LOADING_7_ICON; i++) {
         if (thmLoadResource(&newT->textures[i], i, themePath_temp, GS_PSM_CT32, newT->useDefault) >= 0)
             customBusy = 1;
         else {
@@ -1582,7 +1582,7 @@ static void thmLoad(const char *themePath, int themeID)
     texLoadInternal(&newT->textures[COVER_DEFAULT], COVER_DEFAULT);
 
     // Customizable icons
-    for (i = BDM_ICON; i <= START_ICON; i++)
+    for (i = CATEGORY_EMPTY_BDM_ICON; i <= BUTTON_START_ICON; i++)
         thmLoadResource(&newT->textures[i], i, themePath, GS_PSM_CT32, newT->useDefault);
 
     /* Not customizable icons - currently unused.
@@ -1590,16 +1590,16 @@ static void thmLoad(const char *themePath, int themeID)
         thmLoadResource(&newT->textures[i], i, NULL, GS_PSM_CT32, 1); */
 
     if (!themePath)
-        for (i = ELF_FORMAT; i <= VMODE_PAL; i++)
+        for (i = BADGE_EXEC_ELF_FORMAT; i <= BADGE_REGION_PAL; i++)
             thmLoadResource(&newT->textures[i], i, NULL, GS_PSM_CT32, 1);
 
     if (themePath) {
-        if (configGetInt(themeConfig, "use_settings_bg", &intValue)) {
+        if (configGetInt(themeConfig, "use_bg_main", &intValue)) {
             if (intValue)
-                thmLoadResource(&newT->textures[SETTINGS_BG], SETTINGS_BG, themePath, GS_PSM_CT32, 0);
+                thmLoadResource(&newT->textures[BG_MAIN], BG_MAIN, themePath, GS_PSM_CT32, 0);
         }
     } else
-        texLoadInternal(&newT->textures[SETTINGS_BG], SETTINGS_BG);
+        texLoadInternal(&newT->textures[BG_MAIN], BG_MAIN);
 
     gTheme = newT;
     thmFree(curT);
