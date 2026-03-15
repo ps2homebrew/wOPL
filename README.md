@@ -25,6 +25,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * Gui improvements
 * Art tar archive support
 * mmce support
+* New theme renamed png files.
 </p>
 </details>
 
