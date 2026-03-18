@@ -621,7 +621,7 @@ void diaRenderUI(struct UIItem *ui, short inMenu, struct UIItem *cur, int haveFo
     }
 
     int uiHints[2] = {_STR_SELECT, _STR_BACK};
-    int uiIcons[2] = {BUTTON_SYMBOL_CIRCLE_ICON, BUTTON_SYMBOL_CIRCLE_ICON};
+    int uiIcons[2] = {BUTTON_SYMBOL_CIRCLE_ICON, BUTTON_SYMBOL_CROSS_ICON};
     int uiY = gTheme->usedHeight - 32;
     int uiX = guiAlignSubMenuHints(2, uiHints, uiIcons, gTheme->fonts[0], 12, 2);
 
