@@ -230,7 +230,7 @@ static unsigned int ata_alarm_cb(void *unused)
 }
 
 /* Export 8 */
-int ata_get_error(void)
+int sceAtaGetError(void)
 {
     USE_ATA_REGS;
     return ata_hwport->r_error & 0xff;
@@ -376,7 +376,7 @@ int sceAtaExecCmd(void *buf, u32 blkcount, u16 feature, u16 nsector, u16 sector,
     ata_hwport->r_sector = sector & 0xff;
     ata_hwport->r_lcyl = lcyl & 0xff;
     ata_hwport->r_hcyl = hcyl & 0xff;
-    ata_hwport->r_select = (select | ATA_SEL_LBA) & 0xff; // In v1.04, LBA was enabled in the ata_device_sector_io function.
+    ata_hwport->r_select = (select | ATA_SEL_LBA) & 0xff; // In v1.04, LBA was enabled in the sceAtaDmaTransfer function.
     ata_hwport->r_command = command & 0xff;
 
     /* Turn on the LED.  */
@@ -412,12 +412,12 @@ static inline int ata_dma_complete(void *buf, int blkcount, int dir)
         if (!(SPD_REG16(SPD_R_INTR_STAT) & 0x02)) {
             if (ata_hwport->r_control & 0x01) {
                 M_PRINTF("Error: Command error while doing DMA.\n");
-                M_PRINTF("Error: Command error status 0x%02x, error 0x%02x.\n", ata_hwport->r_status, ata_get_error());
+                M_PRINTF("Error: Command error status 0x%02x, error 0x%02x.\n", ata_hwport->r_status, sceAtaGetError());
 #ifdef NETLOG_DEBUG
-                pNetlogSend("Error: Command error status 0x%02x, error 0x%02x.\n", ata_hwport->r_status, ata_get_error());
+                pNetlogSend("Error: Command error status 0x%02x, error 0x%02x.\n", ata_hwport->r_status, sceAtaGetError());
 #endif
                 /* In v1.04, there was no check for ICRC. */
-                return ((ata_get_error() & ATA_ERR_ICRC) ? ATA_RES_ERR_ICRC : ATA_RES_ERR_IO);
+                return ((sceAtaGetError() & ATA_ERR_ICRC) ? ATA_RES_ERR_ICRC : ATA_RES_ERR_IO);
             } else {
                 M_PRINTF("Warning: Got command interrupt, but not an error.\n");
                 continue;
@@ -494,9 +494,9 @@ int sceAtaWaitResult(void)
     if (ata_hwport->r_status & ATA_STAT_BUSY)
         res = ata_wait_busy();
     if ((stat = ata_hwport->r_status) & ATA_STAT_ERR) {
-        M_PRINTF("Error: Command error: status 0x%02x, error 0x%02x.\n", stat, ata_get_error());
+        M_PRINTF("Error: Command error: status 0x%02x, error 0x%02x.\n", stat, sceAtaGetError());
         /* In v1.04, there was no check for ICRC. */
-        res = (ata_get_error() & ATA_ERR_ICRC) ? ATA_RES_ERR_ICRC : ATA_RES_ERR_IO;
+        res = (sceAtaGetError() & ATA_ERR_ICRC) ? ATA_RES_ERR_ICRC : ATA_RES_ERR_IO;
     }
 
 finish:
