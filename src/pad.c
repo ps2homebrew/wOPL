@@ -74,6 +74,10 @@ static const int keyToPad[17] = {
     PAD_R2,
     PAD_L2};
 
+int gXSensitivity;
+int gYSensitivity;
+int KeyPressedOnce;
+
 /*
  * waitPadReady()
  */

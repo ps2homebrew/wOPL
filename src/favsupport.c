@@ -11,10 +11,13 @@
 #include "include/themes.h"
 #include "include/favsupport.h"
 #include <malloc.h>
+#include <stdio.h>
 
 static int favItemCount = 0;
 
 static item_list_t favItemList;
+
+int gFAVStartMode;
 
 void favInit(item_list_t *itemList)
 {

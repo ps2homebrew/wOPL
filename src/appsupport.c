@@ -14,6 +14,8 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <elf-loader.h>
+#include <stdio.h>
+#include <unistd.h>
 
 #define APP_MODE_UPDATE_DELAY 240
 
@@ -49,6 +51,8 @@ struct app_info_linked
 
 // forward declaration
 static item_list_t appItemList;
+
+int gAPPStartMode;
 
 static void appFreeList(void);
 

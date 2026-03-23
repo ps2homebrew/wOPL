@@ -88,6 +88,10 @@ typedef struct menu_list
     struct menu_list *prev, *next;
 } menu_list_t;
 
+extern int RemainSecs, DisableCron;
+extern clock_t CronStart;
+extern int gSelectButton;
+
 void menuInit();
 void menuEnd();
 void menuReinitMainMenu(void);

@@ -48,6 +48,7 @@
 #include <stdlib.h>
 #include <kernel.h>
 #include <errno.h>
+#include <stdio.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioDopen, fileXioIoctl2, fileXioDclose
@@ -118,105 +119,16 @@ static char errorMessage[256];
 static opl_io_module_t list_support[MODE_COUNT];
 
 // Global data
-char *gBaseMCDir;
-int ps2_ip_use_dhcp;
-int ps2_ip[4];
-int ps2_netmask[4];
-int ps2_gateway[4];
-int ps2_dns[4];
-int gETHOpMode; // See ETH_OP_MODES.
-int gPCShareAddressIsNetBIOS;
-int pc_ip[4];
-int gPCPort;
-char gPCShareNBAddress[17];
-char gPCShareName[32];
-char gPCUserName[32];
-char gPCPassword[32];
-int gNetworkStartup;
-int gHDDSpindown;
-int gBDMStartMode;
-int gHDDStartMode;
-int gETHStartMode;
-int gAPPStartMode;
-int gFAVStartMode;
-int gMMCEStartMode;
-int bdmCacheSize;
-int hddCacheSize;
-int smbCacheSize;
-int gMMCEIGRSlot;
-int gMMCESlot;
-int gMMCEAckWaitCycles;
-int gMMCEUseAlarms;
-int gMMCEEnableGameID;
-int gEnableILK;
-int gEnableMX4SIO;
-int gEnableBdmHDD;
+
 int gAutosort;
 int gAutoRefresh;
-int gEnableNotifications;
 int gEnableArt;
 int gEnableArchivedArt;
-int gWideScreen;
-int gVMode; // 0 - Auto, 1 - PAL, 2 - NTSC
-int gXOff;
-int gYOff;
-int gOverscan;
-int gSelectButton;
-int gHDDGameListCache;
-int gEnableSFX;
-int gEnableBootSND;
-int gEnableBGM;
-int gSFXVolume;
-int gBootSndVolume;
-int gBGMVolume;
-char gDefaultBGMPath[128];
-int gCheatSource;
-int gGSMSource;
-int gPadEmuSource;
-int gFadeDelay;
-int toggleSfx;
-int showCfgPopup;
-#ifdef PADEMU
-int gEnablePadEmu;
-int gPadEmuSettings;
-int gPadMacroSource;
-int gPadMacroSettings;
-#endif
-int gScrollSpeed;
-char gExitPath[256];
-int gEnableDebug;
-int gBDMDebug;
 int gPS2Logo;
 int gDefaultDevice;
 int gEnableWrite;
-char gBDMPrefix[32];
-char gETHPrefix[32];
-char gMMCEPrefix[32];
 int gRememberLastPlayed;
-int KeyPressedOnce;
-int gAutoStartLastPlayed;
-int RemainSecs, DisableCron;
-clock_t CronStart;
-unsigned char gDefaultBgColor[3];
-unsigned char gDefaultTextColor[3];
-unsigned char gDefaultSelTextColor[3];
-unsigned char gDefaultUITextColor[3];
-unsigned char gDefaultPlasmaBlendColor[3];
-hdl_game_info_t *gAutoLaunchGame;
-base_game_info_t *gAutoLaunchBDMGame;
-bdm_device_data_t *gAutoLaunchDeviceData;
-char gOPLPart[128];
-char *gHDDPrefix;
-char gExportName[32];
-
-int gXSensitivity;
-int gYSensitivity;
-
-int gOSDLanguageValue;
-int gOSDTVAspectRatio;
-int gOSDVideOutput;
-int gOSDLanguageEnable;
-int gOSDLanguageSource;
+static char gExportName[32];
 
 void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langChanged);
 

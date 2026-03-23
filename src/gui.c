@@ -22,7 +22,11 @@
 #include "include/sound.h"
 #include "include/guigame.h"
 #include "include/tetris.h"
-
+#include "include/appsupport.h"
+#include "include/bdmsupport.h"
+#include "include/favsupport.h"
+#include "include/hddsupport.h"
+#include "include/mmcesupport.h"
 #include <malloc.h>
 #include <math.h>
 #include <kernel.h>
@@ -30,6 +34,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <libvux.h>
+#include <stdio.h>
 
 // Last Played Auto Start
 #include <time.h>
@@ -53,6 +58,12 @@ static int showThmPopup;
 static int showLngPopup;
 
 static clock_t popupTimer;
+
+int gAutoStartLastPlayed;
+clock_t CronStart;
+int showCfgPopup;
+int gEnableNotifications;
+int gScrollSpeed;
 
 // forward decl.
 static void guiShow();
@@ -109,6 +120,12 @@ static int transIndex;
 static GSTEXTURE gBackgroundTex;
 static int pperm[512];
 static float fadetbl[FADE_SIZE + 1];
+
+unsigned char gDefaultBgColor[3];
+unsigned char gDefaultTextColor[3];
+unsigned char gDefaultSelTextColor[3];
+unsigned char gDefaultUITextColor[3];
+unsigned char gDefaultPlasmaBlendColor[3];
 
 static VU_VECTOR pgrad3[12] = {{1, 1, 0, 1}, {-1, 1, 0, 1}, {1, -1, 0, 1}, {-1, -1, 0, 1}, {1, 0, 1, 1}, {-1, 0, 1, 1}, {1, 0, -1, 1}, {-1, 0, -1, 1}, {0, 1, 1, 1}, {0, -1, 1, 1}, {0, 1, -1, 1}, {0, -1, -1, 1}};
 

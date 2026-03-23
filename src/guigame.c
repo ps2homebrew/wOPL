@@ -15,6 +15,9 @@
 #include "include/guigame.h"
 #include "include/ds34common.h"
 #include "include/vmc_groups.h"
+#include "include/supportbase.h"
+#include <stdio.h>
+#include "include/pggsm.h"
 
 #ifdef PADEMU
 #include <libds34bt.h>

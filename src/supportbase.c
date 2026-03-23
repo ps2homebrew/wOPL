@@ -11,6 +11,8 @@
 #include "include/cheatman.h"
 #include "include/ps2cnf.h"
 #include "include/gui.h"
+#include "include/bdmsupport.h"
+#include "include/hddsupport.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioMount("iso:", ***), fileXioUmount("iso:")
@@ -47,6 +49,14 @@ struct game_cache_list
 };
 
 static int mcID = -1;
+
+#ifdef PADEMU
+int gEnablePadEmu;
+int gPadEmuSettings;
+int gPadMacroSource;
+int gPadMacroSettings;
+int gPadEmuSource;
+#endif
 
 int sbGetmcID(void)
 {

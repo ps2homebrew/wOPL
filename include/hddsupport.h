@@ -27,6 +27,15 @@ typedef struct
     hdl_game_info_t *games;
 } hdl_games_list_t;
 
+extern int gHDDSpindown;
+extern int gHDDStartMode;
+extern int hddCacheSize;
+extern hdl_game_info_t *gAutoLaunchGame;
+extern int gHDDGameListCache;
+// Launching games with args
+extern char *gHDDPrefix;
+extern char gOPLPart[128];
+
 int hddCheck(void);
 int hddReadSectors(u32 lba, u32 nsectors, void *buf);
 int hddSetTransferMode(int type, int mode);

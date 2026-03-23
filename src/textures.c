@@ -6,6 +6,7 @@
 #include <png.h>
 #include <fcntl.h>
 #include <malloc.h>
+#include <unistd.h>
 
 extern void *loading_0_png;
 extern void *loading_1_png;

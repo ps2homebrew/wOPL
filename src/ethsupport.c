@@ -12,6 +12,7 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include <stdio.h>
 #include <ps2smb.h>
 #include <ps2ips.h>
 #include <netman.h>
@@ -60,6 +61,24 @@ static int ethApplyIPConfig(void);
 static int ethReadNetConfig(void);
 
 static int ethInitSemaID = -1;
+
+int ps2_ip_use_dhcp;
+int ps2_ip[4];
+int ps2_netmask[4];
+int ps2_gateway[4];
+int ps2_dns[4];
+int gETHOpMode; // See ETH_OP_MODES.
+int gPCShareAddressIsNetBIOS;
+int pc_ip[4];
+int gPCPort;
+char gPCShareNBAddress[17];
+char gPCShareName[32];
+char gPCUserName[32];
+char gPCPassword[32];
+int gNetworkStartup;
+int smbCacheSize;
+char gETHPrefix[32];
+int gETHStartMode;
 
 // Initializes locking semaphore for network support (not for just SMB support, but for the network subsystem).
 static int ethInitSema(void)

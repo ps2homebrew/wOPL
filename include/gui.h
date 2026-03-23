@@ -60,6 +60,18 @@ extern int guiFrameId;
 #define GUI_SCREEN_GAME_MENU 3
 #define GUI_SCREEN_APP_MENU  4
 
+extern unsigned char gDefaultBgColor[3];
+extern unsigned char gDefaultTextColor[3];
+extern unsigned char gDefaultSelTextColor[3];
+extern unsigned char gDefaultUITextColor[3];
+extern unsigned char gDefaultPlasmaBlendColor[3];
+
+extern int showCfgPopup;
+extern int gAutoStartLastPlayed;
+extern int gEnableNotifications;
+// 0,1,2 scrolling speed
+extern int gScrollSpeed;
+
 void guiSwitchScreen(int target);
 
 void guiReloadScreenExtents();

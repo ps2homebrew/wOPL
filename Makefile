@@ -231,8 +231,8 @@ EE_LDFLAGS += -fdata-sections -ffunction-sections -Wl,--gc-sections
 
 ifdef PS2SDK
 
-all: download_lng download_lwNBD languages
-	echo "Building Open PS2 Loader $(wOPL_VERSION)..."
+all: #download_lng download_lwNBD languages
+	echo "Building Double Unofficial Open PS2 Loader $(wOPL_VERSION)..."
 	echo "-Interface"
 ifneq ($(NOT_PACKED),1)
 	$(MAKE) $(EE_BIN_PACKED)

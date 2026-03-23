@@ -28,6 +28,8 @@
 #include "include/pggsm.h"
 #include "include/cheatman.h"
 #include "include/xparam.h"
+#include <stdio.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <stdlib.h>
@@ -102,6 +104,14 @@ typedef struct
     u32 flags;
     u32 align;
 } elf_pheader_t;
+
+int gOSDLanguageValue;
+int gOSDTVAspectRatio;
+int gOSDVideOutput;
+int gOSDLanguageEnable;
+int gOSDLanguageSource;
+int gEnableDebug;
+char gExitPath[256];
 
 void guiWarning(const char *text, int count);
 void guiEnd();

@@ -9,6 +9,10 @@
 #include "include/util.h"
 #include "include/ioman.h"
 #include "include/sound.h"
+#include "include/ethsupport.h"
+#include "include/supportbase.h"
+#include <stdio.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -24,6 +28,8 @@ static const char *configFilenames[CONFIG_INDEX_COUNT] = {
     "conf_network.cfg",
     "conf_game.cfg",
 };
+
+char *gBaseMCDir;
 
 static int strToColor(const char *string, unsigned char *color)
 {

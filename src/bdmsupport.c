@@ -3,6 +3,7 @@
 #include "include/gui.h"
 #include "include/supportbase.h"
 #include "include/bdmsupport.h"
+#include "include/hddsupport.h"
 #include "include/util.h"
 #include "include/themes.h"
 #include "include/textures.h"
@@ -22,6 +23,7 @@
 #include <kernel.h>
 #include "opl-hdd-ioctl.h"
 #include <errno.h>
+#include <stdio.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl
@@ -50,10 +52,20 @@ static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
 static s32 bdmLoadModuleLock;
-int bdmDeviceModeStarted;
 
 static item_list_t bdmDeviceList[MAX_BDM_DEVICES];
 static int bdmDeviceListInitialized = 0;
+
+int bdmDeviceModeStarted;
+int gBDMStartMode;
+int bdmCacheSize;
+char gBDMPrefix[32];
+int gEnableILK;
+int gEnableMX4SIO;
+int gEnableBdmHDD;
+base_game_info_t *gAutoLaunchBDMGame;
+bdm_device_data_t *gAutoLaunchDeviceData;
+
 
 void bdmInitDevicesData();
 int bdmUpdateDeviceData(item_list_t *itemList);

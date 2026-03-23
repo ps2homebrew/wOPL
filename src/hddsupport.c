@@ -165,6 +165,14 @@ static hdl_games_list_t hddGames;
 // forward declaration
 static item_list_t hddGameList;
 
+int gHDDSpindown;
+int gHDDStartMode;
+int hddCacheSize;
+hdl_game_info_t *gAutoLaunchGame;
+int gHDDGameListCache;
+char gOPLPart[128];
+char *gHDDPrefix;
+
 static int hddLoadGameListCache(hdl_games_list_t *cache);
 static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *game_list);
 

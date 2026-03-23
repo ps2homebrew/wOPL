@@ -17,7 +17,15 @@
 #include "include/system.h"
 #include "include/ioman.h"
 #include "include/sound.h"
+#include "include/appsupport.h"
+#include "include/bdmsupport.h"
+#include "include/ethsupport.h"
+#include "include/favsupport.h"
+#include "include/hddsupport.h"
+#include "include/mmcesupport.h"
+
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <kernel.h>
 #include <errno.h>
@@ -81,6 +89,9 @@ static submenu_list_t *appMenuCurrent;
 static s32 menuSemaId;
 static s32 menuListSemaId = -1;
 static ee_sema_t menuSema;
+
+int RemainSecs, DisableCron;
+int gSelectButton;
 
 static void menuRenameGame(submenu_list_t **submenu)
 {

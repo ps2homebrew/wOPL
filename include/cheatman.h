@@ -63,6 +63,7 @@ typedef struct
 } cheat_entry_t;
 
 extern cheat_entry_t gCheats[MAX_CODES];
+extern int gCheatSource;
 
 void InitCheatsConfig(config_set_t *configSet);
 int GetCheatsEnabled(void);

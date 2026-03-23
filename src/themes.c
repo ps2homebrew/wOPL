@@ -9,6 +9,8 @@
 #include "include/lang.h"
 #include "include/pad.h"
 #include "include/sound.h"
+#include "include/supportbase.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 

@@ -8,6 +8,7 @@
 #include "include/util.h"
 #include "include/ioman.h"
 #include "include/system.h"
+#include "include/hddsupport.h"
 #include <string.h>
 #include <malloc.h>
 #include <rom0_info.h>
@@ -15,6 +16,7 @@
 #include <dirent.h>
 #include "../modules/isofs/zso.h"
 #include <kernel.h>
+#include <unistd.h>
 
 extern int probed_fd;
 extern u32 probed_lba;

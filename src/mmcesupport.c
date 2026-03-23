@@ -15,7 +15,10 @@
 #include <usbhdfsd-common.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include "include/bdmsupport.h"
 #include "include/art_tar.h"
+#include <stdio.h>
+#include <unistd.h>
 
 #include <ps2sdkapi.h>
 #define NEWLIB_PORT_AWARE
@@ -30,6 +33,14 @@ static base_game_info_t *mmceGames;
 
 // forward declaration
 static item_list_t mmceGameList;
+
+int gMMCEIGRSlot;
+int gMMCESlot;
+int gMMCEAckWaitCycles;
+int gMMCEUseAlarms;
+int gMMCEEnableGameID;
+int gMMCEStartMode;
+char gMMCEPrefix[32];
 
 int mmceDetectSlot(void)
 {
