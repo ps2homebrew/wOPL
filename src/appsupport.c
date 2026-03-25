@@ -6,15 +6,18 @@
 #include "include/system.h"
 #include "include/ioman.h"
 #include "include/util.h"
+#include "include/module.h"
 
 #include "include/bdmsupport.h"
 #include "include/ethsupport.h"
 #include "include/hddsupport.h"
+#include "include/initializer.h"
 
 #include <fcntl.h>
 #include <stdlib.h>
 #include <elf-loader.h>
 #include <stdio.h>
+#include <dirent.h>
 #include <unistd.h>
 
 #define APP_MODE_UPDATE_DELAY 240
@@ -54,7 +57,19 @@ static item_list_t appItemList;
 
 int gAPPStartMode;
 
+// App support stuff.
+unsigned char shouldAppsUpdate;
+
+
 static void appFreeList(void);
+
+static int oplScanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg);
+
+static int oplGetAppImage(const char *device, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
+static int oplShouldAppsUpdate(void);
+static config_set_t *oplGetLegacyAppsConfig(void);
+static config_set_t *oplGetLegacyAppsInfo(char *name);
+static int oplPath2Mode(const char *path);
 
 static struct config_value_t *appGetConfigValue(int id)
 {
@@ -533,3 +548,216 @@ static item_list_t appItemList = {
     APP_MODE, -1, 0, MODE_FLAG_NO_COMPAT | MODE_FLAG_NO_UPDATE, MENU_MIN_INACTIVE_FRAMES, APP_MODE_UPDATE_DELAY, NULL, NULL, &appGetTextId, NULL, &appInit, &appNeedsUpdate, &appUpdateItemList,
     &appGetItemCount, NULL, &appGetItemName, &appGetItemNameLength, &appGetItemStartup, &appDeleteItem, &appRenameItem, &appLaunchItem,
     &appGetConfig, &appGetImage, &appCleanUp, &appShutdown, NULL, &appGetIconId};
+
+static int scanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg, char *appsPath, int exception)
+{
+    struct dirent *pdirent;
+    struct stat st;
+    DIR *pdir;
+    int count, ret;
+    config_set_t *appConfig;
+    char dir[128];
+    char path[128];
+
+    count = 0;
+    if ((pdir = opendir(appsPath)) != NULL) {
+        while ((pdirent = readdir(pdir)) != NULL) {
+            if (exception && strchr(pdirent->d_name, '_') == NULL)
+                continue;
+
+            if (strcmp(pdirent->d_name, ".") == 0 || strcmp(pdirent->d_name, "..") == 0)
+                continue;
+
+            snprintf(dir, sizeof(dir), "%s/%s", appsPath, pdirent->d_name);
+            if (stat(dir, &st) < 0)
+                continue;
+            if (!S_ISDIR(st.st_mode))
+                continue;
+
+            snprintf(path, sizeof(path), "%s/%s", dir, APP_TITLE_CONFIG_FILE);
+            appConfig = configAlloc(0, NULL, path);
+            if (appConfig != NULL) {
+                configRead(appConfig);
+
+                ret = callback(dir, appConfig, arg);
+                configFree(appConfig);
+
+                if (ret == 0)
+                    count++;
+                else if (ret < 0) { // Stopped because of unrecoverable error.
+                    break;
+                }
+            }
+        }
+
+        closedir(pdir);
+    } else
+        LOG("APPS failed to open dir %s\n", appsPath);
+
+    return count;
+}
+
+static int oplScanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg)
+{
+    int i, count;
+    item_list_t *listSupport;
+    char appsPath[64];
+
+    count = 0;
+    for (i = 0; i < MODE_COUNT; i++) {
+        listSupport = list_support[i].support;
+        if ((listSupport != NULL) && (listSupport->enabled) && (listSupport->itemGetPrefix != NULL)) {
+            char *prefix = listSupport->itemGetPrefix(listSupport);
+            snprintf(appsPath, sizeof(appsPath), "%sAPPS", prefix);
+            count += scanApps(callback, arg, appsPath, 0);
+        }
+    }
+
+    for (i = 0; i < 2; i++) {
+        snprintf(appsPath, sizeof(appsPath), "mc%d:", i);
+        count += scanApps(callback, arg, appsPath, 1);
+    }
+
+    return count;
+}
+
+static int oplGetAppImage(const char *device, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    int i, remaining, elfbootmode;
+    char priority;
+    item_list_t *listSupport;
+
+    elfbootmode = -1;
+    if (device != NULL) {
+        elfbootmode = oplPath2Mode(device);
+        if (elfbootmode >= 0) {
+            listSupport = list_support[elfbootmode].support;
+
+            if ((listSupport != NULL) && (listSupport->enabled)) {
+                if (listSupport->itemGetImage(listSupport, folder, isRelative, value, suffix, resultTex, psm) >= 0)
+                    return 0;
+            }
+        }
+    }
+
+    // We search on ever devices from fatest to slowest.
+    for (remaining = MODE_COUNT, priority = 0; remaining > 0 && priority < 4; priority++) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            listSupport = list_support[i].support;
+
+            if (i == elfbootmode)
+                continue;
+
+            if ((listSupport != NULL) && (listSupport->enabled) && (listSupport->appsPriority == priority)) {
+                if (listSupport->itemGetImage(listSupport, folder, isRelative, value, suffix, resultTex, psm) >= 0)
+                    return 0;
+                remaining--;
+            }
+        }
+    }
+
+    return -1;
+}
+
+static int oplShouldAppsUpdate(void)
+{
+    int result;
+
+    result = (int)shouldAppsUpdate;
+    shouldAppsUpdate = 0;
+
+    return result;
+}
+
+static config_set_t *oplGetLegacyAppsConfig(void)
+{
+    int i, fd;
+    item_list_t *listSupport;
+    config_set_t *appConfig;
+    char appsPath[128];
+
+    snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
+    fd = sbOpenFile(appsPath, O_RDONLY);
+    if (fd >= 0) {
+        appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
+        close(fd);
+        return appConfig;
+    }
+
+    for (i = MODE_COUNT - 1; i >= 0; i--) {
+        listSupport = list_support[i].support;
+        if ((listSupport != NULL) && (listSupport->enabled) && (listSupport->itemGetPrefix != NULL)) {
+            char *prefix = listSupport->itemGetPrefix(listSupport);
+            snprintf(appsPath, sizeof(appsPath), "%sconf_apps.cfg", prefix);
+
+            fd = sbOpenFile(appsPath, O_RDONLY);
+            if (fd >= 0) {
+                appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
+                close(fd);
+                return appConfig;
+            }
+        }
+    }
+
+    /* Apps config not found on any device, go with last tested device.
+       Does not matter if the config file could be loaded or not */
+    appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);
+
+    return appConfig;
+}
+
+static config_set_t *oplGetLegacyAppsInfo(char *name)
+{
+    int i, fd;
+    item_list_t *listSupport;
+    config_set_t *appConfig;
+    char appsPath[128];
+
+    for (i = MODE_COUNT - 1; i >= 0; i--) {
+        listSupport = list_support[i].support;
+        if ((listSupport != NULL) && (listSupport->enabled) && (listSupport->itemGetPrefix != NULL)) {
+            char *prefix = listSupport->itemGetPrefix(listSupport);
+            snprintf(appsPath, sizeof(appsPath), "%sCFG%s%s.cfg", prefix, i == ETH_MODE ? "\\" : "/", name);
+
+            fd = sbOpenFile(appsPath, O_RDONLY);
+            if (fd >= 0) {
+                appConfig = configAlloc(0, NULL, appsPath);
+                close(fd);
+                return appConfig;
+            }
+        }
+    }
+
+    /* Apps config not found on any device, go with last tested device.
+       Does not matter if the config file could be loaded or not */
+    appConfig = configAlloc(0, NULL, appsPath);
+
+    return appConfig;
+}
+
+// For resolving the mode, given an app's path
+static int oplPath2Mode(const char *path)
+{
+    char appsPath[64];
+    const char *blkdevnameend;
+    int i, blkdevnamelen;
+    item_list_t *listSupport;
+
+    for (i = 0; i < MODE_COUNT; i++) {
+        listSupport = list_support[i].support;
+        if ((listSupport != NULL) && (listSupport->itemGetPrefix != NULL)) {
+            char *prefix = listSupport->itemGetPrefix(listSupport);
+            snprintf(appsPath, sizeof(appsPath), "%sAPPS", prefix);
+
+            blkdevnameend = strchr(appsPath, ':');
+            if (blkdevnameend != NULL) {
+                blkdevnamelen = (int)(blkdevnameend - appsPath);
+
+                if (strncmp(path, appsPath, blkdevnamelen) == 0)
+                    return listSupport->mode;
+            }
+        }
+    }
+
+    return -1;
+}

@@ -23,6 +23,7 @@
 #include "include/favsupport.h"
 #include "include/hddsupport.h"
 #include "include/mmcesupport.h"
+#include "include/module.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -92,6 +93,12 @@ static ee_sema_t menuSema;
 
 int RemainSecs, DisableCron;
 int gSelectButton;
+
+extern unsigned char shouldAppsUpdate;
+extern unsigned int frameCounter;
+
+
+#define MENU_GENERAL_UPDATE_DELAY 60
 
 static void menuRenameGame(submenu_list_t **submenu)
 {
@@ -191,7 +198,7 @@ static void _menuSaveConfig()
     SignalSema(menuSemaId);
 
     if (!result)
-        setErrorMessage(_STR_ERROR_SAVING_SETTINGS);
+        guiSetErrorMessage(_STR_ERROR_SAVING_SETTINGS);
 }
 
 static void _menuRequestConfig()
@@ -1356,5 +1363,116 @@ void menuHandleInputAppMenu()
 
     if (getKeyOn(KEY_START) || getKeyOn(gSelectButton == KEY_CIRCLE ? KEY_CROSS : KEY_CIRCLE)) {
         guiSwitchScreen(GUI_SCREEN_MAIN);
+    }
+}
+
+void menuUpdateHook()
+{
+    int i;
+
+    // if timer exceeds some threshold, schedule updates of the available input sources
+    frameCounter++;
+
+    // schedule updates of all the list handlers
+    if (gAutoRefresh) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            if ((list_support[i].support && list_support[i].support->enabled) && ((list_support[i].support->updateDelay > 0) && (frameCounter % list_support[i].support->updateDelay == 0)))
+                ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[i].support->mode);
+        }
+    }
+
+    // Schedule updates of all list handlers that are to run every frame, regardless of whether auto refresh is active or not.
+    if (frameCounter % MENU_GENERAL_UPDATE_DELAY == 0) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            if ((list_support[i].support && list_support[i].support->enabled) && (list_support[i].support->updateDelay == 0))
+                ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[i].support->mode);
+        }
+    }
+}
+
+void menuClearGameList(opl_io_module_t *mdl)
+{
+    if (mdl->subMenu != NULL) {
+        // lock - gui has to be unused here
+        guiLock();
+
+        submenuDestroy(&mdl->subMenu);
+        mdl->menuItem.submenu = NULL;
+        mdl->menuItem.current = NULL;
+        mdl->menuItem.pagestart = NULL;
+        mdl->menuItem.remindLast = 0;
+
+        // unlock
+        guiUnlock();
+    }
+}
+
+static void updateMenuFromGameList(opl_io_module_t *mdl)
+{
+    guiExecDeferredOps();
+    menuClearGameList(mdl);
+
+    const char *temp = NULL;
+    if (gRememberLastPlayed)
+        configGetStr(configGetByType(CONFIG_LAST), "last_played", &temp);
+
+    // refresh device icon and text (for bdm)
+    mdl->menuItem.icon_id = mdl->support->itemIconId(mdl->support);
+    mdl->menuItem.text_id = mdl->support->itemTextId(mdl->support);
+
+    // read the new game list
+    struct gui_update_t *gup = NULL;
+    int count = mdl->support->itemUpdate(mdl->support);
+    if (count > 0) {
+        int i;
+
+        for (i = 0; i < count; ++i) {
+
+            gup = guiOpCreate(GUI_OP_APPEND_MENU);
+
+            gup->menu.menu = &mdl->menuItem;
+            gup->menu.subMenu = &mdl->subMenu;
+
+            gup->submenu.icon_id = -1;
+            gup->submenu.id = i;
+            gup->submenu.text = mdl->support->itemGetName(mdl->support, i);
+            gup->submenu.text_id = -1;
+            gup->submenu.selected = 0;
+            gup->submenu.owner = (void *)mdl->support;
+
+            if (gRememberLastPlayed && temp && strcmp(temp, mdl->support->itemGetStartup(mdl->support, i)) == 0) {
+                gup->submenu.selected = 1; // Select Last Played Game
+            }
+
+            guiDeferUpdate(gup);
+        }
+    }
+
+    if (gAutosort) {
+        gup = guiOpCreate(GUI_OP_SORT);
+        gup->menu.menu = &mdl->menuItem;
+        gup->menu.subMenu = &mdl->subMenu;
+        guiDeferUpdate(gup);
+    }
+}
+
+void menuDeferredUpdate(void *data)
+{
+    short int *mode = data;
+
+    opl_io_module_t *mod = &list_support[*mode];
+    if (!mod->support)
+        return;
+
+    // see if we have to update
+    if (mod->support->itemNeedsUpdate(mod->support)) {
+        updateMenuFromGameList(mod);
+
+        // If other modes have been updated, then the apps list should be updated too.
+        if (mod->support->mode != APP_MODE)
+            shouldAppsUpdate = 1;
+
+        if (mod->support->mode != FAV_MODE)
+            loadFavourites();
     }
 }

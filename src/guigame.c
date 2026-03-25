@@ -3,7 +3,6 @@
  PADEMU by belek666
 */
 
-#include "include/opl.h"
 #include "include/gui.h"
 #include "include/ioman.h"
 #include "include/lang.h"

@@ -4,7 +4,6 @@
  Review OpenUsbLd README & LICENSE files for further details.
  */
 
-#include "include/opl.h"
 #include "include/gui.h"
 #include "include/renderman.h"
 #include "include/menusys.h"
@@ -27,6 +26,7 @@
 #include "include/favsupport.h"
 #include "include/hddsupport.h"
 #include "include/mmcesupport.h"
+#include "include/module.h"
 #include <malloc.h>
 #include <math.h>
 #include <kernel.h>
@@ -38,6 +38,8 @@
 
 // Last Played Auto Start
 #include <time.h>
+
+extern unsigned int frameCounter;
 
 static int gScheduledOps;
 static int gCompletedOps;
@@ -64,6 +66,8 @@ clock_t CronStart;
 int showCfgPopup;
 int gEnableNotifications;
 int gScrollSpeed;
+
+static char errorMessage[256];
 
 // forward decl.
 static void guiShow();
@@ -1907,4 +1911,30 @@ void guiManageCheats(void)
     }
 
     sfxPlay(SFX_CONFIRM);
+}
+
+
+void guiClearErrorMessage(void)
+{
+    // reset the original frame hook
+    frameCounter = 0;
+    guiSetFrameHook(&menuUpdateHook);
+}
+
+static void errorMessageHook()
+{
+    guiMsgBox(errorMessage, 0, NULL);
+    guiClearErrorMessage();
+}
+
+void guiSetErrorMessageWithCode(int strId, int error)
+{
+    snprintf(errorMessage, sizeof(errorMessage), _l(strId), error);
+    guiSetFrameHook(&errorMessageHook);
+}
+
+void guiSetErrorMessage(int strId)
+{
+    snprintf(errorMessage, sizeof(errorMessage), _l(strId));
+    guiSetFrameHook(&errorMessageHook);
 }

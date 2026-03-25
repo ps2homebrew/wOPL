@@ -4,7 +4,6 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/opl.h"
 #include "include/ethsupport.h"
 #include "include/system.h"
 #include "include/ioman.h"

@@ -6,10 +6,10 @@
 #
 */
 
-#include "include/opl.h"
-#include <fcntl.h>
 #include "include/xparam.h"
 #include <loadfile.h>
+#include <fcntl.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
 

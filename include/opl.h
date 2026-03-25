@@ -17,25 +17,10 @@
 
 #define OPL_VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS 10000
 
-int oplPath2Mode(const char *path);
-int oplGetAppImage(const char *device, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
-int oplScanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg);
-int oplShouldAppsUpdate(void);
-config_set_t *oplGetLegacyAppsConfig(void);
-config_set_t *oplGetLegacyAppsInfo(char *name);
-
-void setErrorMessage(int strId);
-void setErrorMessageWithCode(int strId, int error);
 int loadConfig(int types);
 int saveConfig(int types, int showUI);
 void applyConfig(int themeID, int langID, int skipDeviceRefresh);
-void menuDeferredUpdate(void *data);
-void moduleUpdateMenu(int mode, int themeChanged, int langChanged);
 void handleLwnbdSrv();
-void deinit(int exception, int modeSelected);
-
-// Shutdown minimal services initiated for auto loading.
-void miniDeinit(config_set_t *configSet);
 
 
 enum ETH_OP_MODES {
@@ -66,7 +51,7 @@ extern int gEnableWrite;
 extern int gRememberLastPlayed;
 
 
-void initSupport(item_list_t *itemList, int mode, int force_reinit);
+void _loadConfig();
 
 void setDefaultColors(void);
 
@@ -75,18 +60,9 @@ void loadFavourites(void);
 
 #define MENU_ITEM_HEIGHT 19
 
-#include "include/menusys.h"
+int checkLoadConfigBDM(int types);
 
-typedef struct
-{
-    item_list_t *support;
-
-    /// menu item used with this list support
-    menu_item_t menuItem;
-
-    /// submenu list
-    submenu_list_t *subMenu;
-} opl_io_module_t;
+int checkLoadConfigHDD(int types);
 
 /*
 BLURT output char blurttext[128];

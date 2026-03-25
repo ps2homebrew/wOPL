@@ -4,9 +4,9 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/opl.h"
 #include "include/pad.h"
 #include "include/ioman.h"
+#include "include/menusys.h"
 #include <libpad.h>
 #include <timer.h>
 #include <time.h>

@@ -1,4 +1,3 @@
-#include "include/opl.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -19,6 +18,7 @@
 #include "include/art_tar.h"
 #include <stdio.h>
 #include <unistd.h>
+#include "include/initializer.h"
 
 #include <ps2sdkapi.h>
 #define NEWLIB_PORT_AWARE

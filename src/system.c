@@ -28,6 +28,7 @@
 #include "include/pggsm.h"
 #include "include/cheatman.h"
 #include "include/xparam.h"
+#include "include/initializer.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>

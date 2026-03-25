@@ -10,6 +10,7 @@
 #include "include/pad.h"
 #include "include/sound.h"
 #include "include/supportbase.h"
+#include "include/module.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -24,8 +25,6 @@ extern u16 size_conf_theme_wOPL_cfg;
 
 extern const char conf_theme_wOPL_CF_cfg;
 extern u16 size_conf_theme_wOPL_CF_cfg;
-
-theme_t *gTheme;
 
 static int screenWidth;
 static int screenHeight;

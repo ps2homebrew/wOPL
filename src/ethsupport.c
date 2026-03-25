@@ -1,4 +1,3 @@
-#include "include/opl.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -12,6 +11,7 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include "include/initializer.h"
 #include <stdio.h>
 #include <ps2smb.h>
 #include <ps2ips.h>
@@ -389,33 +389,33 @@ void ethDisplayErrorStatus(void)
         case 0: // No error
             break;
         case ERROR_ETH_MODULE_NETIF_FAILURE:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_NETIF, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_NETIF, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_CONN:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_CONN, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_CONN, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LOGON:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_LOGON, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_LOGON, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_OPENSHARE:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_SHARE, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_SHARE, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LISTSHARES:
-            setErrorMessageWithCode(_STR_NETWORK_SHARE_LIST_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_SHARE_LIST_ERROR, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LISTGAMES:
-            setErrorMessageWithCode(_STR_NETWORK_GAMES_LIST_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_GAMES_LIST_ERROR, gNetworkStartup);
             break;
         case ERROR_ETH_LINK_FAIL:
             LOG("ETH: Unable to get valid link status.\n");
-            setErrorMessageWithCode(_STR_NETWORK_ERROR_LINK_FAIL, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_ERROR_LINK_FAIL, gNetworkStartup);
             break;
         case ERROR_ETH_DHCP_FAIL:
             LOG("ETH: Unable to get valid IP address via DHCP.\n");
-            setErrorMessageWithCode(_STR_NETWORK_ERROR_DHCP_FAIL, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_ERROR_DHCP_FAIL, gNetworkStartup);
             break;
         default:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR, gNetworkStartup);
     }
 }
 

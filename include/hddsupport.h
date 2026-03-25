@@ -45,5 +45,6 @@ item_list_t *hddGetObject(int initOnly);
 void hddLoadModules(void);
 void hddLoadSupportModules(void);
 void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
+void autoLaunchHDDGame(char *argv[]);
 
 #endif

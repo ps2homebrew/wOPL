@@ -4,6 +4,7 @@
 #include "include/config.h"
 #include <gsKit.h>
 
+struct menu_item;
 
 #define IO_MODE_SELECTED_NONE -1
 #define IO_MODE_SELECTED_ALL  MODE_COUNT
@@ -156,5 +157,20 @@ typedef struct _item_list_t
 
     int (*itemIconId)(item_list_t *itemList);
 } item_list_t;
+
+void itemInitSupport(item_list_t *support);
+void itemExecSelect(struct menu_item *curMenu);
+void itemExecRefresh(struct menu_item *curMenu);
+
+void itemExecCross(struct menu_item *curMenu);
+
+void itemExecCircle(struct menu_item *curMenu);
+
+void itemExecSquare(struct menu_item *curMenu);
+
+void itemExecTriangle(struct menu_item *curMenu);
+
+void itemExecFav(struct menu_item *curMenu);
+
 
 #endif

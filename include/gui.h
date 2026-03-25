@@ -167,6 +167,11 @@ void guiHandleDeferedIO(int *ptr, const char *message, int type, void *data);
 
 void guiGameHandleDeferedIO(int *ptr, struct UIItem *ui, int type, void *data);
 
+void guiClearErrorMessage(void);
+
+void guiSetErrorMessage(int strId);
+void guiSetErrorMessageWithCode(int strId, int error);
+
 /** Renders a single frame with a specified message on the screen
  */
 void guiRenderTextScreen(const char *message);

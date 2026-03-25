@@ -19,6 +19,8 @@
 #include <libcdvd.h>
 #include <kernel.h>
 #include "opl-hdd-ioctl.h"
+#include "include/initializer.h"
+#include <stdlib.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioFormat, fileXioMount, fileXioUmount, fileXioDevctl
@@ -678,7 +680,7 @@ void hddLoadModules(void)
 
         if (ret < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
             return;
         }
     } else
@@ -766,14 +768,14 @@ void hddLoadSupportModules(void)
         int ret = sysLoadModuleBuffer(&ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg);
         if (ret < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_MODULE_HDD_FAILURE);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_MODULE_HDD_FAILURE);
             return;
         }
 
         // Check if a HDD unit is connected
         if (hddCheck() < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_NOT_DETECTED);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_NOT_DETECTED);
             return;
         }
 
@@ -781,7 +783,7 @@ void hddLoadSupportModules(void)
         ret = sysLoadModuleBuffer(&ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg);
         if (ret < 0) {
             LOG("HDD: HardDisk Drive not formatted (PFS).\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_FORMATTED_ERROR, ERROR_HDD_MODULE_PFS_FAILURE);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_FORMATTED_ERROR, ERROR_HDD_MODULE_PFS_FAILURE);
             return;
         }
 
@@ -1317,3 +1319,25 @@ static item_list_t hddGameList = {
     HDD_MODE, 0, 0, MODE_FLAG_COMPAT_DMA, MENU_MIN_INACTIVE_FRAMES, HDD_MODE_UPDATE_DELAY, NULL, NULL, &hddGetTextId, &hddGetPrefix, &hddInit, &hddNeedsUpdate, &hddUpdateGameList,
     &hddGetGameCount, &hddGetGame, &hddGetGameName, &hddGetGameNameLength, &hddGetGameStartup, &hddDeleteGame, &hddRenameGame,
     &hddLaunchGame, &hddGetConfig, &hddGetImage, &hddCleanUp, &hddShutdown, &hddCheckVMC, &hddGetIconId};
+
+
+void autoLaunchHDDGame(char *argv[])
+{
+    char path[256];
+    config_set_t *configSet;
+
+    miniInit(HDD_MODE);
+
+    gAutoLaunchGame = malloc(sizeof(hdl_game_info_t));
+    memset(gAutoLaunchGame, 0, sizeof(hdl_game_info_t));
+
+    snprintf(gAutoLaunchGame->startup, sizeof(gAutoLaunchGame->startup), argv[1]);
+    gAutoLaunchGame->start_sector = strtoul(argv[2], NULL, 0);
+    snprintf(gOPLPart, sizeof(gOPLPart), "hdd0:%s", argv[3]);
+
+    snprintf(path, sizeof(path), "%sCFG/%s.cfg", gHDDPrefix, gAutoLaunchGame->startup);
+    configSet = configAlloc(0, NULL, path);
+    configRead(configSet);
+
+    hddLaunchGame(NULL, -1, configSet);
+}

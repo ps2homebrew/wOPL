@@ -6,6 +6,7 @@
 #include "include/themes.h"
 #include "include/sound.h"
 #include "include/supportbase.h"
+#include "include/module.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
