@@ -17,6 +17,10 @@
 #include "include/renderman.h"
 #include "include/themes.h"
 
+#ifdef __DEBUG
+#include "include/debug.h"
+#endif
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
