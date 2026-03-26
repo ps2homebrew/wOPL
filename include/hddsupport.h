@@ -33,7 +33,7 @@ int hddSetTransferMode(int type, int mode);
 void hddSetIdleTimeout(int timeout);
 
 item_list_t *hddGetObject(int initOnly);
-void hddLoadModules(void);
+int hddLoadModules(void);
 void hddLoadSupportModules(void);
 void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
 
