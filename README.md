@@ -1,5 +1,7 @@
 # Double Unofficial-Open-PS2-Loader
 
+![logo](https://github.com/NathanNeurotic/wOPL/blob/wOPL-base/gfx/logo.png)
+
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
 Copyright 2025-Present, Wolf3s, Ripto and chasebocamp<br/>

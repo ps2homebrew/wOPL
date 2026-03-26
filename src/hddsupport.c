@@ -156,6 +156,7 @@ extern u32 probed_lba;
 u8 IOBuffer[2048] ALIGNED(64); // one sector
 
 static unsigned char hddForceUpdate = 0;
+static unsigned char hddModulesLoaded = 0;
 static unsigned char hddHDProKitDetected = 0;
 static unsigned char hddModulesLoadCount = 0;
 static unsigned char hddSupportModulesLoaded = 0;
@@ -173,6 +174,14 @@ hdl_game_info_t *gAutoLaunchGame;
 int gHDDGameListCache;
 char gOPLPart[128];
 char *gHDDPrefix;
+typedef enum {
+    HDD_LOADMODULES_STATUS_ERROR = -2,
+    HDD_LOADMODULES_STATUS_UNK = -1,
+    HDD_LOADMODULES_STATUS_NOERROR,
+    HDD_LOADMODULES_STATUS_ALREADYLOADED,
+    HDD_LOADMODULES_STATUS_BUSYLOADING,
+    HDD_LOADMODULES_STATUS_COUNT,
+} hdd_loadmodules_status;
 
 static int hddLoadGameListCache(hdl_games_list_t *cache);
 static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *game_list);
@@ -648,11 +657,15 @@ static int hddCreateOPLPartition(const char *name)
     return result;
 }
 
-void hddLoadModules(void)
+int hddLoadModules(void)
 {
-    int ret;
+    int retLoadModule;
+    int retStatus = HDD_LOADMODULES_STATUS_UNK;
 
     LOG("HDDSUPPORT LoadModules %d\n", hddModulesLoadCount);
+
+    if (hddModulesLoaded)
+        retStatus = HDD_LOADMODULES_STATUS_ALREADYLOADED;
 
     if (hddModulesLoadCount == 0) {
         // Increment the load count as soon as possible to prevent thread scheduling from allowing another thread to
@@ -667,25 +680,32 @@ void hddLoadModules(void)
         hddHDProKitDetected = hddCheckHDProKit();
         if (hddHDProKitDetected) {
             LOG("[ATAD_HDPRO]:\n");
-            ret = sysLoadModuleBuffer(&hdpro_atad_irx, size_hdpro_atad_irx, 0, NULL);
+            retLoadModule = sysLoadModuleBuffer(&hdpro_atad_irx, size_hdpro_atad_irx, 0, NULL);
             LOG("[XHDD]:\n");
             sysLoadModuleBuffer(&xhdd_irx, size_xhdd_irx, 6, "-hdpro");
         } else {
             LOG("[ATAD]:\n");
-            ret = sysLoadModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL);
+            retLoadModule = sysLoadModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL);
             LOG("[XHDD]:\n");
             sysLoadModuleBuffer(&xhdd_irx, size_xhdd_irx, 0, NULL);
         }
 
-        if (ret < 0) {
+        if (retLoadModule < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
             guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
-            return;
+            retStatus = HDD_LOADMODULES_STATUS_ERROR;
+        } else {
+            retStatus = HDD_LOADMODULES_STATUS_NOERROR;
+            hddModulesLoaded = 1;
         }
-    } else
+    } else {
         hddModulesLoadCount++;
+        if (!hddModulesLoaded)
+            retStatus = HDD_LOADMODULES_STATUS_BUSYLOADING;
+    }
 
     LOG("HDDSUPPORT LoadModules done\n");
+    return retStatus;
 }
 
 // Returns 1 for MBR/GPT, 0 for APA, and -1 if an error occured
