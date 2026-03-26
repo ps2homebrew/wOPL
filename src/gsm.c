@@ -11,7 +11,7 @@
 #
 */
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/system.h"

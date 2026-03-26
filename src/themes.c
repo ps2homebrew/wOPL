@@ -1,4 +1,5 @@
-#include "include/opl.h"
+
+#include "include/common.h"
 #include "include/themes.h"
 #include "include/util.h"
 #include "include/gui.h"

@@ -4,6 +4,7 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
+#include "include/common.h"
 #include "include/dia.h"
 #include "include/gui.h"
 #include "include/lang.h"

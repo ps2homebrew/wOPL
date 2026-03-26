@@ -4,7 +4,7 @@
  Review OpenUsbLd README & LICENSE files for further details.
  */
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/fntsys.h"
 #include "include/renderman.h"
 #include "include/ioman.h"

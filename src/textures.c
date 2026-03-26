@@ -1,4 +1,4 @@
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/textures.h"
 #include "include/util.h"
 #include "include/ioman.h"

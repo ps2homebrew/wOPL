@@ -9,7 +9,7 @@
 #include "include/lang.h"
 #include "include/themes.h"
 #include "include/favsupport.h"
-#include "include/module.h"
+#include "include/common.h"
 #include <malloc.h>
 #include <stdio.h>
 

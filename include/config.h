@@ -201,4 +201,14 @@ void configRemoveVMC(config_set_t *configSet, int slot);
 char *configGetDir(void);
 void configPrepareNotifications(char *prefix);
 
+void loadConfig();
+
+int configCheckLoadConfigBDM(int types);
+
+int configCheckLoadConfigHDD(int types);
+
+int configLoad(int types);
+int configSave(int types, int showUI);
+void configApply(int themeID, int langID, int skipDeviceRefresh);
+
 #endif

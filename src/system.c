@@ -8,7 +8,6 @@
 #include <iopcontrol_special.h>
 #endif
 
-#include "include/opl.h"
 #include "include/gui.h"
 #include "include/ethsupport.h"
 #include "include/hddsupport.h"

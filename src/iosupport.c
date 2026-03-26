@@ -1,3 +1,5 @@
+
+#include "include/common.h"
 #include "include/ioman.h"
 #include "include/gui.h"
 #include "include/guigame.h"

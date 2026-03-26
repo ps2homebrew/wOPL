@@ -1,4 +1,4 @@
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/appsupport.h"

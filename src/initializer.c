@@ -10,18 +10,9 @@
 #include "include/system.h"
 #include "include/util.h"
 
-#include "include/supportbase.h"
-#include "include/bdmsupport.h"
-#include "include/ethsupport.h"
-#include "include/hddsupport.h"
-#include "include/appsupport.h"
-#include "include/favsupport.h"
-#include "include/mmcesupport.h"
+#include "include/common.h"
 #include "include/sound.h"
 #include <libpad.h>
-
-#include "include/module.h"
-#include "include/initializer.h"
 
 #ifdef PADEMU
 #include <libds34bt.h>
@@ -284,10 +275,10 @@ void init(void)
         padStatus = startPads();
     readPads();
     if (!getKeyPressed(KEY_START)) {
-        _loadConfig(); // only try to restore config if emergency key is not being pressed
+        loadConfig(); // only try to restore config if emergency key is not being pressed
     } else {
         LOG("--- SKIPPING OPL CONFIG LOADING\n");
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
     }
 
 
@@ -380,9 +371,9 @@ void miniInit(int mode)
     if (CONFIG_ALL & CONFIG_OPL) {
         if (!(ret & CONFIG_OPL)) {
             if (mode == BDM_MODE)
-                ret = checkLoadConfigBDM(CONFIG_ALL);
+                ret = configCheckLoadConfigBDM(CONFIG_ALL);
             else if (mode == HDD_MODE)
-                ret = checkLoadConfigHDD(CONFIG_ALL);
+                ret = configCheckLoadConfigHDD(CONFIG_ALL);
         }
 
         if (ret & CONFIG_OPL) {

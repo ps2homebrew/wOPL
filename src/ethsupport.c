@@ -1,3 +1,5 @@
+
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -11,7 +13,6 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
-#include "include/initializer.h"
 #include <stdio.h>
 #include <ps2smb.h>
 #include <ps2ips.h>
@@ -664,7 +665,7 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     compatmask = sbPrepare(game, configSet, size_smb_cdvdman_irx, smb_cdvdman_irx, &i);

@@ -1,4 +1,5 @@
 #include "include/gui.h"
+#include "include/common.h"
 #include "include/pad.h"
 #include "include/lang.h"
 #include "include/textures.h"

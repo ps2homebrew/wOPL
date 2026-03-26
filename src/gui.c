@@ -21,12 +21,7 @@
 #include "include/sound.h"
 #include "include/guigame.h"
 #include "include/tetris.h"
-#include "include/appsupport.h"
-#include "include/bdmsupport.h"
-#include "include/favsupport.h"
-#include "include/hddsupport.h"
-#include "include/mmcesupport.h"
-#include "include/module.h"
+#include "include/common.h"
 #include <malloc.h>
 #include <math.h>
 #include <kernel.h>
@@ -81,6 +76,9 @@ static float fps = 0.0f;
 
 extern GSGLOBAL *gsGlobal;
 #endif
+
+
+#define VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS 10000
 
 // Global data
 int guiInactiveFrames;
@@ -485,7 +483,7 @@ void guiShowConfig()
         if (ret == BLOCKDEVICE_BUTTON)
             guiShowBlockDeviceConfig();
 
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
         menuReinitMainMenu();
     }
 }
@@ -535,7 +533,7 @@ void guiShowMMCEConfig()
         diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
     }
 
-    applyConfig(-1, -1, 0);
+    configApply(-1, -1, 0);
     menuReinitMainMenu();
 }
 
@@ -683,7 +681,7 @@ reselect_video_mode:
         if (previousTheme != themeID && isBgmPlaying())
             bgmStop();
 
-        applyConfig(themeID, langID, 1);
+        configApply(themeID, langID, 1);
         sfxInit(0);
 
         if (gEnableBGM && !isBgmPlaying())
@@ -694,7 +692,7 @@ reselect_video_mode:
         if (guiConfirmVideoMode() == 0) {
             // Restore previous video mode, without changing the theme & language settings.
             gVMode = previousVMode;
-            applyConfig(themeID, langID, 1);
+            configApply(themeID, langID, 1);
             goto reselect_video_mode;
         }
     }
@@ -810,7 +808,7 @@ void guiShowNetConfig(void)
         if (result == NETCFG_RECONNECT && gNetworkStartup < ERROR_ETH_SMB_CONN)
             gNetworkStartup = ERROR_ETH_SMB_LOGON;
 
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
     }
 }
 
@@ -829,7 +827,7 @@ void guiShowParentalLockConfig(void)
         diaGetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password, CONFIG_KEY_VALUE_LEN);
 
         if (strlen(password) > 0) {
-            if (strncmp(OPL_PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
+            if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
                 // Store password
                 configSetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password);
             } else {
@@ -919,7 +917,7 @@ void guiShowControllerConfig(void)
             guiGameShowPadMacroConfig(1);
         }
 #endif
-        applyConfig(-1, -1, 1);
+        configApply(-1, -1, 1);
     }
 }
 
@@ -1728,7 +1726,7 @@ int guiConfirmVideoMode(void)
 
     sfxPlay(SFX_MESSAGE);
 
-    timeEnd = clock() + OPL_VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS * (CLOCKS_PER_SEC / 1000);
+    timeEnd = clock() + VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS * (CLOCKS_PER_SEC / 1000);
     while (!terminate) {
         guiStartFrame();
 

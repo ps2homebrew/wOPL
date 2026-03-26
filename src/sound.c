@@ -8,7 +8,7 @@
 #include <vorbis/vorbisfile.h>
 
 #include "include/sound.h"
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/ioman.h"
 #include "include/themes.h"
 #include <fcntl.h>

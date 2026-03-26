@@ -4,7 +4,7 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/menusys.h"
 #include "include/iosupport.h"
 #include "include/renderman.h"
@@ -17,17 +17,9 @@
 #include "include/system.h"
 #include "include/ioman.h"
 #include "include/sound.h"
-#include "include/appsupport.h"
-#include "include/bdmsupport.h"
-#include "include/ethsupport.h"
-#include "include/favsupport.h"
-#include "include/hddsupport.h"
-#include "include/mmcesupport.h"
-#include "include/module.h"
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
+
 #include <kernel.h>
 #include <errno.h>
 
@@ -906,11 +898,11 @@ int menuCheckParentalLock(void)
                 if (strncmp(parentalLockPassword, password, CONFIG_KEY_VALUE_LEN) == 0) {
                     result = 0;
                     parentalLockCheckEnabled = 0; // Stop asking for the password.
-                } else if (strncmp(OPL_PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) == 0) {
+                } else if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) == 0) {
                     guiMsgBox(_l(_STR_PARENLOCK_DISABLE_WARNING), 0, NULL);
 
                     configRemoveKey(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD);
-                    saveConfig(CONFIG_OPL, 1);
+                    configSave(CONFIG_OPL, 1);
 
                     result = 0;
                     parentalLockCheckEnabled = 0; // Stop asking for the password.
@@ -993,7 +985,7 @@ void menuHandleInputMenu()
                 guiGameSavePadEmuGlobalConfig(configGetByType(CONFIG_GAME));
                 guiGameSavePadMacroGlobalConfig(configGetByType(CONFIG_GAME));
 #endif
-                saveConfig(CONFIG_OPL | CONFIG_NETWORK | CONFIG_GAME, 1);
+                configSave(CONFIG_OPL | CONFIG_NETWORK | CONFIG_GAME, 1);
                 menuSetParentalLockCheckState(1); // Re-enable parental lock check.
             }
         } else if (id == MENU_EXIT) {
@@ -1259,7 +1251,7 @@ void menuHandleInputGameMenu()
             if (guiGameSaveConfig(itemConfig, selected_item->item->userdata))
                 configSetInt(itemConfig, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_USER);
             menuSaveConfig();
-            saveConfig(CONFIG_GAME, 0);
+            configSave(CONFIG_GAME, 0);
             guiMsgBox(_l(_STR_GAME_SETTINGS_SAVED), 0, NULL);
             guiGameLoadConfig(selected_item->item->userdata, gameMenuLoadConfig(NULL));
         } else if (menuID == GAME_TEST_CHANGES) {

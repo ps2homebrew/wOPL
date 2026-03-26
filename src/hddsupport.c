@@ -1,5 +1,4 @@
-#include "sys/fcntl.h"
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -992,7 +991,7 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     char gid[5];

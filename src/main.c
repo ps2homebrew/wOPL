@@ -6,19 +6,11 @@
 #include "include/texcache.h"
 #include "include/system.h"
 
-#include "include/supportbase.h"
-#include "include/bdmsupport.h"
-#include "include/ethsupport.h"
-#include "include/hddsupport.h"
-#include "include/appsupport.h"
-#include "include/favsupport.h"
-#include "include/mmcesupport.h"
+#include "include/common.h"
 
 #include "include/sound.h"
 #include "include/tetris.h"
 #include "include/xparam.h"
-#include "include/module.h"
-#include "include/initializer.h"
 
 #include <libmc.h>
 #include <kernel.h>

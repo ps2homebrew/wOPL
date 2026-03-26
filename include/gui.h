@@ -2,7 +2,6 @@
 #define __GUI_H
 
 #include "include/iosupport.h"
-#include "include/opl.h"
 #include "include/texcache.h"
 #include "include/dialogs.h"
 #include "include/menusys.h"

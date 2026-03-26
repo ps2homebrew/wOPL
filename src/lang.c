@@ -1,4 +1,4 @@
-#include "include/opl.h"
+#include <gsKit.h>
 #include "include/lang.h"
 #include "include/util.h"
 #include "include/fntsys.h"
