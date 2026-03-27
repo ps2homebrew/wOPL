@@ -4,13 +4,14 @@
  Review OpenUsbLd README & LICENSE files for further details.
  */
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/fntsys.h"
 #include "include/renderman.h"
 #include "include/ioman.h"
 #include "include/utf8.h"
 #include "include/util.h"
 #include "include/atlas.h"
+#include "include/supportbase.h"
 #include <malloc.h>
 #include <sys/types.h>
 #include <ft2build.h>

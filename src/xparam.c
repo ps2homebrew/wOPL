@@ -6,10 +6,12 @@
 #
 */
 
-#include "include/opl.h"
-#include <fcntl.h>
 #include "include/xparam.h"
 #include <loadfile.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
 
 char params_DCACHE_OFF[] = {'0', 'x', '1', '0', 0, '0', 0};
 char params_CPU_DELAY[] = {'0', 'x', '6', 0, '0', 'x', '7', '8', '0', 0};

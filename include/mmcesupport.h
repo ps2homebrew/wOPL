@@ -14,9 +14,19 @@ typedef struct
     vmc_spec_t specs; /* Card specifications */
 } mmce_vmc_infos_t;
 
+extern int gMMCEIGRSlot;
+extern int gMMCESlot;
+extern int gMMCEAckWaitCycles;
+extern int gMMCEUseAlarms;
+extern int gMMCEEnableGameID;
+extern int gMMCEStartMode;
+extern char gMMCEPrefix[32];
+
+
 void mmceInit(item_list_t *itemList);
 item_list_t *mmceGetObject(int initOnly);
 void mmceLoadModules(void);
 void mmceLaunchGame(item_list_t *itemList, int fd, config_set_t *configSet);
+
 
 #endif

@@ -1,10 +1,14 @@
-#include "include/opl.h"
+#include <gsKit.h>
 #include "include/lang.h"
 #include "include/util.h"
 #include "include/fntsys.h"
 #include "include/ioman.h"
 #include "include/themes.h"
 #include "include/sound.h"
+#include "include/supportbase.h"
+#include "include/module.h"
+#include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <dirent.h>

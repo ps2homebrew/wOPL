@@ -5,8 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/pad.h"
 #include "include/renderman.h"
 #include "include/dialogs.h"

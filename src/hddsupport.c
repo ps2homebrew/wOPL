@@ -1,5 +1,4 @@
-#include "sys/fcntl.h"
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -19,12 +18,15 @@
 #include <libcdvd.h>
 #include <kernel.h>
 #include "opl-hdd-ioctl.h"
+#include "include/initializer.h"
+#include <stdlib.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioFormat, fileXioMount, fileXioUmount, fileXioDevctl
 #include <io_common.h>   // FIO_MT_RDWR
 
 #include <hdd-ioctl.h>
+#include <speedregs.h>
 
 #include "../modules/isofs/zso.h"
 
@@ -154,6 +156,7 @@ extern u32 probed_lba;
 u8 IOBuffer[2048] ALIGNED(64); // one sector
 
 static unsigned char hddForceUpdate = 0;
+static unsigned char hddModulesLoaded = 0;
 static unsigned char hddHDProKitDetected = 0;
 static unsigned char hddModulesLoadCount = 0;
 static unsigned char hddSupportModulesLoaded = 0;
@@ -163,6 +166,22 @@ static hdl_games_list_t hddGames;
 
 // forward declaration
 static item_list_t hddGameList;
+
+int gHDDSpindown;
+int gHDDStartMode;
+int hddCacheSize;
+hdl_game_info_t *gAutoLaunchGame;
+int gHDDGameListCache;
+char gOPLPart[128];
+char *gHDDPrefix;
+typedef enum {
+    HDD_LOADMODULES_STATUS_ERROR = -2,
+    HDD_LOADMODULES_STATUS_UNK = -1,
+    HDD_LOADMODULES_STATUS_NOERROR,
+    HDD_LOADMODULES_STATUS_ALREADYLOADED,
+    HDD_LOADMODULES_STATUS_BUSYLOADING,
+    HDD_LOADMODULES_STATUS_COUNT,
+} hdd_loadmodules_status;
 
 static int hddLoadGameListCache(hdl_games_list_t *cache);
 static int hddUpdateGameListCache(hdl_games_list_t *cache, hdl_games_list_t *game_list);
@@ -533,6 +552,32 @@ static int hddCheckHDProKit(void)
     return ret;
 }
 
+/**
+ * Some compatible adaptors may malfunction if transfers are not done according
+ * to the old ps2atad design. Official adaptors appear to have a 0x0001 set for
+ * this register, but not compatibles. While official I/O to this register are
+ * 8-bit, some compatibles have a 0x01 for the lower 8-bits, but the upper
+ * 8-bits contain some random value. Hence perform a 16-bit read instead.
+ */
+static int hddCheckGameStar(void)
+{
+    int ret = 0;
+    USE_SPD_REGS;
+
+    DIntr();
+    ee_kmode_enter();
+
+    ret = (SPD_REG16(0x20) != 1);
+
+    ee_kmode_exit();
+    EIntr();
+
+    if (ret)
+        LOG("HDDSUPPORT GameStar detected!\n");
+
+    return ret;
+}
+
 // Taken from libhdd:
 #define PFS_ZONE_SIZE 8192
 #define PFS_FRAGMENT  0x00000000
@@ -612,11 +657,15 @@ static int hddCreateOPLPartition(const char *name)
     return result;
 }
 
-void hddLoadModules(void)
+int hddLoadModules(void)
 {
-    int ret;
+    int retLoadModule;
+    int retStatus = HDD_LOADMODULES_STATUS_UNK;
 
     LOG("HDDSUPPORT LoadModules %d\n", hddModulesLoadCount);
+
+    if (hddModulesLoaded)
+        retStatus = HDD_LOADMODULES_STATUS_ALREADYLOADED;
 
     if (hddModulesLoadCount == 0) {
         // Increment the load count as soon as possible to prevent thread scheduling from allowing another thread to
@@ -631,25 +680,32 @@ void hddLoadModules(void)
         hddHDProKitDetected = hddCheckHDProKit();
         if (hddHDProKitDetected) {
             LOG("[ATAD_HDPRO]:\n");
-            ret = sysLoadModuleBuffer(&hdpro_atad_irx, size_hdpro_atad_irx, 0, NULL);
+            retLoadModule = sysLoadModuleBuffer(&hdpro_atad_irx, size_hdpro_atad_irx, 0, NULL);
             LOG("[XHDD]:\n");
             sysLoadModuleBuffer(&xhdd_irx, size_xhdd_irx, 6, "-hdpro");
         } else {
             LOG("[ATAD]:\n");
-            ret = sysLoadModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL);
+            retLoadModule = sysLoadModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL);
             LOG("[XHDD]:\n");
             sysLoadModuleBuffer(&xhdd_irx, size_xhdd_irx, 0, NULL);
         }
 
-        if (ret < 0) {
+        if (retLoadModule < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
-            return;
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_IF_NOT_DETECTED);
+            retStatus = HDD_LOADMODULES_STATUS_ERROR;
+        } else {
+            retStatus = HDD_LOADMODULES_STATUS_NOERROR;
+            hddModulesLoaded = 1;
         }
-    } else
+    } else {
         hddModulesLoadCount++;
+        if (!hddModulesLoaded)
+            retStatus = HDD_LOADMODULES_STATUS_BUSYLOADING;
+    }
 
     LOG("HDDSUPPORT LoadModules done\n");
+    return retStatus;
 }
 
 // Returns 1 for MBR/GPT, 0 for APA, and -1 if an error occured
@@ -731,14 +787,14 @@ void hddLoadSupportModules(void)
         int ret = sysLoadModuleBuffer(&ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg);
         if (ret < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_MODULE_HDD_FAILURE);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_MODULE_HDD_FAILURE);
             return;
         }
 
         // Check if a HDD unit is connected
         if (hddCheck() < 0) {
             LOG("HDD: No HardDisk Drive detected.\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_NOT_DETECTED);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_CONNECTED_ERROR, ERROR_HDD_NOT_DETECTED);
             return;
         }
 
@@ -746,7 +802,7 @@ void hddLoadSupportModules(void)
         ret = sysLoadModuleBuffer(&ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg);
         if (ret < 0) {
             LOG("HDD: HardDisk Drive not formatted (PFS).\n");
-            setErrorMessageWithCode(_STR_HDD_NOT_FORMATTED_ERROR, ERROR_HDD_MODULE_PFS_FAILURE);
+            guiSetErrorMessageWithCode(_STR_HDD_NOT_FORMATTED_ERROR, ERROR_HDD_MODULE_PFS_FAILURE);
             return;
         }
 
@@ -955,7 +1011,7 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     char gid[5];
@@ -977,6 +1033,9 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     if (hddHDProKitDetected) {
         size_irx = size_hdd_hdpro_cdvdman_irx;
         irx = &hdd_hdpro_cdvdman_irx;
+    } else if (hddCheckGameStar()) {
+        size_irx = size_hdd_gamestar_cdvdman_irx;
+        irx = &hdd_gamestar_cdvdman_irx;
     } else {
         size_irx = size_hdd_cdvdman_irx;
         irx = &hdd_cdvdman_irx;
@@ -1108,7 +1167,7 @@ static int hddGetTextId(item_list_t *itemList)
 
 static int hddGetIconId(item_list_t *itemList)
 {
-    return HDD_ICON;
+    return CATEGORY_HDD_APA_ICON;
 }
 
 // This may be called, even if hddInit() was not.
@@ -1279,3 +1338,25 @@ static item_list_t hddGameList = {
     HDD_MODE, 0, 0, MODE_FLAG_COMPAT_DMA, MENU_MIN_INACTIVE_FRAMES, HDD_MODE_UPDATE_DELAY, NULL, NULL, &hddGetTextId, &hddGetPrefix, &hddInit, &hddNeedsUpdate, &hddUpdateGameList,
     &hddGetGameCount, &hddGetGame, &hddGetGameName, &hddGetGameNameLength, &hddGetGameStartup, &hddDeleteGame, &hddRenameGame,
     &hddLaunchGame, &hddGetConfig, &hddGetImage, &hddCleanUp, &hddShutdown, &hddCheckVMC, &hddGetIconId};
+
+
+void autoLaunchHDDGame(char *argv[])
+{
+    char path[256];
+    config_set_t *configSet;
+
+    miniInit(HDD_MODE);
+
+    gAutoLaunchGame = malloc(sizeof(hdl_game_info_t));
+    memset(gAutoLaunchGame, 0, sizeof(hdl_game_info_t));
+
+    snprintf(gAutoLaunchGame->startup, sizeof(gAutoLaunchGame->startup), argv[1]);
+    gAutoLaunchGame->start_sector = strtoul(argv[2], NULL, 0);
+    snprintf(gOPLPart, sizeof(gOPLPart), "hdd0:%s", argv[3]);
+
+    snprintf(path, sizeof(path), "%sCFG/%s.cfg", gHDDPrefix, gAutoLaunchGame->startup);
+    configSet = configAlloc(0, NULL, path);
+    configRead(configSet);
+
+    hddLaunchGame(NULL, -1, configSet);
+}

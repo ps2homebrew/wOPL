@@ -1,4 +1,4 @@
-#include "include/opl.h"
+#include "include/iosupport.h"
 #include "include/ioman.h"
 #include <kernel.h>
 #include <string.h>
@@ -57,6 +57,7 @@ static ee_sema_t gQueueSema;
 
 static int isIOBlocked = 0;
 static int isIORunning = 0;
+int gBDMDebug;
 
 int ioRegisterHandler(int type, io_request_handler_t handler)
 {

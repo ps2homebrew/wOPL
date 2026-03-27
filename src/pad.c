@@ -4,9 +4,9 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/opl.h"
 #include "include/pad.h"
 #include "include/ioman.h"
+#include "include/menusys.h"
 #include <libpad.h>
 #include <timer.h>
 #include <time.h>
@@ -73,6 +73,10 @@ static const int keyToPad[17] = {
     PAD_L1,
     PAD_R2,
     PAD_L2};
+
+int gXSensitivity;
+int gYSensitivity;
+int KeyPressedOnce;
 
 /*
  * waitPadReady()

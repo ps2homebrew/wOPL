@@ -1,6 +1,7 @@
 #ifndef __BDM_SUPPORT_H
 #define __BDM_SUPPORT_H
 
+#include "include/supportbase.h"
 #include "include/iosupport.h"
 
 typedef struct
@@ -22,6 +23,18 @@ typedef struct
     unsigned char ForceRefresh;
 } bdm_device_data_t;
 
+extern int gBDMStartMode;
+extern int bdmCacheSize;
+extern char gBDMPrefix[32];
+
+extern int gEnableILK;
+extern int gEnableMX4SIO;
+extern int gEnableBdmHDD;
+
+extern base_game_info_t *gAutoLaunchBDMGame;
+extern bdm_device_data_t *gAutoLaunchDeviceData;
+
+
 int bdmFindPartition(char *target, const char *name, int write);
 void bdmLoadModules(void);
 void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
@@ -30,5 +43,9 @@ void bdmInitSemaphore();
 void bdmEnumerateDevices();
 
 void bdmResolveLBA_UDMA(bdm_device_data_t *pDeviceData);
+int bdmWaitForDevice(int deviceId, u32 timeoutMs);
+int bdmHDDIsPresent();
+
+void autoLaunchBDMGame(char *argv[]);
 
 #endif

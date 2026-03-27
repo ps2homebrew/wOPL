@@ -8,7 +8,7 @@
 #include <vorbis/vorbisfile.h>
 
 #include "include/sound.h"
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/ioman.h"
 #include "include/themes.h"
 #include <fcntl.h>
@@ -16,6 +16,7 @@
 #include <malloc.h>
 #include <kernel.h>
 #include <errno.h>
+#include <unistd.h>
 
 // Silence unused variable warnings from vorbisfile.h
 static ov_callbacks OV_CALLBACKS_NOCLOSE __attribute__((unused));
@@ -71,6 +72,14 @@ static struct sfxEffect sfx_files[SFX_COUNT] = {
 
 static struct audsrv_adpcm_t sfx[SFX_COUNT];
 static int audio_initialized = 0;
+
+int gEnableSFX;
+int gEnableBootSND;
+int gEnableBGM;
+int gSFXVolume;
+int gBootSndVolume;
+int gBGMVolume;
+char gDefaultBGMPath[128];
 
 // Returns 0 if the specified file was read. The sfxEffect structure will not be updated unless the file is successfully read.
 static int sfxRead(const char *full_path, struct sfxEffect *sfx)

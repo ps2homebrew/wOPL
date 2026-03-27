@@ -88,6 +88,10 @@ typedef struct menu_list
     struct menu_list *prev, *next;
 } menu_list_t;
 
+extern int RemainSecs, DisableCron;
+extern clock_t CronStart;
+extern int gSelectButton;
+
 void menuInit();
 void menuEnd();
 void menuReinitMainMenu(void);
@@ -128,5 +132,8 @@ void menuRemoveHints(menu_item_t *menu);
 
 int menuSetParentalLockCheckState(int enabled);
 int menuCheckParentalLock(void);
+void menuDeferredUpdate(void *data);
+
+void menuUpdateHook();
 
 #endif

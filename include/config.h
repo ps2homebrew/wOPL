@@ -2,6 +2,7 @@
 #define __CONFIG_H
 
 #include <sys/stat.h>
+#include <tamtypes.h>
 
 // Enum for the different types of config files. Game-specific config files (<game ID>.cfg) will always have an ID of 0.
 enum CONFIG_INDEX {
@@ -166,6 +167,8 @@ typedef struct
     u32 uid;
 } config_set_t;
 
+extern char *gBaseMCDir;
+
 void configInit(char *prefix);
 void configSetMove(char *prefix);
 void configMove(config_set_t *configSet, const char *fileName);
@@ -197,5 +200,15 @@ void configRemoveVMC(config_set_t *configSet, int slot);
 
 char *configGetDir(void);
 void configPrepareNotifications(char *prefix);
+
+void loadConfig();
+
+int configCheckLoadConfigBDM(int types);
+
+int configCheckLoadConfigHDD(int types);
+
+int configLoad(int types);
+int configSave(int types, int showUI);
+void configApply(int themeID, int langID, int skipDeviceRefresh);
 
 #endif

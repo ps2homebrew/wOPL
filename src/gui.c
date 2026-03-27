@@ -4,7 +4,6 @@
  Review OpenUsbLd README & LICENSE files for further details.
  */
 
-#include "include/opl.h"
 #include "include/gui.h"
 #include "include/renderman.h"
 #include "include/menusys.h"
@@ -22,7 +21,7 @@
 #include "include/sound.h"
 #include "include/guigame.h"
 #include "include/tetris.h"
-
+#include "include/common.h"
 #include <malloc.h>
 #include <math.h>
 #include <kernel.h>
@@ -30,9 +29,12 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <libvux.h>
+#include <stdio.h>
 
 // Last Played Auto Start
 #include <time.h>
+
+extern unsigned int frameCounter;
 
 static int gScheduledOps;
 static int gCompletedOps;
@@ -54,6 +56,14 @@ static int showLngPopup;
 
 static clock_t popupTimer;
 
+int gAutoStartLastPlayed;
+clock_t CronStart;
+int showCfgPopup;
+int gEnableNotifications;
+int gScrollSpeed;
+
+static char errorMessage[256];
+
 // forward decl.
 static void guiShow();
 
@@ -66,6 +76,9 @@ static float fps = 0.0f;
 
 extern GSGLOBAL *gsGlobal;
 #endif
+
+
+#define VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS 10000
 
 // Global data
 int guiInactiveFrames;
@@ -109,6 +122,12 @@ static int transIndex;
 static GSTEXTURE gBackgroundTex;
 static int pperm[512];
 static float fadetbl[FADE_SIZE + 1];
+
+unsigned char gDefaultBgColor[3];
+unsigned char gDefaultTextColor[3];
+unsigned char gDefaultSelTextColor[3];
+unsigned char gDefaultUITextColor[3];
+unsigned char gDefaultPlasmaBlendColor[3];
 
 static VU_VECTOR pgrad3[12] = {{1, 1, 0, 1}, {-1, 1, 0, 1}, {1, -1, 0, 1}, {-1, -1, 0, 1}, {1, 0, 1, 1}, {-1, 0, 1, 1}, {1, 0, -1, 1}, {-1, 0, -1, 1}, {0, 1, 1, 1}, {0, -1, 1, 1}, {0, 1, -1, 1}, {0, -1, -1, 1}};
 
@@ -464,7 +483,7 @@ void guiShowConfig()
         if (ret == BLOCKDEVICE_BUTTON)
             guiShowBlockDeviceConfig();
 
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
         menuReinitMainMenu();
     }
 }
@@ -514,7 +533,7 @@ void guiShowMMCEConfig()
         diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
     }
 
-    applyConfig(-1, -1, 0);
+    configApply(-1, -1, 0);
     menuReinitMainMenu();
 }
 
@@ -662,7 +681,7 @@ reselect_video_mode:
         if (previousTheme != themeID && isBgmPlaying())
             bgmStop();
 
-        applyConfig(themeID, langID, 1);
+        configApply(themeID, langID, 1);
         sfxInit(0);
 
         if (gEnableBGM && !isBgmPlaying())
@@ -673,7 +692,7 @@ reselect_video_mode:
         if (guiConfirmVideoMode() == 0) {
             // Restore previous video mode, without changing the theme & language settings.
             gVMode = previousVMode;
-            applyConfig(themeID, langID, 1);
+            configApply(themeID, langID, 1);
             goto reselect_video_mode;
         }
     }
@@ -789,7 +808,7 @@ void guiShowNetConfig(void)
         if (result == NETCFG_RECONNECT && gNetworkStartup < ERROR_ETH_SMB_CONN)
             gNetworkStartup = ERROR_ETH_SMB_LOGON;
 
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
     }
 }
 
@@ -808,7 +827,7 @@ void guiShowParentalLockConfig(void)
         diaGetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password, CONFIG_KEY_VALUE_LEN);
 
         if (strlen(password) > 0) {
-            if (strncmp(OPL_PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
+            if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
                 // Store password
                 configSetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password);
             } else {
@@ -898,7 +917,7 @@ void guiShowControllerConfig(void)
             guiGameShowPadMacroConfig(1);
         }
 #endif
-        applyConfig(-1, -1, 1);
+        configApply(-1, -1, 1);
     }
 }
 
@@ -1036,7 +1055,7 @@ void guiExecDeferredOps(void)
 static void guiDrawBusy(int alpha)
 {
     if (gTheme->loadingIcon) {
-        GSTEXTURE *texture = thmGetTexture(LOAD0_ICON + (guiFrameId >> 1) % gTheme->loadingIconCount);
+        GSTEXTURE *texture = thmGetTexture(LOADING_1_ICON + (guiFrameId >> 1) % gTheme->loadingIconCount);
         if (texture && texture->Mem) {
             u64 mycolor = GS_SETREG_RGBA(0x80, 0x80, 0x80, alpha);
             rmDrawPixmap(texture, gTheme->loadingIcon->posX, gTheme->loadingIcon->posY, gTheme->loadingIcon->aligned, gTheme->loadingIcon->width, gTheme->loadingIcon->height, gTheme->loadingIcon->scaled, mycolor);
@@ -1046,12 +1065,12 @@ static void guiDrawBusy(int alpha)
 
 static void guiRenderGreeting(int alpha)
 {
-    u64 mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
+    u64 mycolor = GS_SETREG_RGBA(0x00, 0x00, 0x00, alpha);
     rmDrawRect(0, 0, screenWidth, screenHeight, mycolor);
 
     GSTEXTURE *logo = thmGetTexture(LOGO_PICTURE);
     if (logo) {
-        mycolor = GS_SETREG_RGBA(0x80, 0x80, 0x80, alpha);
+        mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
         rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, logo->Width, logo->Height, SCALING_RATIO, mycolor);
     }
 }
@@ -1257,9 +1276,9 @@ void guiDrawBGPlasma()
     rmSetBackground(&gBackgroundTex);
 }
 
-int guiDrawBGSettings(void)
+int guiDrawBGMain(void)
 {
-    GSTEXTURE *bg = thmGetTexture(SETTINGS_BG);
+    GSTEXTURE *bg = thmGetTexture(BG_MAIN);
     if (bg) {
         rmDrawPixmap(bg, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
         return 1;
@@ -1342,7 +1361,7 @@ int guiAlignSubMenuHints(int hintCount, int *textID, int *iconID, int font, int 
 void guiDrawSubMenuHints(void)
 {
     int subMenuHints[2] = {_STR_SELECT, _STR_GAMES_LIST};
-    int subMenuIcons[2] = {CIRCLE_ICON, CROSS_ICON};
+    int subMenuIcons[2] = {BUTTON_SYMBOL_CIRCLE_ICON, BUTTON_SYMBOL_CROSS_ICON};
 
     int x = guiAlignSubMenuHints(2, subMenuHints, subMenuIcons, gTheme->fonts[0], 12, 2);
     int y = gTheme->usedHeight - 32;
@@ -1628,9 +1647,9 @@ int guiMsgBox(const char *text, int addAccept, struct UIItem *ui)
         rmDrawLine(50, 410, screenWidth - 50, 410, gTheme->textColor);
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, text, gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
         if (addAccept)
-            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1707,7 +1726,7 @@ int guiConfirmVideoMode(void)
 
     sfxPlay(SFX_MESSAGE);
 
-    timeEnd = clock() + OPL_VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS * (CLOCKS_PER_SEC / 1000);
+    timeEnd = clock() + VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS * (CLOCKS_PER_SEC / 1000);
     while (!terminate) {
         guiStartFrame();
 
@@ -1730,8 +1749,8 @@ int guiConfirmVideoMode(void)
         rmDrawLine(50, 410, screenWidth - 50, 410, gTheme->textColor);
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_CFM_VMODE_CHG), gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1776,10 +1795,10 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_GAME_SETTINGS_PROMPT), gTheme->textColor);
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
-        guiDrawIconAndText(TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_SYMBOL_SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_SYMBOL_TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1882,12 +1901,38 @@ void guiManageCheats(void)
             renderedCheats++;
         }
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
-        guiDrawIconAndText(START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(SQUARE_ICON, _STR_DISABLE_ALL, gTheme->fonts[0], 290, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_SYMBOL_SQUARE_ICON, _STR_DISABLE_ALL, gTheme->fonts[0], 290, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
 
     sfxPlay(SFX_CONFIRM);
+}
+
+
+void guiClearErrorMessage(void)
+{
+    // reset the original frame hook
+    frameCounter = 0;
+    guiSetFrameHook(&menuUpdateHook);
+}
+
+static void errorMessageHook()
+{
+    guiMsgBox(errorMessage, 0, NULL);
+    guiClearErrorMessage();
+}
+
+void guiSetErrorMessageWithCode(int strId, int error)
+{
+    snprintf(errorMessage, sizeof(errorMessage), _l(strId), error);
+    guiSetFrameHook(&errorMessageHook);
+}
+
+void guiSetErrorMessage(int strId)
+{
+    snprintf(errorMessage, sizeof(errorMessage), _l(strId));
+    guiSetFrameHook(&errorMessageHook);
 }

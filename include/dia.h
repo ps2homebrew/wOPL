@@ -1,7 +1,7 @@
 #ifndef __DIA_H
 #define __DIA_H
 
-#include "include/opl.h"
+#include <tamtypes.h>
 
 // UI dialog item definition
 typedef enum {

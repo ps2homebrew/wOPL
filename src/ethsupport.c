@@ -1,4 +1,5 @@
-#include "include/opl.h"
+
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -12,6 +13,7 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include <stdio.h>
 #include <ps2smb.h>
 #include <ps2ips.h>
 #include <netman.h>
@@ -60,6 +62,24 @@ static int ethApplyIPConfig(void);
 static int ethReadNetConfig(void);
 
 static int ethInitSemaID = -1;
+
+int ps2_ip_use_dhcp;
+int ps2_ip[4];
+int ps2_netmask[4];
+int ps2_gateway[4];
+int ps2_dns[4];
+int gETHOpMode; // See ETH_OP_MODES.
+int gPCShareAddressIsNetBIOS;
+int pc_ip[4];
+int gPCPort;
+char gPCShareNBAddress[17];
+char gPCShareName[32];
+char gPCUserName[32];
+char gPCPassword[32];
+int gNetworkStartup;
+int smbCacheSize;
+char gETHPrefix[32];
+int gETHStartMode;
 
 // Initializes locking semaphore for network support (not for just SMB support, but for the network subsystem).
 static int ethInitSema(void)
@@ -370,33 +390,33 @@ void ethDisplayErrorStatus(void)
         case 0: // No error
             break;
         case ERROR_ETH_MODULE_NETIF_FAILURE:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_NETIF, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_NETIF, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_CONN:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_CONN, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_CONN, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LOGON:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_LOGON, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_LOGON, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_OPENSHARE:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_SHARE, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_SHARE, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LISTSHARES:
-            setErrorMessageWithCode(_STR_NETWORK_SHARE_LIST_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_SHARE_LIST_ERROR, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LISTGAMES:
-            setErrorMessageWithCode(_STR_NETWORK_GAMES_LIST_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_GAMES_LIST_ERROR, gNetworkStartup);
             break;
         case ERROR_ETH_LINK_FAIL:
             LOG("ETH: Unable to get valid link status.\n");
-            setErrorMessageWithCode(_STR_NETWORK_ERROR_LINK_FAIL, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_ERROR_LINK_FAIL, gNetworkStartup);
             break;
         case ERROR_ETH_DHCP_FAIL:
             LOG("ETH: Unable to get valid IP address via DHCP.\n");
-            setErrorMessageWithCode(_STR_NETWORK_ERROR_DHCP_FAIL, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_ERROR_DHCP_FAIL, gNetworkStartup);
             break;
         default:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR, gNetworkStartup);
     }
 }
 
@@ -645,7 +665,7 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     compatmask = sbPrepare(game, configSet, size_smb_cdvdman_irx, smb_cdvdman_irx, &i);
@@ -749,7 +769,7 @@ static int ethGetTextId(item_list_t *itemList)
 
 static int ethGetIconId(item_list_t *itemList)
 {
-    return ETH_ICON;
+    return CATEGORY_NET_SMB_ICON;
 }
 
 // This may be called, even if ethInit() was not.

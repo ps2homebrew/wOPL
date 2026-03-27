@@ -20,6 +20,10 @@
 #define KEY_R2       15
 #define KEY_L2       16
 
+extern int gXSensitivity;
+extern int gYSensitivity;
+extern int KeyPressedOnce;
+
 int startPads();
 int readPads();
 void unloadPads();

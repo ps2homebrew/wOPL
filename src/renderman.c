@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <kernel.h>
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/renderman.h"
 #include "include/ioman.h"
 
@@ -25,6 +25,12 @@ static int vsync_id = -1;
 
 #define NUM_RM_VMODES 14
 #define RM_VMODE_AUTO 0
+
+int gWideScreen;
+int gVMode; // 0 - Auto, 1 - PAL, 2 - NTSC
+int gXOff;
+int gYOff;
+int gOverscan;
 
 // RM Vmode -> GS Vmode conversion table
 struct rm_mode

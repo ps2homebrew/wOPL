@@ -1,5 +1,4 @@
 #include "include/dialogs.h"
-#include "include/opl.h"
 #include "include/dia.h"
 #include "include/lang.h"
 #include "include/gui.h"

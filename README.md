@@ -1,5 +1,7 @@
 # Double Unofficial-Open-PS2-Loader
 
+![logo](https://github.com/NathanNeurotic/wOPL/blob/wOPL-base/gfx/logo.png)
+
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
 Copyright 2025-Present, Wolf3s, Ripto and chasebocamp<br/>
@@ -25,6 +27,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * Gui improvements
 * Art tar archive support
 * mmce support
+* New theme renamed png files.
 </p>
 </details>
 

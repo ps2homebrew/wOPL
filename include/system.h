@@ -10,6 +10,18 @@
 #define NEUTRINO_PATH     "mc0:NEUTRINO/neutrino.elf"
 #define NEUTRINO_ALT_PATH "mc1:NEUTRINO/neutrino.elf"
 
+extern int gOSDLanguageValue;
+extern int gOSDTVAspectRatio;
+extern int gOSDVideOutput;
+extern int gOSDLanguageEnable;
+extern int gOSDLanguageSource;
+
+// Enable Debug Colors
+extern int gEnableDebug;
+
+// Exit path
+extern char gExitPath[256];
+
 unsigned int USBA_crc32(const char *string);
 int sysGetDiscID(char *discID);
 void sysInitDev9(void);

@@ -1,4 +1,3 @@
-#include "include/opl.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -15,8 +14,11 @@
 #include <usbhdfsd-common.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include "include/bdmsupport.h"
 #include "include/art_tar.h"
-
+#include <stdio.h>
+#include <unistd.h>
+#include "include/common.h"
 #include <ps2sdkapi.h>
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl
@@ -30,6 +32,14 @@ static base_game_info_t *mmceGames;
 
 // forward declaration
 static item_list_t mmceGameList;
+
+int gMMCEIGRSlot;
+int gMMCESlot;
+int gMMCEAckWaitCycles;
+int gMMCEUseAlarms;
+int gMMCEEnableGameID;
+int gMMCEStartMode;
+char gMMCEPrefix[32];
 
 int mmceDetectSlot(void)
 {
@@ -308,7 +318,7 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
@@ -406,7 +416,7 @@ static int mmceGetTextId(item_list_t *itemList)
 
 static int mmceGetIconId(item_list_t *itemList)
 {
-    int mode = MMCE_ICON;
+    int mode = CATEGORY_MMCE_ICON;
 
     return mode;
 }

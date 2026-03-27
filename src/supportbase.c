@@ -1,4 +1,5 @@
-#include "include/opl.h"
+
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/util.h"
 #include "include/iosupport.h"
@@ -11,6 +12,8 @@
 #include "include/cheatman.h"
 #include "include/ps2cnf.h"
 #include "include/gui.h"
+#include "include/bdmsupport.h"
+#include "include/hddsupport.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioMount("iso:", ***), fileXioUmount("iso:")
@@ -47,6 +50,14 @@ struct game_cache_list
 };
 
 static int mcID = -1;
+
+#ifdef PADEMU
+int gEnablePadEmu;
+int gPadEmuSettings;
+int gPadMacroSource;
+int gPadMacroSettings;
+int gPadEmuSource;
+#endif
 
 int sbGetmcID(void)
 {
@@ -1191,15 +1202,30 @@ config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const
     configRead(config); // Does not matter if the config file could be loaded or not.
 
     // Get game size if not already set
-    if ((game->sizeMB == 0) && (game->format != GAME_FORMAT_OLD_ISO)) {
+    if (game->sizeMB == 0) {
         char gamepath[256];
 
-        snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->name, game->extension);
+        if (game->format == GAME_FORMAT_ISO) {
+            snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->name, game->extension);
 
-        if (stat(gamepath, &st) == 0)
-            game->sizeMB = st.st_size >> 20;
-        else
-            game->sizeMB = 0;
+            if (stat(gamepath, &st) == 0)
+                game->sizeMB = st.st_size >> 20;
+        } else if (game->format == GAME_FORMAT_OLD_ISO) {
+            snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s.%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->startup, game->name, game->extension);
+
+            if (stat(gamepath, &st) == 0)
+                game->sizeMB = st.st_size >> 20;
+        } else if (game->format == GAME_FORMAT_USBLD) {
+            // Calculate total size for multi-part USBLD games
+            int part;
+            unsigned int name_checksum = USBA_crc32(game->name);
+
+            for (part = 0; part < game->parts; part++) {
+                snprintf(gamepath, sizeof(gamepath), "%sul.%08X.%s.%02x", prefix, name_checksum, game->startup, part);
+                if (stat(gamepath, &st) == 0)
+                    game->sizeMB += (st.st_size >> 20);
+            }
+        }
     }
 
     configSetStr(config, CONFIG_ITEM_NAME, game->name);

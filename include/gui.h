@@ -2,7 +2,6 @@
 #define __GUI_H
 
 #include "include/iosupport.h"
-#include "include/opl.h"
 #include "include/texcache.h"
 #include "include/dialogs.h"
 #include "include/menusys.h"
@@ -59,6 +58,18 @@ extern int guiFrameId;
 #define GUI_SCREEN_INFO      2
 #define GUI_SCREEN_GAME_MENU 3
 #define GUI_SCREEN_APP_MENU  4
+
+extern unsigned char gDefaultBgColor[3];
+extern unsigned char gDefaultTextColor[3];
+extern unsigned char gDefaultSelTextColor[3];
+extern unsigned char gDefaultUITextColor[3];
+extern unsigned char gDefaultPlasmaBlendColor[3];
+
+extern int showCfgPopup;
+extern int gAutoStartLastPlayed;
+extern int gEnableNotifications;
+// 0,1,2 scrolling speed
+extern int gScrollSpeed;
 
 void guiSwitchScreen(int target);
 
@@ -124,7 +135,7 @@ void guiUpdateScrollSpeed(void);
 void guiUpdateScreenScale(void);
 
 void guiDrawBGPlasma();
-int guiDrawBGSettings(void);
+int guiDrawBGMain(void);
 int guiDrawIconAndText(int iconId, int textId, int font, int x, int y, u64 color);
 void guiDrawSubMenuHints(void);
 
@@ -154,6 +165,11 @@ void guiCheckNotifications(int checkTheme, int checkLang);
 void guiHandleDeferedIO(int *ptr, const char *message, int type, void *data);
 
 void guiGameHandleDeferedIO(int *ptr, struct UIItem *ui, int type, void *data);
+
+void guiClearErrorMessage(void);
+
+void guiSetErrorMessage(int strId);
+void guiSetErrorMessageWithCode(int strId, int error);
 
 /** Renders a single frame with a specified message on the screen
  */
