@@ -96,6 +96,8 @@ jobs:
       fail-fast: false
       matrix:
         extra: [EXTRA_FEATURES=0, EXTRA_FEATURES=1]
+        gsm: [GSM=0, GSM=1]
+        cheat: [CHEAT=0, CHEAT=1]
         pademu: [PADEMU=0, PADEMU=1]
     runs-on: ubuntu-22.04
     container: ghcr.io/ps2homebrew/ps2homebrew:main
@@ -131,10 +133,10 @@ jobs:
         run: |
           echo "wOPL_VERSION=$(make woplversion)" >> $GITHUB_ENV
 
-      - name: Compile -> make ${{ matrix.extra }} ${{ matrix.pademu }} ${{ matrix.extra }} NOT_PACKED=1
+      - name: Compile -> make ${{ matrix.extra }} ${{ matrix.pademu }} ${{ matrix.gsm }} ${{ matrix.cheat }} NOT_PACKED=1
         run: |
-          make --trace ${{ matrix.pademu }} ${{ matrix.extra }} NOT_PACKED=1
-          mv wopl.elf WOPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}.ELF
+          make --trace ${{ matrix.pademu }} ${{ matrix.extra }} ${{ matrix.gsm }} ${{ matrix.cheat }} NOT_PACKED=1
+          mv wopl.elf WOPNPS2LD-${{ env.wOPL_VERSION }}-${{ matrix.pademu }}-${{ matrix.extra }}-${{ matrix.gsm }}-${{ matrix.cheat }}.ELF
 
       - name: Create detailed changelog
         run: sh ./make_changelog.sh
@@ -142,7 +144,7 @@ jobs:
       - name: Upload variants artifact ELF
         uses: actions/upload-artifact@v4
         with:
-          name: WOPNPS2LD-VARIANTS ${{ matrix.pademu }} ${{ matrix.extra }}
+          name: WOPNPS2LD-VARIANTS ${{ matrix.pademu }}  ${{ matrix.gsm }} ${{ matrix.cheat }} ${{ matrix.extra }}
           path: WOPNPS2LD*.ELF
 
   merge-variants:

@@ -9,7 +9,9 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
 #include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/mcemu.h"
@@ -915,7 +917,9 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 {
     int i, size_irx = 0;
     int EnablePS2Logo = 0;
+#ifdef CHEAT
     int result;
+#endif
     void *irx = NULL;
     char filename[32];
     hdl_game_info_t *game;
@@ -1042,7 +1046,7 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     }
 
     sbPrepare(NULL, configSet, size_irx, irx, &i);
-
+#ifdef CHEAT
     if ((result = sbLoadCheats(gHDDPrefix, game->startup)) < 0) {
         if (gAutoLaunchGame == NULL) {
             switch (result) {
@@ -1055,6 +1059,7 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+#endif
 
     settings = (struct cdvdman_settings_hdd *)((u8 *)irx + i);
 

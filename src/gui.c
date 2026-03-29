@@ -16,8 +16,12 @@
 #include "include/config.h"
 #include "include/system.h"
 #include "include/ethsupport.h"
+#ifdef GSM
 #include "include/pggsm.h"
+#endif
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
 #include "include/sound.h"
 #include "include/guigame.h"
 #include "include/tetris.h"
@@ -223,23 +227,33 @@ void guiEndFrame(void)
 
 void guiShowAbout()
 {
-    char wOPLVersion[128];
+    char wOPLVersion[140];
     char wOPLBuildDetails[96];
 
     snprintf(wOPLVersion, sizeof(wOPLVersion), "Double Unofficial Open PS2 Loader %s", WOPL_VERSION);
     diaSetLabel(diaAbout, ABOUT_TITLE, wOPLVersion);
 
-    snprintf(wOPLBuildDetails, sizeof(wOPLBuildDetails), "GSM %s"
-                                                         " - UDMA+"
+    snprintf(wOPLBuildDetails, sizeof(wOPLBuildDetails),
+#ifdef GSM
+             " GSM %s"
+#endif
+#ifdef CHEAT
+             " CHEAT"
+#endif
+             " - UDMA+"
 #ifdef __RTL
-                                                         " - RTL"
+             " - RTL"
 #endif
 #ifdef PADEMU
-                                                         " - PADEMU"
+             " - PADEMU"
 #endif
-             // Version numbers
+    // Version numbers
+#ifdef GSM
              ,
              GSM_VERSION);
+#else
+    );
+#endif
     diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, wOPLBuildDetails);
 
     diaSetSecretHandler(tetrisSecretHandler);
@@ -1823,6 +1837,7 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
     return 1;
 }
 
+#ifdef CHEAT
 void guiManageCheats(void)
 {
     int offset = 0;
@@ -1910,6 +1925,7 @@ void guiManageCheats(void)
 
     sfxPlay(SFX_CONFIRM);
 }
+#endif
 
 
 void guiClearErrorMessage(void)

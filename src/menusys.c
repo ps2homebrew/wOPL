@@ -270,8 +270,12 @@ void menuInitGameMenu(void)
 
     // initialize the menu
     submenuAppendItem(&gameMenu, -1, NULL, GAME_COMPAT_SETTINGS, _STR_COMPAT_SETTINGS, NULL);
+#ifdef CHEAT
     submenuAppendItem(&gameMenu, -1, NULL, GAME_CHEAT_SETTINGS, _STR_CHEAT_SETTINGS, NULL);
+#endif
+#ifdef GSM
     submenuAppendItem(&gameMenu, -1, NULL, GAME_GSM_SETTINGS, _STR_GSCONFIG, NULL);
+#endif
     submenuAppendItem(&gameMenu, -1, NULL, GAME_VMC_SETTINGS, _STR_VMC_SCREEN, NULL);
 #ifdef PADEMU
     submenuAppendItem(&gameMenu, -1, NULL, GAME_PADEMU_SETTINGS, _STR_PADEMUCONFIG, NULL);
@@ -1233,11 +1237,18 @@ void menuHandleInputGameMenu()
 
         if (menuID == GAME_COMPAT_SETTINGS) {
             guiGameShowCompatConfig(selected_item->item->current->item.id, selected_item->item->userdata, itemConfig);
-        } else if (menuID == GAME_CHEAT_SETTINGS) {
+        }
+#ifdef CHEAT // TODO: Organize this
+        else if (menuID == GAME_CHEAT_SETTINGS) {
             guiGameShowCheatConfig();
-        } else if (menuID == GAME_GSM_SETTINGS) {
+        }
+#endif
+#ifdef GSM
+        else if (menuID == GAME_GSM_SETTINGS) {
             guiGameShowGSConfig();
-        } else if (menuID == GAME_VMC_SETTINGS) {
+        }
+#endif
+        else if (menuID == GAME_VMC_SETTINGS) {
             guiGameShowVMCMenu(selected_item->item->current->item.id, selected_item->item->userdata);
 #ifdef PADEMU
         } else if (menuID == GAME_PADEMU_SETTINGS) {

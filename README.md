@@ -21,13 +21,14 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
   <summary> <b> Changes in wOPL </b> </summary>
 <p>
 
-* Removal of UDPBD since there are not much users using this
-* Add a easter egg when booting on wOPL
-* Code cleanups/fixes and compiler warning fixes
-* Gui improvements
-* Art tar archive support
-* mmce support
+* Removal of UDPBD since there are not much users using this.
+* Add a easter egg when booting on wOPL.
+* Code cleanups/fixes and compiler warning fixes.
+* Gui improvements.
+* Art tar archive support.
+* mmce support.
 * New theme renamed png files.
+* Added daf0x gamestar module.
 </p>
 </details>
 

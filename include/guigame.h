@@ -11,8 +11,13 @@ char *gameConfigSource(void);
 int guiGameVmcNameHandler(char *text, int maxLen);
 void guiGameShowVMCMenu(int id, item_list_t *support);
 void guiGameShowCompatConfig(int id, item_list_t *support, config_set_t *configSet);
+#ifdef GSM
 void guiGameShowGSConfig(void);
+#endif
+
+#ifdef CHEAT
 void guiGameShowCheatConfig(void);
+#endif
 
 #ifdef PADEMU
 void guiGameShowPadEmuConfig(int forceGlobal);

@@ -555,6 +555,7 @@ struct UIItem diaVMC[] = {
     // end of dialog
     {UI_TERMINATOR}};
 
+#ifdef GSM
 // Per-Game Game Settings > GSM Menu (--Bat--)
 struct UIItem diaGSConfig[] = {
     {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_GSM_SETTINGS}}},
@@ -597,7 +598,9 @@ struct UIItem diaGSConfig[] = {
 
     // end of dialog
     {UI_TERMINATOR}};
+#endif
 
+#ifdef CHEAT
 // Per Game Settings > Cheat Menu --Bat--
 struct UIItem diaCheatConfig[] = {
     {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_CHEAT_SETTINGS}}},
@@ -625,6 +628,7 @@ struct UIItem diaCheatConfig[] = {
 
     // end of dialog
     {UI_TERMINATOR}};
+#endif
 
 #ifdef PADEMU
 struct UIItem diaPadEmuConfig[] = {

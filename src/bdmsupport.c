@@ -365,7 +365,9 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 {
     int i, fd, iop_fd, index, compatmask = 0;
     int EnablePS2Logo = 0;
+#ifdef CHEAT
     int result;
+#endif
     u64 startingLBA;
     unsigned int startCluster;
     char partname[256], filename[32];
@@ -539,7 +541,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     // adjust ZSO cache
     settings->common.zso_cache = bdmCacheSize;
-
+#ifdef CHEAT
     if ((result = sbLoadCheats(pDeviceData->bdmPrefix, game->startup)) < 0) {
         if (gAutoLaunchBDMGame == NULL) {
             switch (result) {
@@ -552,6 +554,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+#endif
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
