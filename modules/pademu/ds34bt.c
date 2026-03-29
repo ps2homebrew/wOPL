@@ -1013,9 +1013,9 @@ static int L2CAP_event_task(int result, int bytes)
                 pad = MAX_PADS;
             }
         } // acl_handle_ok
-// clang-format off
+        // clang-format off
     }    // !rcode
-// clang-format on
+    // clang-format on
     return pad;
 }
 
