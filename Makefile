@@ -32,13 +32,13 @@ EXTRA_FEATURES ?= 0
 RTL ?= $(EXTRA_FEATURES)
 
 #Enables/disables Graphics Synthesizer Mode (GSM) selector
-GSM ?= 0
+GSM ?= 1
 
 #Enables/disables pad emulator
 PADEMU ?= 1
 
 #Enables/disables the cheat engine (PS2RD)
-CHEAT ?= 0
+CHEAT ?= 1
 
 #Enables/disables building of an edition of wOPL that will support the DTL-T10000 (SDK v2.3+)
 DTL_T10000 ?= 0
