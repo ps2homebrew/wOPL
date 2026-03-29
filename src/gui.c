@@ -238,7 +238,7 @@ void guiShowAbout()
              " GSM %s"
 #endif
 #ifdef CHEAT
-             " CHEAT"
+             " - CHEAT"
 #endif
              " - UDMA+"
 #ifdef __RTL
