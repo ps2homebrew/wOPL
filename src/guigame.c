@@ -17,7 +17,9 @@
 #include "include/vmc_groups.h"
 #include "include/supportbase.h"
 #include <stdio.h>
+#ifdef GSM
 #include "include/pggsm.h"
+#endif
 
 #ifdef PADEMU
 #include <libds34bt.h>
@@ -32,14 +34,18 @@ static int dmaMode;
 static int compatMode;
 static int coreLoader;
 
+#ifdef GSM
 static int EnableGSM;
 static int GSMVMode;
 static int GSMXOffset;
 static int GSMYOffset;
 static int GSMFIELDFix;
+#endif
 
+#ifdef CHEAT
 static int EnableCheat;
 static int CheatMode;
+#endif
 
 static int forceGlobalOSDLanguage;
 
@@ -74,8 +80,12 @@ static char hexDiscID[15];
 static char configSource[128];
 
 // forward declarations.
+#ifdef GSM
 static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGame);
+#endif
+#ifdef CHEAT
 static void guiGameLoadCheatsConfig(config_set_t *configSet, config_set_t *configGame);
+#endif
 #ifdef PADEMU
 static void guiGameLoadPadEmuConfig(config_set_t *configSet, config_set_t *configGame);
 static void guiGameLoadPadMacroConfig(config_set_t *configSet, config_set_t *configGame);
@@ -337,6 +347,7 @@ void guiGameShowVMCMenu(int id, item_list_t *support)
 }
 
 // GSM
+#ifdef GSM
 static void guiGameSetGSMSettingsState(void)
 {
     int previousSource = gGSMSource;
@@ -418,8 +429,10 @@ void guiGameShowGSConfig(void)
 
     diaExecuteDialog(diaGSConfig, -1, 1, &guiGameGSMUpdater);
 }
+#endif
 
 // CHEATS
+#ifdef CHEAT
 static void guiGameSetCheatSettingsState(void)
 {
     int previousSource = gCheatSource;
@@ -463,6 +476,7 @@ void guiGameShowCheatConfig(void)
 
     diaExecuteDialog(diaCheatConfig, -1, 1, &guiGameCheatUpdater);
 }
+#endif
 
 // PADEMU
 #ifdef PADEMU
@@ -1016,7 +1030,8 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
     else
         configRemoveKey(configSet, CONFIG_ITEM_CORE_LOADER);
 
-    /// GSM ///
+        /// GSM ///
+#ifdef GSM
     diaGetInt(diaGSConfig, GSMCFG_ENABLEGSM, &EnableGSM);
     diaGetInt(diaGSConfig, GSMCFG_GSMVMODE, &GSMVMode);
     diaGetInt(diaGSConfig, GSMCFG_GSMXOFFSET, &GSMXOffset);
@@ -1056,8 +1071,10 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
         configSetInt(configGame, CONFIG_ITEM_GSMYOFFSET, GSMYOffset);
         configSetInt(configGame, CONFIG_ITEM_GSMFIELDFIX, GSMFIELDFix);
     }
+#endif
 
     /// Cheats ///
+#ifdef CHEAT
     diaGetInt(diaCheatConfig, CHTCFG_CHEATSOURCE, &gCheatSource);
     diaGetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, &EnableCheat);
     diaGetInt(diaCheatConfig, CHTCFG_CHEATMODE, &CheatMode);
@@ -1077,6 +1094,7 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
         configSetInt(configGame, CONFIG_ITEM_ENABLECHEAT, EnableCheat);
         configSetInt(configGame, CONFIG_ITEM_CHEATMODE, CheatMode);
     }
+#endif
 
 #ifdef PADEMU
     /// PADEMU ///
@@ -1110,15 +1128,19 @@ void guiGameRemoveGlobalSettings(config_set_t *configGame)
 {
     if (menuCheckParentalLock() == 0) {
         // Cheats
+#ifdef CHEAT
         configRemoveKey(configGame, CONFIG_ITEM_ENABLECHEAT);
         configRemoveKey(configGame, CONFIG_ITEM_CHEATMODE);
-
+#endif
         // GSM
+#ifdef GSM
         configRemoveKey(configGame, CONFIG_ITEM_ENABLEGSM);
         configRemoveKey(configGame, CONFIG_ITEM_GSMVMODE);
         configRemoveKey(configGame, CONFIG_ITEM_GSMXOFFSET);
         configRemoveKey(configGame, CONFIG_ITEM_GSMYOFFSET);
         configRemoveKey(configGame, CONFIG_ITEM_GSMFIELDFIX);
+#endif
+
         // OSD Language
         configRemoveKey(configGame, CONFIG_ITEM_OSD_SETTINGS_LANGID);
         configRemoveKey(configGame, CONFIG_ITEM_OSD_SETTINGS_TV_ASP);
@@ -1145,6 +1167,7 @@ void guiGameRemoveSettings(config_set_t *configSet)
         configRemoveKey(configSet, CONFIG_ITEM_DNAS);
         configRemoveKey(configSet, CONFIG_ITEM_ALTSTARTUP);
 
+#ifdef GSM
         // GSM
         configRemoveKey(configSet, CONFIG_ITEM_GSMSOURCE);
         configRemoveKey(configSet, CONFIG_ITEM_ENABLEGSM);
@@ -1152,11 +1175,14 @@ void guiGameRemoveSettings(config_set_t *configSet)
         configRemoveKey(configSet, CONFIG_ITEM_GSMXOFFSET);
         configRemoveKey(configSet, CONFIG_ITEM_GSMYOFFSET);
         configRemoveKey(configSet, CONFIG_ITEM_GSMFIELDFIX);
+#endif
 
+#ifdef CHEAT
         // Cheats
         configRemoveKey(configSet, CONFIG_ITEM_CHEATSSOURCE);
         configRemoveKey(configSet, CONFIG_ITEM_ENABLECHEAT);
         configRemoveKey(configSet, CONFIG_ITEM_CHEATMODE);
+#endif
 
         // OSD Language
         configRemoveKey(configSet, CONFIG_ITEM_OSD_SETTINGS_LANGID);
@@ -1187,6 +1213,7 @@ void guiGameTestSettings(int id, item_list_t *support, config_set_t *configSet)
     support->itemLaunch(support, id, configSet);
 }
 
+#ifdef GSM
 static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGame)
 {
     EnableGSM = 0;
@@ -1226,7 +1253,9 @@ static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGa
     diaSetInt(diaGSConfig, GSMCFG_GSMYOFFSET, GSMYOffset);
     diaSetInt(diaGSConfig, GSMCFG_GSMFIELDFIX, GSMFIELDFix);
 }
+#endif
 
+#ifdef CHEAT
 static void guiGameLoadCheatsConfig(config_set_t *configSet, config_set_t *configGame)
 {
     EnableCheat = 0;
@@ -1251,6 +1280,7 @@ static void guiGameLoadCheatsConfig(config_set_t *configSet, config_set_t *confi
     diaSetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, EnableCheat);
     diaSetInt(diaCheatConfig, CHTCFG_CHEATMODE, CheatMode);
 }
+#endif
 
 #ifdef PADEMU
 static void guiGameLoadPadEmuConfig(config_set_t *configSet, config_set_t *configGame)
@@ -1470,10 +1500,12 @@ void guiGameLoadConfig(item_list_t *support, config_set_t *configSet)
 
     configGetInt(configSet, CONFIG_ITEM_CORE_LOADER, &coreLoader);
     diaSetInt(diaCompatConfig, COMPAT_LOADER, coreLoader);
-
+#ifdef GSM
     guiGameLoadGSMConfig(configSet, configGame);
-
+#endif
+#ifdef CHEAT
     guiGameLoadCheatsConfig(configSet, configGame);
+#endif
 #ifdef PADEMU
     guiGameLoadPadEmuConfig(configSet, configGame);
     guiGameLoadPadMacroConfig(configSet, configGame);

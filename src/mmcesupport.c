@@ -8,7 +8,9 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
 #include "modules/iopcore/common/cdvd_config.h"
 #include "../ee_core/include/coreconfig.h"
 #include <usbhdfsd-common.h>
@@ -209,7 +211,9 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 {
     int i, index, compatmask = 0;
     int EnablePS2Logo = 0;
+#ifdef CHEAT
     int result;
+#endif
 
     char partname[256], filename[32];
     base_game_info_t *game;
@@ -302,7 +306,7 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         LOG("DVD-DL layer 1 @ part %u sector 0x%lx.\n", layer1_part, layer1_offset);
     }
     settings->common.layer1_start = layer1_start;
-
+#ifdef CHEAT
     if ((result = sbLoadCheats(mmcePrefix, game->startup)) < 0) {
         if (gAutoLaunchBDMGame == NULL) {
             switch (result) {
@@ -315,6 +319,7 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+#endif
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);

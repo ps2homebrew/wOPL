@@ -28,8 +28,12 @@
 #include "padpatterns.h"
 #include "syshook.h"
 #include "tlb.h"
+#ifdef GSM
 #include "gsm_api.h"
+#endif
+#ifdef CHEAT
 #include "cheat_api.h"
+#endif
 #include "cd_igr_rpc.h"
 #include "coreconfig.h"
 
@@ -188,20 +192,23 @@ static void IGR_Thread(void *arg)
                 " sync.p;");
         }
 
+#ifdef GSM
         if (config->EnableGSMOp) {
             if (EnableDebug)
                 DBGCOL(0x00FF00, IGR, "Stopping GSM");
             DPRINTF("Stopping GSM...\n");
             DisableGSM();
         }
+#endif
 
+#ifdef CHEAT
         if (config->gCheatList) {
             if (EnableDebug)
                 DBGCOL(0xFF0000, IGR, "Stopping CheatEngine");
             DPRINTF("Stopping PS2RD Cheat Engine...\n");
             DisableCheats();
         }
-
+#endif
         if (EnableDebug)
             DBGCOL(0x00FFFF, IGR, "Waiting for IOP Reboot");
 

@@ -181,6 +181,8 @@ int guiConfirmVideoMode(void);
 
 int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame);
 
+#ifdef CHEAT
 void guiManageCheats(void);
+#endif
 
 #endif

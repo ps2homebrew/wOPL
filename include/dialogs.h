@@ -111,12 +111,13 @@ enum UI_ITEMS {
     NETCFG_ETHOPMODE,
     NETCFG_RECONNECT,
     NETCFG_OK,
-
+#ifdef CHEAT
     CHTCFG_CHEATSOURCE,
     CHTCFG_CHEATCFG,
     CHTCFG_ENABLECHEAT,
     CHTCFG_CHEATMODE,
-
+#endif
+#ifdef GSM
     GSMCFG_GSMSOURCE,
     GSMCFG_GSCONFIG,
     GSMCFG_ENABLEGSM,
@@ -124,7 +125,7 @@ enum UI_ITEMS {
     GSMCFG_GSMXOFFSET,
     GSMCFG_GSMYOFFSET,
     GSMCFG_GSMFIELDFIX,
-
+#endif
     COMPAT_DMA = 100,
     COMPAT_ALTSTARTUP,
     COMPAT_GAMEID,
@@ -227,8 +228,13 @@ extern struct UIItem diaAudioConfig[];
 extern struct UIItem diaControllerConfig[];
 extern struct UIItem diaCompatConfig[];
 extern struct UIItem diaVMCConfig[];
+#ifdef GSM
 extern struct UIItem diaGSConfig[];
+#endif
+
+#ifdef CHEAT
 extern struct UIItem diaCheatConfig[];
+#endif
 
 extern struct UIItem diaConfig[];
 extern struct UIItem diaAbout[];

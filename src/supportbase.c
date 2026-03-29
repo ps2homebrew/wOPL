@@ -7,9 +7,12 @@
 #include "include/supportbase.h"
 #include "include/ioman.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
+#ifdef GSM
 #include "include/pggsm.h"
-#include "include/cheatman.h"
+#endif
 #include "include/ps2cnf.h"
 #include "include/gui.h"
 #include "include/bdmsupport.h"
@@ -21,6 +24,7 @@
 #include <ps2sdkapi.h>   // lseek64
 #include <malloc.h>
 #include <kernel.h>
+#include <libcdvd-common.h>
 
 #include "../modules/isofs/zso.h"
 
@@ -1040,10 +1044,13 @@ int sbPrepare(base_game_info_t *game, config_set_t *configSet, int size_cdvdman,
     settings->fakemodule_flags = 0;
     settings->fakemodule_flags |= FAKE_MODULE_FLAG_CDVDFSV;
     settings->fakemodule_flags |= FAKE_MODULE_FLAG_CDVDSTM;
-
+#ifdef GSM
     InitGSMConfig(configSet);
+#endif
 
+#ifdef CHEAT
     InitCheatsConfig(configSet);
+#endif
 
     config_set_t *configGame = configGetByType(CONFIG_GAME);
 
@@ -1268,6 +1275,7 @@ void sbCreateFolders(const char *path, int createDiscImgFolders)
         sbCreateFoldersFromList(path, discImgFolders);
 }
 
+#ifdef CHEAT
 int sbLoadCheats(const char *path, const char *file)
 {
     char cheatfile[64];
@@ -1288,3 +1296,4 @@ int sbLoadCheats(const char *path, const char *file)
 
     return cheatMode;
 }
+#endif
