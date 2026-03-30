@@ -29,6 +29,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * mmce support.
 * New theme renamed png files.
 * Added daf0x gamestar module.
+* Modular pademu, Play your games without selecting modules.
 </p>
 </details>
 
