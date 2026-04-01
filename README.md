@@ -4,7 +4,8 @@
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
-Copyright 2025-Present, Wolf3s, Ripto and chasebocamp<br/>
+Copyright 2025-2026 chasebochamp</br>
+Copyright 2025-Present, Wolf3s and Ripto<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
