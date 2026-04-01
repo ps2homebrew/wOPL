@@ -5,6 +5,12 @@ I_sceSifRegisterRpc
 I_sceSifRpcLoop
 sifcmd_IMPORTS_end
 
+#ifdef DEBUG
+stdio_IMPORTS_start
+I_printf
+stdio_IMPORTS_end
+#endif
+
 thsemap_IMPORTS_start
 I_CreateSema
 I_SignalSema

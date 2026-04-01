@@ -8,12 +8,9 @@
 #ifndef __SYS_UTILS_H
 #define __SYS_UTILS_H
 
-#include <irx.h>
-
-typedef struct
-{
-    int version;
-    void **exports;
-} modinfo_t;
+extern void *GetExportTable(char *libname, int version);
+extern u32 GetExportTableSize(void *table);
+extern void *GetExportEntry(void *table, u32 entry);
+extern void *HookExportEntry(void *table, u32 entry, void *func);
 
 #endif /* __MCEMU_UTILS_H */

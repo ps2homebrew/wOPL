@@ -142,3 +142,62 @@ void translate_pad_ds4(const struct ds4report *in, struct ds2report *out, u8 hav
     out->PressureL2 = in->PressureL2;
     out->PressureR2 = in->PressureR2;
 }
+
+void translate_pad_ds5(const struct ds5report *in, struct ds2report *out, u8 have_touchpad)
+{
+    static const u8 dpad_mapping[] = {
+        (DS2ButtonUp),
+        (DS2ButtonUp | DS2ButtonRight),
+        (DS2ButtonRight),
+        (DS2ButtonDown | DS2ButtonRight),
+        (DS2ButtonDown),
+        (DS2ButtonDown | DS2ButtonLeft),
+        (DS2ButtonLeft),
+        (DS2ButtonUp | DS2ButtonLeft),
+        0,
+    };
+
+    u8
+        dpad = in->Dpad > DS4DpadDirectionReleased ? DS4DpadDirectionReleased : in->Dpad, // Just in case an unexpected value appears
+        select = in->Create,
+        start = in->Option;
+
+    if (have_touchpad && in->TPad) {
+        if (!in->nFinger1Active) {
+            if (in->Finger1X < 960)
+                select = 1;
+            else
+                start = 1;
+        }
+
+        if (!in->nFinger2Active) {
+            if (in->Finger2X < 960)
+                select = 1;
+            else
+                start = 1;
+        }
+    }
+
+    out->nButtonStateL = ~(select | in->L3 << 1 | in->R3 << 2 | start << 3 | dpad_mapping[dpad]);
+    out->nButtonStateH = ~(in->L2 | in->R2 << 1 | in->L1 << 2 | in->R1 << 3 | in->Triangle << 4 | in->Circle << 5 | in->Cross << 6 | in->Square << 7);
+
+    out->RightStickX = in->RightStickX;
+    out->RightStickY = in->RightStickY;
+    out->LeftStickX = in->LeftStickX;
+    out->LeftStickY = in->LeftStickY;
+
+    out->PressureRight = out->nRight ? 0 : 255;
+    out->PressureLeft = out->nLeft ? 0 : 255;
+    out->PressureUp = out->nUp ? 0 : 255;
+    out->PressureDown = out->nDown ? 0 : 255;
+
+    out->PressureTriangle = in->Triangle * 255;
+    out->PressureCircle = in->Circle * 255;
+    out->PressureCross = in->Cross * 255;
+    out->PressureSquare = in->Square * 255;
+
+    out->PressureL1 = in->L1 * 255;
+    out->PressureR1 = in->R1 * 255;
+    out->PressureL2 = in->PressureL2;
+    out->PressureR2 = in->PressureR2;
+}
