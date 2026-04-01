@@ -79,11 +79,11 @@ BlankSlotList[func_002187e8() % BlankSlots]
         data[4-5] = Timestamp in format: YYYYYYYMMMMDDDDD
         Note: Year is since year 2000.
 */
-
+// clang-format off
 #define OSD_HISTORY_GET_YEAR(datestamp)         ((datestamp) >> 9 & 0x7F)
 #define OSD_HISTORY_GET_MONTH(datestamp)        ((datestamp) >> 5 & 0xF)
-#define OSD_HISTORY_GET_DATE(datestamp)         ((datestamp)&0x1F)
-#define OSD_HISTORY_SET_DATE(year, month, date) (((unsigned short int)(year)) << 9 | ((unsigned short int)(month)&0xF) << 5 | ((date)&0x1F))
+#define OSD_HISTORY_GET_DATE(datestamp)         ((datestamp) & 0x1F)
+#define OSD_HISTORY_SET_DATE(year, month, date) (((unsigned short int)(year)) << 9 | ((unsigned short int)(month) & 0xF) << 5 | ((date) & 0x1F))
 struct HistoryEntry
 {
     char name[16];
@@ -93,6 +93,7 @@ struct HistoryEntry
     unsigned char padding;
     unsigned short int DateStamp;
 };
+// clang-format on
 
 // Functions
 int LoadHistoryFile(const char *path, struct HistoryEntry *HistoryEntries);
