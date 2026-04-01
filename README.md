@@ -25,7 +25,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * Add a easter egg when booting on wOPL.
 * Code cleanups/fixes and compiler warning fixes.
 * Gui improvements.
-* Art tar archive support.
+* Art tar archive support(Only BDM, HDD and MMCE).
 * mmce support.
 * New theme renamed png files.
 * Added daf0x gamestar module.
