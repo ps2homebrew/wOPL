@@ -400,7 +400,7 @@ static inline int ata_dma_complete(void *buf, int blkcount, int dir)
             if ((dma_stat = SPD_REG16(0x38) & 0x1f))
                 goto next_transfer;
 
-        SpdIntrDisable(SPD_INTR_ATA);
+        SpdIntrEnable(SPD_INTR_ATA);
         /* Wait for the previous transfer to complete or a timeout.  */
         WaitEventFlag(ata_evflg, ATA_EV_TIMEOUT | ATA_EV_COMPLETE, WEF_CLEAR | WEF_OR, &bits);
 
