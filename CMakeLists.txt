@@ -33,7 +33,7 @@ function(wopl_add_make_target target_name make_target)
     )
 endfunction()
 
-add_custom_target(uopl ALL
+add_custom_target(wopl ALL
     COMMAND "${WOPL_MAKE}" ${WOPL_COMMON_ARGS} all
     WORKING_DIRECTORY "${WOPL_SOURCE_DIR}"
     USES_TERMINAL
