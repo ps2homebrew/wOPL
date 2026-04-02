@@ -35,7 +35,7 @@ jobs:
             zip
 
       - name: git checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -74,7 +74,7 @@ jobs:
 
       - name: Upload release artifact ELF
         if: ${{ success() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: WOPNPS2LD
           path: |
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload release artifact info
         if: ${{ success() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: INFO
           path: |
@@ -122,7 +122,7 @@ jobs:
             zip
 
       - name: git checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -142,7 +142,7 @@ jobs:
         run: sh ./make_changelog.sh
 
       - name: Upload variants artifact ELF
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: WOPNPS2LD-VARIANTS ${{ matrix.pademu }}  ${{ matrix.gsm }} ${{ matrix.cheat }} ${{ matrix.extra }}
           path: WOPNPS2LD*.ELF
@@ -152,7 +152,7 @@ jobs:
     needs: build-variants
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v6
         with:
           name: WOPNPS2LD-VARIANTS
           pattern: WOPNPS2LD-VARIANTS*
@@ -182,7 +182,7 @@ jobs:
             zip
 
       - name: git checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -196,7 +196,7 @@ jobs:
 
       - name: Upload release artifact
         if: ${{ success() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: WOPNPS2LD-LANGS
           path: |
@@ -231,7 +231,7 @@ jobs:
             zip
 
       - name: git checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -250,7 +250,7 @@ jobs:
           mv wopl.elf wopl-${{ matrix.debug }}-${{ env.wOPL_VERSION }}-${{ env.SHORT_COMMIT }}.elf
 
       - name: Upload variants artifact ELF
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: wopl-${{ matrix.debug }}-${{ env.wOPL_VERSION }}-${{ env.SHORT_COMMIT }}
           path: wopl-*.elf
@@ -260,7 +260,7 @@ jobs:
     needs: build-debug
     steps:
       - name: Merge Artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v6
         with:
           name: WOPNPS2LD-DEBUG
           pattern: wopl-*
@@ -273,7 +273,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
