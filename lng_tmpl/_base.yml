@@ -150,6 +150,10 @@ gui_strings:
   string: Cover Art
 - label: ARCHIVEDART
   string: Archived Art
+- label: DISCART
+  string: Enable Disc Art
+- label: HINT_DISCART
+  string: To apply this you will need to restart wOPL
 - label: WIDE_SCREEN
   string: Widescreen
 - label: POWEROFF

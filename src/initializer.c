@@ -199,6 +199,7 @@ static void setDefaults(void)
     gEnableNotifications = 0;
     gEnableArt = 1;
     gEnableArchivedArt = 1;
+    gDiscEnableArt = 1;
     gWideScreen = 0;
     gEnableSFX = 0;
     gEnableBootSND = 0;

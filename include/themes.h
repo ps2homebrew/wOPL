@@ -140,6 +140,8 @@ typedef struct theme
 
 extern theme_t *gTheme;
 
+extern int gDiscEnableArt;
+
 void thmInit(void);
 void thmReinit(const char *path);
 void thmReloadScreenExtents(void);

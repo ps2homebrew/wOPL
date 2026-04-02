@@ -31,6 +31,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * New theme renamed png files.
 * Added daf0x gamestar module.
 * Modular pademu, Play your games without selecting modules.
+* Disc cover enable
 </p>
 </details>
 

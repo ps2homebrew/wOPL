@@ -38,6 +38,8 @@ static const char **guiThemesNames = NULL;
 // Global data
 theme_t *gTheme;
 
+int gDiscEnableArt;
+
 enum ELEM_ATTRIBUTE_TYPE {
     ELEM_TYPE_ATTRIBUTE_TEXT = 0,
     ELEM_TYPE_STATIC_TEXT,
@@ -1223,7 +1225,7 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
                     initItemsList(themePath, themeConfig, theme, elem, name, NULL);
                     theme->favsItemsList = elem;
                 }
-            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_ICON], type)) {
+            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_ICON], type) && gDiscEnableArt) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, 64, 64, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initGameImage(themePath, themeConfig, theme, elem, name, "ICO", 20, NULL, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER], type)) {
