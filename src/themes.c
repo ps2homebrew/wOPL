@@ -1073,7 +1073,7 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
         covers[i].cover = (mutable_image_t *)elem->extended;
         covers[i].texture = getGameImageTexture(covers[i].cover->cache, menu->item->userdata, &covers[i].game->item);
         if (!covers[i].texture || !covers[i].texture->Mem)
-            covers[i].texture = (covers[i].cover->defaultTexture) ? &covers[i].cover->defaultTexture->source : thmGetTexture(COVER_GAMES); // TODO: See the apps is tested
+            covers[i].texture = (covers[i].cover->defaultTexture) ? &covers[i].cover->defaultTexture->source : thmGetTexture(COVER_GAMES);
 
         if (covers[i].cover->overlayTexture) {
             if (elem->reflection)
@@ -1455,6 +1455,8 @@ static void thmLoad(const char *themePath, int themeID)
     newT->gamesItemsList = NULL;
     newT->appsItemsList = NULL;
     newT->favsItemsList = NULL;
+    newT->logoIcon = NULL;
+    newT->logoIconCount = LOGO_21_ICON - LOGO_1_ICON + 1;
     newT->loadingIcon = NULL;
     newT->loadingIconCount = LOADING_7_ICON - LOADING_1_ICON + 1;
     newT->coverflow = NULL;
@@ -1568,14 +1570,16 @@ static void thmLoad(const char *themePath, int themeID)
     // default all to not loaded...
     for (i = 0; i < TEXTURES_COUNT; i++)
         newT->textures[i].Mem = NULL;
-
-    // LOGO, loaded here to avoid flickering during startup with device in AUTO + theme set
-    texLoadInternal(&newT->textures[LOGO_PICTURE], LOGO_PICTURE);
-
     // First start with busy icon
     const char *themePath_temp = themePath;
     int customBusy = 0;
-    for (i = LOADING_1_ICON; i <= LOADING_7_ICON; i++) {
+
+    for (i = LOGO_1_ICON; i <= LOGO_21_ICON; i++) {
+        thmLoadResource(&newT->textures[i], i, themePath_temp, GS_PSM_CT32, newT->useDefault);
+    }
+    newT->logoIconCount = i - LOGO_1_ICON;
+
+    for (i = LOADING_1_ICON; i <= LOADING_8_ICON; i++) {
         if (thmLoadResource(&newT->textures[i], i, themePath_temp, GS_PSM_CT32, newT->useDefault) >= 0)
             customBusy = 1;
         else {
@@ -1585,7 +1589,7 @@ static void thmLoad(const char *themePath, int themeID)
                 themePath_temp = NULL;
         }
     }
-    newT->loadingIconCount = i;
+    newT->loadingIconCount = i - LOADING_1_ICON;
 
     // Default cover for missing covers in coverflow.
     texLoadInternal(&newT->textures[COVER_GAMES], COVER_GAMES);
