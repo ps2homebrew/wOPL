@@ -60,17 +60,21 @@ GIT_REPO = $(shell test -d .git && echo 1 || echo 0)
 ifeq ($(GIT_AVAILABLE)$(GIT_REPO),11)
 REVISION = $(shell expr $(shell git rev-list --count HEAD) + 2)
 GIT_HASH = $(shell git rev-parse --short=7 HEAD 2>/dev/null)
-ifeq ($(shell git diff --quiet; echo $$?),1)
-  DIRTY = -dirty
-endif
 GIT_TAG = $(shell git describe --exact-match --tags 2>/dev/null)
 else
 REVISION = 0
 GIT_HASH =
 GIT_TAG =
-DIRTY = -dirty
 endif
-wOPL_VERSION = v$(VERSION).$(SUBVERSION)$(if $(EXTRAVERSION),-$(EXTRAVERSION))$(if $(GIT_HASH),-$(GIT_HASH))$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
+
+ifeq ($(shell git diff --quiet; echo $$?),1)
+  DIRTY = -dirty
+endif
+ifneq ($(shell test -d .git; echo $$?),0)
+  DIRTY = -dirty
+endif
+
+wOPL_VERSION = v$(VERSION).$(SUBVERSION)$(if $(EXTRAVERSION),-$(EXTRAVERSION))-$(REVISION)$(if $(DIRTY),$(DIRTY))$(if $(LOCALVERSION),-$(LOCALVERSION))
 
 ifneq ($(GIT_TAG),)
 ifneq ($(GIT_TAG),latest)
