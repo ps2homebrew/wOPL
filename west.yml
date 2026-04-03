@@ -1,0 +1,20 @@
+manifest:
+  self:
+    path: wOPL
+
+  projects:
+    - name: clang-format-lint-action
+      url: https://github.com/DoozyX/clang-format-lint-action
+      path: thirdparty/clang-format-lint-action
+      revision: master
+
+    - name: lng_src
+      url: https://github.com/NathanNeurotic/Open-PS2-Loader-lang
+      path: lng_src
+      revision: main
+      clone-depth: 1
+
+    - name: lwNBD
+      url: https://github.com/bignaux/lwNBD
+      path: modules/network/lwNBD
+      revision: 9777a10f840679ef89b1ec6a588e2d93803d7c37
