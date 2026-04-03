@@ -54,7 +54,8 @@ extern void *R2_png;*/
 
 extern void *bg_main_png;
 extern void *bg_info_png;
-extern void *cover_png;
+extern void *cover_game_png;
+extern void *cover_app_png;
 extern void *disc_png;
 extern void *screenshot_png;
 
@@ -183,7 +184,8 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {R2_ICON, "R2", &R2_png}, */
     {BG_MAIN, "bg_main", &bg_main_png},
     {BG_INFO, "bg_info", &bg_info_png},
-    {COVER_DEFAULT, "cover", &cover_png},
+    {COVER_GAMES, "cover_game", &cover_game_png},
+    {COVER_APPS, "cover_app", &cover_app_png},
     {DISC_DEFAULT, "disc", &disc_png},
     {SCREENSHOT_DEFAULT, "screenshot", &screenshot_png},
     {BADGE_EXEC_ELF_FORMAT, "badge_exec_elf", &badge_exec_elf_png},

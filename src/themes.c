@@ -51,7 +51,8 @@ enum ELEM_ATTRIBUTE_TYPE {
     ELEM_TYPE_MENU_TEXT,
     ELEM_TYPE_ITEMS_LIST,
     ELEM_TYPE_ITEM_ICON,
-    ELEM_TYPE_ITEM_COVER,
+    ELEM_TYPE_ITEM_COVER_GAMES,
+    ELEM_TYPE_ITEM_COVER_APPS,
     ELEM_TYPE_ITEM_TEXT,
     ELEM_TYPE_HINT_TEXT,
     ELEM_TYPE_INFO_HINT_TEXT,
@@ -81,7 +82,8 @@ static const char *elementsType[ELEM_TYPE_COUNT] = {
     "MenuText",
     "ItemsList",
     "ItemIcon",
-    "ItemCover",
+    "ItemCoverGames",
+    "ItemCoverApps",
     "ItemText",
     "HintText",
     "InfoHintText",
@@ -1071,7 +1073,7 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
         covers[i].cover = (mutable_image_t *)elem->extended;
         covers[i].texture = getGameImageTexture(covers[i].cover->cache, menu->item->userdata, &covers[i].game->item);
         if (!covers[i].texture || !covers[i].texture->Mem)
-            covers[i].texture = (covers[i].cover->defaultTexture) ? &covers[i].cover->defaultTexture->source : thmGetTexture(COVER_DEFAULT);
+            covers[i].texture = (covers[i].cover->defaultTexture) ? &covers[i].cover->defaultTexture->source : thmGetTexture(COVER_GAMES); // TODO: See the apps is tested
 
         if (covers[i].cover->overlayTexture) {
             if (elem->reflection)
@@ -1095,7 +1097,7 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
 
 static void initCoverflow(const char *themePath, config_set_t *themeConfig, theme_t *theme, theme_element_t *elem, const char *name, int count, const char *texture, const char *overlay)
 {
-    mutable_image_t *mutableImage = initMutableImage(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, "COV", count, texture, overlay);
+    mutable_image_t *mutableImage = initMutableImage(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, "COV_GAMES", count, texture, overlay);
     elem->extended = mutableImage;
     elem->endElem = &endMutableImage;
 
@@ -1228,9 +1230,12 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
             } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_ICON], type) && gDiscEnableArt) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, 64, 64, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initGameImage(themePath, themeConfig, theme, elem, name, "ICO", 20, NULL, NULL);
-            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER], type)) {
+            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER_GAMES], type)) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
-                initGameImage(themePath, themeConfig, theme, elem, name, "COV", 10, NULL, NULL);
+                initGameImage(themePath, themeConfig, theme, elem, name, "COV_GAMES", 10, NULL, NULL);
+            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER_APPS], type)) {
+                elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
+                initGameImage(themePath, themeConfig, theme, elem, name, "COV_APPS", 10, NULL, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_TEXT], type)) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_ITEM_TEXT, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, theme->textColor, theme->fonts[0]);
                 elem->drawElem = &drawItemText;
@@ -1583,7 +1588,7 @@ static void thmLoad(const char *themePath, int themeID)
     newT->loadingIconCount = i;
 
     // Default cover for missing covers in coverflow.
-    texLoadInternal(&newT->textures[COVER_DEFAULT], COVER_DEFAULT);
+    texLoadInternal(&newT->textures[COVER_GAMES], COVER_GAMES);
 
     // Customizable icons
     for (i = CATEGORY_EMPTY_BDM_ICON; i <= BUTTON_START_ICON; i++)
