@@ -103,9 +103,11 @@ EECORE_OBJS = ee_core.o ioprp.o util.o \
 		hdd_cdvdman.o hdd_gamestar_cdvdman.o mmce_cdvdman.o hdd_hdpro_cdvdman.o cdvdfsv.o \
 		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o
 
-PNG_ASSETS = loading_1 loading_2 loading_3 loading_4 loading_5 loading_6 loading_7 loading_8 category_empty_bdm category_usb category_ilink category_mx4sio category_hdd_bdm \
+PNG_ASSETS = logo_01 logo_02 logo_03 logo_04 logo_05 logo_06 logo_07 logo_08 logo_09 logo_10 logo_11 logo_12 logo_13 logo_14 logo_15 \
+	logo_16 logo_17 logo_18 logo_19 logo_20 logo_21 loading_1 loading_2 loading_3 loading_4 loading_5 loading_6 loading_7 loading_8 \
+	category_empty_bdm category_usb category_ilink category_mx4sio category_hdd_bdm \
 	category_hdd_apa category_net_smb category_apps category_fav category_mmce mark_star button_symbol_cross button_symbol_triangle button_symbol_circle button_symbol_square button_select button_start button_dpad_left button_dpad_right \
-	bg_main bg_info cover disc screenshot badge_exec_elf badge_disc_hdl badge_disc_iso badge_disc_zso badge_disc_ul badge_exec_app badge_disc_cd badge_disc_dvd badge_vmode_43 badge_vmode_169 badge_vmode_169_ps2rd badge_vmode_169_hexiso \
+	bg_main bg_info cover_app cover_game disc screenshot badge_exec_elf badge_disc_hdl badge_disc_iso badge_disc_zso badge_disc_ul badge_exec_app badge_disc_cd badge_disc_dvd badge_vmode_43 badge_vmode_169 badge_vmode_169_ps2rd badge_vmode_169_hexiso \
 	dev_1 dev_2 dev_3 dev_4 dev_5 dev_6 dev_7 dev_8 rating_0 \
 	rating_1 rating_2 rating_3 rating_4 rating_5 badge_res_240p badge_res_240p_hexiso badge_res_480i badge_res_480p \
 	badge_res_480p_xt badge_res_480p_xc badge_res_480p_gsm badge_res_480p_ps2rd badge_res_480p_hexiso \

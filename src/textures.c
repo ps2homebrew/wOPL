@@ -8,6 +8,32 @@
 #include <malloc.h>
 #include <unistd.h>
 
+extern void *logo_01_png;
+extern void *logo_02_png;
+extern void *logo_03_png;
+extern void *logo_04_png;
+extern void *logo_05_png;
+extern void *logo_06_png;
+extern void *logo_07_png;
+extern void *logo_08_png;
+extern void *logo_09_png;
+extern void *logo_10_png;
+extern void *logo_11_png;
+extern void *logo_12_png;
+extern void *logo_13_png;
+extern void *logo_14_png;
+extern void *logo_15_png;
+extern void *logo_16_png;
+extern void *logo_17_png;
+extern void *logo_18_png;
+extern void *logo_19_png;
+extern void *logo_20_png;
+extern void *logo_21_png;
+
+extern void *loading_6_png;
+extern void *loading_7_png;
+extern void *loading_8_png;
+
 extern void *loading_0_png;
 extern void *loading_1_png;
 extern void *loading_2_png;
@@ -54,7 +80,8 @@ extern void *R2_png;*/
 
 extern void *bg_main_png;
 extern void *bg_info_png;
-extern void *cover_png;
+extern void *cover_game_png;
+extern void *cover_app_png;
 extern void *disc_png;
 extern void *screenshot_png;
 
@@ -140,6 +167,27 @@ typedef struct
 static png_texture_t pngTexture;
 
 static texture_t internalDefault[TEXTURES_COUNT] = {
+    {LOGO_1_ICON, "logo_01", &logo_01_png},
+    {LOGO_2_ICON, "logo_02", &logo_02_png},
+    {LOGO_3_ICON, "logo_03", &logo_03_png},
+    {LOGO_4_ICON, "logo_04", &logo_04_png},
+    {LOGO_5_ICON, "logo_05", &logo_05_png},
+    {LOGO_6_ICON, "logo_06", &logo_06_png},
+    {LOGO_7_ICON, "logo_07", &logo_07_png},
+    {LOGO_8_ICON, "logo_08", &logo_08_png},
+    {LOGO_9_ICON, "logo_09", &logo_09_png},
+    {LOGO_10_ICON, "logo_10", &logo_10_png},
+    {LOGO_11_ICON, "logo_11", &logo_11_png},
+    {LOGO_12_ICON, "logo_12", &logo_12_png},
+    {LOGO_13_ICON, "logo_13", &logo_13_png},
+    {LOGO_14_ICON, "logo_14", &logo_14_png},
+    {LOGO_15_ICON, "logo_15", &logo_15_png},
+    {LOGO_16_ICON, "logo_16", &logo_16_png},
+    {LOGO_17_ICON, "logo_17", &logo_17_png},
+    {LOGO_18_ICON, "logo_18", &logo_18_png},
+    {LOGO_19_ICON, "logo_19", &logo_19_png},
+    {LOGO_20_ICON, "logo_20", &logo_20_png},
+    {LOGO_21_ICON, "logo_21", &logo_21_png},
     {LOADING_1_ICON, "loading_1", &loading_1_png},
     {LOADING_2_ICON, "loading_2", &loading_2_png},
     {LOADING_3_ICON, "loading_3", &loading_3_png},
@@ -183,7 +231,8 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {R2_ICON, "R2", &R2_png}, */
     {BG_MAIN, "bg_main", &bg_main_png},
     {BG_INFO, "bg_info", &bg_info_png},
-    {COVER_DEFAULT, "cover", &cover_png},
+    {COVER_GAMES, "cover_game", &cover_game_png},
+    {COVER_APPS, "cover_app", &cover_app_png},
     {DISC_DEFAULT, "disc", &disc_png},
     {SCREENSHOT_DEFAULT, "screenshot", &screenshot_png},
     {BADGE_EXEC_ELF_FORMAT, "badge_exec_elf", &badge_exec_elf_png},
