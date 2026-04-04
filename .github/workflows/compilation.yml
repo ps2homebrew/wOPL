@@ -335,7 +335,7 @@ jobs:
 #        with:
 #          tag_name: ${{ steps.meta.outputs.tag }}
 #          name: ${{ steps.meta.outputs.name }}
-#          prerelease: true
+#          prerelease: false
 #          generate_release_notes: true
 #          target_commitish: ${{ github.sha }}
 #          body: |
