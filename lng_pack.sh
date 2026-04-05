@@ -50,7 +50,8 @@ done < ${LANG_LIST}
 
   Copyright 2009-2010, Ifcaro & jimmikaelkael
   Copyright 2024, KrahJohilto
-  Copyright 2025-Present, Wolf3s, Ripto and chasebocamp
+  Copyright 2025-2026, chasebocamp
+  Copyright 2025-Present, Wolf3s and Ripto
   Licenced under Academic Free License version 3.0
   Review Open PS2 Loader README & LICENSE files for further details.
 
