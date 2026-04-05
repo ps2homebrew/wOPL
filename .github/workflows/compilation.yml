@@ -13,7 +13,9 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    container: ghcr.io/bignaux/flakestation:main
+    container: 
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 1000
     steps:
 
       - name: git checkout
@@ -82,7 +84,9 @@ jobs:
         cheat: [CHEAT=0, CHEAT=1]
         pademu: [PADEMU=0, PADEMU=1]
     runs-on: ubuntu-22.04
-    container: ghcr.io/bignaux/flakestation:main
+    container:
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 1000
     steps:
 
       - name: git checkout
@@ -124,7 +128,9 @@ jobs:
 
   build-lang:
     runs-on: ubuntu-22.04
-    container: ghcr.io/bignaux/flakestation:main
+    container:
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 1000
     steps:
 
       - name: git checkout
@@ -155,7 +161,9 @@ jobs:
         debug: [iopcore_debug, ingame_debug, eesio_debug, DTL_T10000=1]
         container_commit: [":main"]
     runs-on: ubuntu-22.04
-    container: ghcr.io/bignaux/flakestation:main
+    container:
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 1000
     steps:
 
       - name: git checkout
