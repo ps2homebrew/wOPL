@@ -140,9 +140,11 @@ int _start(int argc, char *argv[])
     pademu_setup(pad_enable, pad_vibration);
 
 #ifdef BT
+    ds34bt_reset();
     ds34bt_init(pad_enable, pad_options);
 #endif
 #ifdef USB
+    ds34usb_reset();
     ds34usb_init(pad_enable, pad_options);
 #endif
     return MODULE_RESIDENT_END;
@@ -189,12 +191,6 @@ void _exit(int mode)
 #endif
 #ifdef USB
     ds34usb_reset();
-#endif
-#ifdef USE_XBOX360
-    xbox360usb_reset();
-#endif
-#ifdef USE_XBOXONE
-    xboxoneusb_reset();
 #endif
 }
 
@@ -348,19 +344,19 @@ static void pademu_setup(u8 ports, u8 vib)
         pad[i].mask[2] = 0x03;
         pad[i].mask[3] = 0x00;
 
-        pad[i].lrum = 2;
-        pad[i].rrum = 2;
+        pad[i].lrum = 4; // 2;
+        pad[i].rrum = 3; // 2;
     }
 }
 
 static u8 pademu_data[6][6] =
     {
-        {0x00, 0x00, 0x02, 0x00, 0x00, 0x5A},
-        {0x03, 0x02, 0x00, 0x02, 0x01, 0x00},
-        {0x00, 0x00, 0x01, 0x02, 0x00, 0x0A},
-        {0x00, 0x00, 0x01, 0x01, 0x01, 0x14},
-        {0x00, 0x00, 0x02, 0x00, 0x01, 0x00},
-        {0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF}};
+        {0x00, 0x00, 0x02, 0x00, 0x00, 0x5A},  // 0x40
+        {0x03, 0x02, 0x00, 0x02, 0x01, 0x00},  // 0x45
+        {0x00, 0x00, 0x01, 0x02, 0x00, 0x0A},  // 0x46
+        {0x00, 0x00, 0x01, 0x01, 0x01, 0x14},  // 0x46
+        {0x00, 0x00, 0x02, 0x00, 0x01, 0x00},  // 0x47
+        {0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF}}; // 0x4D
 
 static void pademu(sio2_transfer_data_t *td)
 {
@@ -439,8 +435,8 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
     memset(out, 0x00, out_size);
 
     if (padf[port] == NULL) {
-        pad[port].lrum = 2;
-        pad[port].rrum = 2;
+        pad[port].lrum = 4;
+        pad[port].rrum = 3;
         return;
     }
 
@@ -465,12 +461,28 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
             break;
 
         case 0x43: // enter/exit config mode
-            if (pad[port].mode_cfg) {
-                pad[port].mode_cfg = in[3];
-                break;
+            i = padf[port]->get_data(padf[port], &out[3], out_size - 3, port);
+
+            if (pad[port].mode_lock == 0) { // mode unlocked
+                if (pad[port].mode != i) {
+                    pad[port].mode = i;
+
+                    if (pad[port].mode)
+                        pad[port].mode_id = ANALOG_MODE;
+                    else
+                        pad[port].mode_id = DIGITAL_MODE;
+
+                    out[2] = 0x00;
+                }
             }
 
             pad[port].mode_cfg = in[3];
+
+            if (pad[port].mode_cfg != 0) { // NEW
+                out[1] = pad[port].mode_id;
+            }
+            break;
+
         case 0x42: // read data
             if (in[1] == 0x42) {
                 if (pad[port].vibration) { // disable/enable vibration
@@ -488,6 +500,8 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
                         pad[port].mode_id = ANALOG_MODE;
                     else
                         pad[port].mode_id = DIGITAL_MODE;
+
+                    out[2] = 0x00;
                 }
             }
 
@@ -511,8 +525,8 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
 
         case 0x45: // query model and mode
             memcpy(&out[3], &pademu_data[1], 6);
-            out[5] = pad[port].mode;
             out[3] = padf[port]->get_model(padf[port], port);
+            out[5] = pad[port].mode;
             break;
 
         case 0x46: // query act
