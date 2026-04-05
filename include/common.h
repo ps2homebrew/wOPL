@@ -1,5 +1,5 @@
-#ifndef __OPL_H
-#define __OPL_H
+#ifndef __COMMON_H
+#define __COMMON_H
 
 
 #include "include/iosupport.h"
@@ -20,9 +20,6 @@
 #define PARENTAL_LOCK_MASTER_PASS "989765"
 
 
-void handleLwnbdSrv();
-
-
 enum ETH_OP_MODES {
     ETH_OP_MODE_AUTO = 0,
     ETH_OP_MODE_100M_FDX,
@@ -32,7 +29,6 @@ enum ETH_OP_MODES {
 
     ETH_OP_MODE_COUNT
 };
-extern int gEnableUSB;
 
 extern int gAutosort;
 extern int gAutoRefresh;
@@ -67,4 +63,29 @@ BLURT output char blurttext[128];
     delay(10);
 #define BLURT snprintf(blurttext, sizeof(blurttext), "%s(%d)", blurttext, __LINE__);
 */
+
+#ifdef __EESIO_DEBUG
+#include "SIOCookie.h"
+#define LOG_INIT() ee_sio_start(38400, 0, 0, 0, 0, 1)
+#define LOG_ENABLE() \
+    do {             \
+    } while (0)
+#else
+#ifdef __DEBUG
+#include "include/debug.h"
+#define LOG_INIT() \
+    do {           \
+    } while (0)
+#define LOG_ENABLE() ioPutRequest(IO_CUSTOM_SIMPLEACTION, &debugSetActive)
+#else
+#define LOG_INIT() \
+    do {           \
+    } while (0)
+#define LOG_ENABLE() \
+    do {             \
+    } while (0)
+#endif
+#endif
+
+
 #endif

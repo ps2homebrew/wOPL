@@ -510,7 +510,7 @@ static const char *button_names_enum[] = {
     NULL};
 
 // NOTE: struct member prefixed with "n" means it's active-low (i.e. value of 0 indicates button is pressed, value 1 is released)
-static enum DS2ButtonBitNumber {
+typedef enum {
     DS2BtnBit_Select = 0,
     DS2BtnBit_L3 = 1,
     DS2BtnBit_R3 = 2,
@@ -526,8 +526,8 @@ static enum DS2ButtonBitNumber {
     DS2BtnBit_Triangle = 12,
     DS2BtnBit_Circle = 13,
     DS2BtnBit_Cross = 14,
-    DS2BtnBit_Square = 15,
-};
+    DS2BtnBit_Square = 15
+} DS2ButtonBitNumber;
 
 static const char button_enum_to_bit_number[] = {
     BtnBit_Off, // Off
