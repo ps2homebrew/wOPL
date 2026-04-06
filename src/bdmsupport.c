@@ -45,14 +45,6 @@ typedef struct
     vmc_spec_t specs; /* Card specifications */
 } bdm_vmc_infos_t;
 
-#define MAX_BDM_DEVICES 5
-
-#define BDM_TYPE_UNKNOWN -1
-#define BDM_TYPE_USB     0
-#define BDM_TYPE_ILINK   1
-#define BDM_TYPE_SDC     2
-#define BDM_TYPE_ATA     3
-
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
@@ -997,6 +989,7 @@ void autoLaunchBDMGame(char *argv[])
 
     bdmLaunchGame(NULL, -1, configSet);
 }
+
 int bdmWaitForDevice(int deviceId, u32 timeoutMs)
 {
     const int RETRY_DELAY = 100;
@@ -1022,6 +1015,20 @@ int bdmWaitForDevice(int deviceId, u32 timeoutMs)
 
         DelayThread(RETRY_DELAY * 1000);
     }
+}
+
+int bdmDeviceIsPresent(int deviceId)
+{
+    char path[16];
+    sprintf(path, "mass%d:/", deviceId);
+    int dir = fileXioDopen(path);
+
+    if (dir >= 0) {
+        fileXioDclose(dir);
+        return 1; // ready
+    }
+
+    return 0;
 }
 
 int bdmHDDIsPresent()
