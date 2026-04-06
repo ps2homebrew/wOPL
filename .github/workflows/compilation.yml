@@ -20,11 +20,9 @@ jobs:
 
       - name: git checkout
         uses: actions/checkout@v6
-        with:
-            clean: false
-            set-safe-directory: false
 
       - run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
 
       - name: Compile -> make clean release
