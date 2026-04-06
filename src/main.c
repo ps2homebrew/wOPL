@@ -15,29 +15,6 @@
 #include <libmc.h>
 #include <kernel.h>
 
-#ifdef __EESIO_DEBUG
-#include "SIOCookie.h"
-#define LOG_INIT() ee_sio_start(38400, 0, 0, 0, 0, 1)
-#define LOG_ENABLE() \
-    do {             \
-    } while (0)
-#else
-#ifdef __DEBUG
-#include "include/debug.h"
-#define LOG_INIT() \
-    do {           \
-    } while (0)
-#define LOG_ENABLE() ioPutRequest(IO_CUSTOM_SIMPLEACTION, &debugSetActive)
-#else
-#define LOG_INIT() \
-    do {           \
-    } while (0)
-#define LOG_ENABLE() \
-    do {             \
-    } while (0)
-#endif
-#endif
-
 extern unsigned int frameCounter;
 
 

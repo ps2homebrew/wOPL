@@ -4,20 +4,20 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/common.h"
-#include "include/menusys.h"
 #include "include/iosupport.h"
+#include "include/lang.h"
+#include "include/lwnbd.h"
+#include "include/menusys.h"
+#include "include/common.h"
+#include "include/pad.h"
 #include "include/renderman.h"
 #include "include/fntsys.h"
-#include "include/lang.h"
-#include "include/themes.h"
-#include "include/pad.h"
 #include "include/gui.h"
 #include "include/guigame.h"
-#include "include/system.h"
 #include "include/ioman.h"
 #include "include/sound.h"
-
+#include "include/system.h"
+#include "include/themes.h"
 #include <assert.h>
 
 #include <kernel.h>
