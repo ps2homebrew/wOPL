@@ -12,6 +12,7 @@ Review the LICENSE file for further details.
 [![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
+[![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
 
 ## Introduction
 
