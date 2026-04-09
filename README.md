@@ -1,6 +1,6 @@
 # Double Unofficial-Open-PS2-Loader
 
-![logo](https://github.com/NathanNeurotic/wOPL/blob/wOPL-base/gfx/logo.png)
+![logo](https://github.com/NathanNeurotic/wOPL/blob/wOPL-base/gfx/logo_15.png)
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
@@ -9,7 +9,7 @@ Copyright 2025-Present, Wolf3s and Ripto<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-1-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
+[![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
 
@@ -32,6 +32,13 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * Added daf0x gamestar module.
 * Modular pademu, Play your games without selecting modules.
 * Disc cover enable.
+
+### Art Tar
+Your all cover arts should be stored using .tar format, stored on ART/art.tar 
+
+### wOPL Easter egg
+This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
+
 </p>
 </details>
 

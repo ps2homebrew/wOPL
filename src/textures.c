@@ -130,7 +130,6 @@ extern void *badge_region_multi_png;
 extern void *badge_region_ntsc_png;
 extern void *badge_region_pal_png;
 
-extern void *logo_png;
 extern void *case_png;
 extern void *apps_case_png;
 extern void *plank_png;
@@ -279,7 +278,6 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {BADGE_REGION_MULTI, "badge_region_multi", &badge_region_multi_png},
     {BADGE_REGION_NTSC, "badge_region_ntsc", &badge_region_ntsc_png},
     {BADGE_REGION_PAL, "badge_region_pal", &badge_region_pal_png},
-    {LOGO_PICTURE, "logo", &logo_png},
     {CASE_OVERLAY, "case", &case_png},
     {APPS_CASE_OVERLAY, "apps_case", &apps_case_png},
     {PLANK, "plank", &plank_png},

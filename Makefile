@@ -112,7 +112,7 @@ PNG_ASSETS = logo_01 logo_02 logo_03 logo_04 logo_05 logo_06 logo_07 logo_08 log
 	rating_1 rating_2 rating_3 rating_4 rating_5 badge_res_240p badge_res_240p_hexiso badge_res_480i badge_res_480p \
 	badge_res_480p_xt badge_res_480p_xc badge_res_480p_gsm badge_res_480p_ps2rd badge_res_480p_hexiso \
 	badge_res_576i badge_res_576p_gsm badge_res_720p_gsm \
-	badge_res_1080i badge_res_1080i_gsm badge_res_1080p_gsm badge_region_multi badge_region_ntsc badge_region_pal logo case apps_case \
+	badge_res_1080i badge_res_1080i_gsm badge_res_1080p_gsm badge_region_multi badge_region_ntsc badge_region_pal case apps_case \
 	plank discbox_list_games discbox_list_apps discbox_list_shadow \
 	bdm_index_1 bdm_index_2 bdm_index_3 bdm_index_4 bdm_index_5 button_stick_r3 button_dpad_up button_dpad_down
 	# unused icons - l1 l2 l3 r1 r2
