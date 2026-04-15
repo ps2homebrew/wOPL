@@ -54,3 +54,5 @@ lng/lang_*.lng
 src/lang_internal.c
 include/lang_autogen.h
 tmp/
+modules/network/libsmb2
+modules/network/usmb2
