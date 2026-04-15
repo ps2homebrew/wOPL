@@ -10,7 +10,6 @@
 
 #include "internal.h"
 #include "ioplib_util.h"
-#include "smsutils.h"
 
 typedef struct ModuleStatus
 {
@@ -62,7 +61,7 @@ static struct FakeModule modulefake_list[] = {
 #endif
     // Faked dynamically for BDM-USB and PADEMU
     {"USBD.IRX", "USB_driver", FAKE_MODULE_ID_USBD, FAKE_MODULE_FLAG_USBD, 0x0204, 2},
-#ifdef SMB_DRIVER || defined(USE_UDPBD)
+#ifdef SMB_DRIVER
     {"SMAP.IRX", "INET_SMAP_driver", FAKE_MODULE_ID_SMAP, FAKE_MODULE_FLAG_SMAP, 0x0219, 2},
     {"ENT_SMAP.IRX", "ent_smap", FAKE_MODULE_ID_SMAP, FAKE_MODULE_FLAG_SMAP, 0x021f, 2},
 #endif

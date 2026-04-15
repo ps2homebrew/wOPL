@@ -2,9 +2,17 @@
 #define __IOSUPPORT_H
 
 #include "include/config.h"
+#include <gsKit.h>
+
+struct menu_item;
 
 #define IO_MODE_SELECTED_NONE -1
 #define IO_MODE_SELECTED_ALL  MODE_COUNT
+
+// IO type IDs
+#define IO_CUSTOM_SIMPLEACTION  1 // handler for parameter-less actions
+#define IO_MENU_UPDATE_DEFFERED 2
+#define IO_CACHE_LOAD_ART       3 // io call to handle the loading of covers
 
 enum IO_MODES {
     BDM_MODE = 0,
@@ -16,6 +24,7 @@ enum IO_MODES {
     HDD_MODE,
     APP_MODE,
     FAV_MODE,
+    MMCE_MODE,
 
     MODE_COUNT
 };
@@ -148,5 +157,20 @@ typedef struct _item_list_t
 
     int (*itemIconId)(item_list_t *itemList);
 } item_list_t;
+
+void itemInitSupport(item_list_t *support);
+void itemExecSelect(struct menu_item *curMenu);
+void itemExecRefresh(struct menu_item *curMenu);
+
+void itemExecCross(struct menu_item *curMenu);
+
+void itemExecCircle(struct menu_item *curMenu);
+
+void itemExecSquare(struct menu_item *curMenu);
+
+void itemExecTriangle(struct menu_item *curMenu);
+
+void itemExecFav(struct menu_item *curMenu);
+
 
 #endif

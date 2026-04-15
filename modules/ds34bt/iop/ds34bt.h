@@ -3,7 +3,7 @@
 
 #include "irx.h"
 
-#include <ds34common.h>
+#include "ds34common.h"
 
 #define DS3 0
 #define DS4 1
@@ -249,8 +249,5 @@ enum eHID {
 
     // }}}
 };
-
-void mips_memcpy(void *, const void *, unsigned);
-void mips_memset(void *, int, unsigned);
 
 #endif

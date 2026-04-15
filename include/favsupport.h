@@ -13,4 +13,6 @@ submenu_item_t *readFavouritesFile(int *out_size);
 void addFavouriteItem(const submenu_item_t *item);
 void removeFavouriteByIdAndText(int id, const char *text);
 
+extern int gFAVStartMode;
+
 #endif

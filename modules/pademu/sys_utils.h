@@ -8,28 +8,9 @@
 #ifndef __SYS_UTILS_H
 #define __SYS_UTILS_H
 
-#include <irx.h>
-
-typedef struct
-{
-    int version;
-    void **exports;
-} modinfo_t;
-
-#ifdef USE_SMSUTILS
-/* SMS Utils Imports */
-#define smsutils_IMPORTS_start DECLARE_IMPORT_TABLE(smsutils, 1, 1)
-
-void mips_memcpy(void *, const void *, unsigned);
-#define I_mips_memcpy DECLARE_IMPORT(4, mips_memcpy)
-
-void mips_memset(void *, int, unsigned);
-#define I_mips_memset DECLARE_IMPORT(5, mips_memset)
-
-#define smsutils_IMPORTS_end END_IMPORT_TABLE
-#else
-#define mips_memset memset
-#define mips_memcpy memcpy
-#endif
+extern void *GetExportTable(char *libname, int version);
+extern u32 GetExportTableSize(void *table);
+extern void *GetExportEntry(void *table, u32 entry);
+extern void *HookExportEntry(void *table, u32 entry, void *func);
 
 #endif /* __MCEMU_UTILS_H */

@@ -4,7 +4,6 @@
  Review OpenUsbLd README & LICENSE files for further details.
  */
 
-#include "include/opl.h"
 #include "include/gui.h"
 #include "include/renderman.h"
 #include "include/menusys.h"
@@ -17,18 +16,29 @@
 #include "include/config.h"
 #include "include/system.h"
 #include "include/ethsupport.h"
-#include "include/compatupd.h"
+#ifdef GSM
 #include "include/pggsm.h"
+#endif
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
 #include "include/sound.h"
 #include "include/guigame.h"
+#include "include/tetris.h"
+#include "include/common.h"
+#include <malloc.h>
+#include <math.h>
+#include <kernel.h>
 
 #include <limits.h>
 #include <stdlib.h>
 #include <libvux.h>
+#include <stdio.h>
 
 // Last Played Auto Start
 #include <time.h>
+
+extern unsigned int frameCounter;
 
 static int gScheduledOps;
 static int gCompletedOps;
@@ -50,6 +60,14 @@ static int showLngPopup;
 
 static clock_t popupTimer;
 
+int gAutoStartLastPlayed;
+clock_t CronStart;
+int showCfgPopup;
+int gEnableNotifications;
+int gScrollSpeed;
+
+static char errorMessage[256];
+
 // forward decl.
 static void guiShow();
 
@@ -62,6 +80,9 @@ static float fps = 0.0f;
 
 extern GSGLOBAL *gsGlobal;
 #endif
+
+
+#define VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS 10000
 
 // Global data
 int guiInactiveFrames;
@@ -106,6 +127,12 @@ static GSTEXTURE gBackgroundTex;
 static int pperm[512];
 static float fadetbl[FADE_SIZE + 1];
 
+unsigned char gDefaultBgColor[3];
+unsigned char gDefaultTextColor[3];
+unsigned char gDefaultSelTextColor[3];
+unsigned char gDefaultUITextColor[3];
+unsigned char gDefaultPlasmaBlendColor[3];
+
 static VU_VECTOR pgrad3[12] = {{1, 1, 0, 1}, {-1, 1, 0, 1}, {1, -1, 0, 1}, {-1, -1, 0, 1}, {1, 0, 1, 1}, {-1, 0, 1, 1}, {1, 0, -1, 1}, {-1, 0, -1, 1}, {0, 1, 1, 1}, {0, -1, 1, 1}, {0, 1, -1, 1}, {0, -1, -1, 1}};
 
 void guiReloadScreenExtents()
@@ -145,6 +172,7 @@ void guiInit(void)
     gBackgroundTex.Vram = 0;
     gBackgroundTex.VramClut = 0;
     gBackgroundTex.Clut = NULL;
+    gBackgroundTex.ClutStorageMode = GS_CLUT_STORAGE_CSM1;
 
     // Precalculate the values for the perlin noise plasma
     int i;
@@ -199,34 +227,41 @@ void guiEndFrame(void)
 
 void guiShowAbout()
 {
-    char OPLVersion[48];
-    char OPLBuildDetails[40];
+    char wOPLVersion[140];
+    char wOPLBuildDetails[96];
 
-    snprintf(OPLVersion, sizeof(OPLVersion), "Open PS2 Loader %s", OPL_VERSION);
-    diaSetLabel(diaAbout, ABOUT_TITLE, OPLVersion);
+    snprintf(wOPLVersion, sizeof(wOPLVersion), "Double Unofficial Open PS2 Loader %s", WOPL_VERSION);
+    diaSetLabel(diaAbout, ABOUT_TITLE, wOPLVersion);
 
-    snprintf(OPLBuildDetails, sizeof(OPLBuildDetails), "GSM %s"
-                                                       " - UDMA+"
-#ifdef __RTL
-                                                       " - RTL"
+    snprintf(wOPLBuildDetails, sizeof(wOPLBuildDetails),
+#ifdef GSM
+             " GSM %s"
 #endif
-#ifdef IGS
-                                                       " - IGS %s"
+#ifdef CHEAT
+             " - CHEAT"
+#endif
+             " - UDMA+"
+#ifdef __RTL
+             " - RTL"
 #endif
 #ifdef PADEMU
-                                                       " - PADEMU"
+             " - PADEMU"
 #endif
-             // Version numbers
+    // Version numbers
+#ifdef GSM
              ,
-             GSM_VERSION
-#ifdef IGS
-             ,
-             IGS_VERSION
-#endif
+             GSM_VERSION);
+#else
     );
-    diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, OPLBuildDetails);
+#endif
+    diaSetLabel(diaAbout, ABOUT_BUILD_DETAILS, wOPLBuildDetails);
 
-    diaExecuteDialog(diaAbout, -1, 1, NULL);
+    diaSetSecretHandler(tetrisSecretHandler);
+    int aboutResult = diaExecuteDialog(diaAbout, -1, 1, NULL);
+    diaClearSecretHandler();
+
+    if (aboutResult == UIID_BTN_SECRET)
+        tetrisRun();
 }
 
 void guiCheckNotifications(int checkTheme, int checkLang)
@@ -317,125 +352,6 @@ static void guiShowNotifications(void)
     }
 }
 
-static int guiNetCompatUpdRefresh(int modified)
-{
-    int result;
-    unsigned int done, total;
-
-    if ((result = oplGetUpdateGameCompatStatus(&done, &total)) == OPL_COMPAT_UPDATE_STAT_WIP) {
-        diaSetInt(diaNetCompatUpdate, NETUPD_PROGRESS, (done == 0 || total == 0) ? 0 : (int)((float)done / total * 100.0f));
-    }
-
-    return result;
-}
-
-static void guiShowNetCompatUpdateResult(int result)
-{
-    switch (result) {
-        case OPL_COMPAT_UPDATE_STAT_DONE:
-            // Completed with no errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_DONE), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_ERROR:
-            // Completed with errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_FAILED), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_CONN_ERROR:
-            // Completed with errors.
-            guiMsgBox(_l(_STR_NET_UPDATE_CONN_FAILED), 0, NULL);
-            break;
-        case OPL_COMPAT_UPDATE_STAT_ABORTED:
-            // User-aborted.
-            guiMsgBox(_l(_STR_NET_UPDATE_CANCELLED), 0, NULL);
-            break;
-    }
-}
-
-void guiShowNetCompatUpdate(void)
-{
-    int ret, UpdateAll;
-    u8 done, started;
-    void *UpdateFunction;
-
-    diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_START, 1);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_CANCEL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_LBL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_PERC_LBL, 0);
-    diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS, 0);
-    diaSetInt(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 0);
-    diaSetEnabled(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 1);
-
-    done = 0;
-    started = 0;
-    UpdateFunction = NULL;
-    while (!done) {
-        ret = diaExecuteDialog(diaNetCompatUpdate, -1, 1, UpdateFunction);
-        switch (ret) {
-            case NETUPD_BTN_START:
-                if (guiMsgBox(_l(_STR_CONFIRMATION_SETTINGS_UPDATE), 1, NULL)) {
-                    guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-
-                    if ((ret = ethLoadInitModules()) == 0) {
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_START, 0);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_BTN_CANCEL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_LBL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS_PERC_LBL, 1);
-                        diaSetVisible(diaNetCompatUpdate, NETUPD_PROGRESS, 1);
-                        diaSetEnabled(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, 0);
-
-                        diaGetInt(diaNetCompatUpdate, NETUPD_OPT_UPD_ALL, &UpdateAll);
-                        oplUpdateGameCompat(UpdateAll);
-                        UpdateFunction = &guiNetCompatUpdRefresh;
-                        started = 1;
-                    } else {
-                        ethDisplayErrorStatus();
-                    }
-                }
-                break;
-            case UIID_BTN_CANCEL: // If the user pressed the cancel button.
-            case NETUPD_BTN_CANCEL:
-                if (started) {
-                    if (guiMsgBox(_l(_STR_CONFIRMATION_CANCEL_UPDATE), 1, NULL)) {
-                        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-                        oplAbortUpdateGameCompat();
-                        // The process truly ends when the UI callback gets the update from the worker thread that the process has ended.
-                    }
-                } else {
-                    done = 1;
-                    started = 0;
-                }
-                break;
-            default:
-                guiShowNetCompatUpdateResult(ret);
-                done = 1;
-                started = 0;
-                UpdateFunction = NULL;
-                break;
-        }
-    }
-}
-
-void guiShowNetCompatUpdateSingle(int id, item_list_t *support, config_set_t *configSet)
-{
-    int ConfigSource, result;
-
-    ConfigSource = CONFIG_SOURCE_DEFAULT;
-    configGetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, &ConfigSource);
-
-    if (guiMsgBox(_l(_STR_CONFIRMATION_SETTINGS_UPDATE), 1, NULL)) {
-        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
-
-        if ((ethLoadInitModules()) == 0) {
-            if ((result = oplUpdateGameCompatSingle(id, support, configSet)) == OPL_COMPAT_UPDATE_STAT_DONE) {
-                configSetInt(configSet, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_DLOAD);
-            }
-            guiShowNetCompatUpdateResult(result);
-        } else {
-            ethDisplayErrorStatus();
-        }
-    }
-}
-
 static void guiShowBlockDeviceConfig(void)
 {
     int ret;
@@ -444,18 +360,12 @@ static void guiShowBlockDeviceConfig(void)
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, gEnableMX4SIO);
     diaSetEnabled(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, !gHDDStartMode);
     diaSetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, gEnableBdmHDD);
-#ifdef UDPBD
-    diaSetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, gEnableUDPBD);
-#endif
 
     ret = diaExecuteDialog(diaBlockDevicesConfig, -1, 1, NULL);
     if (ret) {
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEILK, &gEnableILK);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEMX4SIO, &gEnableMX4SIO);
         diaGetInt(diaBlockDevicesConfig, CFG_ENABLEBDMHDD, &gEnableBdmHDD);
-#ifdef UDPBD
-        diaGetInt(diaBlockDevicesConfig, CFG_ENABLEUDPBD, &gEnableUDPBD);
-#endif
     }
 }
 
@@ -485,8 +395,10 @@ int guiDeviceTypeToIoMode(int deviceType)
         return HDD_MODE;
     else if (deviceType == 3)
         return APP_MODE;
-    else
+    else if (deviceType == 4)
         return FAV_MODE;
+    else
+        return MMCE_MODE;
 }
 
 int guiIoModeToDeviceType(int ioMode)
@@ -506,6 +418,8 @@ int guiIoModeToDeviceType(int ioMode)
             return 3;
         case FAV_MODE:
             return 4;
+        case MMCE_MODE:
+            return 5;
         default:
             return 0;
     }
@@ -514,7 +428,7 @@ int guiIoModeToDeviceType(int ioMode)
 void guiShowConfig()
 {
     // configure the enumerations
-    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), _l(_STR_APPS), _l(_STR_FAV), NULL};
+    const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), _l(_STR_APPS), _l(_STR_FAV), _l(_STR_MMCE), NULL};
     const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
 
     diaSetEnum(diaConfig, CFG_DEFDEVICE, deviceNames);
@@ -583,9 +497,58 @@ void guiShowConfig()
         if (ret == BLOCKDEVICE_BUTTON)
             guiShowBlockDeviceConfig();
 
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
         menuReinitMainMenu();
     }
+}
+
+void guiShowMMCEConfig()
+{
+    int ret;
+    const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
+    const char *deviceSlots[] = {"0", "1", _l(_STR_AUTO), NULL};
+    const char *deviceAckWaitCycles[] = {"0", "1", "2", "3", "4", "5", NULL};
+    const char *deviceOnOff[] = {"OFF", "ON", NULL};
+    const char *deviceIGRSlots[] = {"NONE", "0", "1", "BOTH", NULL};
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEMODE, deviceModes);
+    diaSetInt(diaMMCEConfig, CFG_MMCEMODE, gMMCEStartMode);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCESLOT, deviceSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCESLOT, gMMCESlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEIGRSLOT, deviceIGRSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, gMMCEIGRSlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, deviceAckWaitCycles);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, gMMCEAckWaitCycles);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_USE_ALARMS, deviceOnOff);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, gMMCEUseAlarms);
+
+    diaSetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix);
+
+#ifdef __DEBUG
+    diaSetInt(diaMMCEConfig, CFG_MMCEGAMEID, gMMCEEnableGameID);
+#endif
+
+    ret = diaExecuteDialog(diaMMCEConfig, -1, 1, NULL);
+    if (ret) {
+        diaGetInt(diaMMCEConfig, CFG_MMCEMODE, &gMMCEStartMode);
+        diaGetInt(diaMMCEConfig, CFG_MMCESLOT, &gMMCESlot);
+#ifdef __DEBUG
+        diaGetInt(diaMMCEConfig, CFG_MMCEGAMEID, &gMMCEEnableGameID);
+#endif
+        diaGetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, &gMMCEIGRSlot);
+
+        diaGetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
+        diaGetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, &gMMCEUseAlarms);
+
+        diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
+    }
+
+    configApply(-1, -1, 0);
+    menuReinitMainMenu();
 }
 
 static int curTheme = -1;
@@ -697,6 +660,8 @@ reselect_video_mode:
     diaSetInt(diaUIConfig, UICFG_AUTOREFRESH, gAutoRefresh);
     diaSetInt(diaUIConfig, UICFG_NOTIFICATIONS, gEnableNotifications);
     diaSetInt(diaUIConfig, UICFG_COVERART, gEnableArt);
+    diaSetInt(diaUIConfig, UICFG_ARCHIVEDART, gEnableArchivedArt);
+    diaSetInt(diaUIConfig, UICFG_DISCART, gDiscEnableArt);
     diaSetInt(diaUIConfig, UICFG_WIDESCREEN, gWideScreen);
     diaSetInt(diaUIConfig, UICFG_VMODE, gVMode);
     diaSetInt(diaUIConfig, UICFG_XOFF, gXOff);
@@ -718,6 +683,8 @@ reselect_video_mode:
         diaGetInt(diaUIConfig, UICFG_AUTOREFRESH, &gAutoRefresh);
         diaGetInt(diaUIConfig, UICFG_NOTIFICATIONS, &gEnableNotifications);
         diaGetInt(diaUIConfig, UICFG_COVERART, &gEnableArt);
+        diaGetInt(diaUIConfig, UICFG_ARCHIVEDART, &gEnableArchivedArt);
+        diaGetInt(diaUIConfig, UICFG_DISCART, &gDiscEnableArt);
         diaGetInt(diaUIConfig, UICFG_WIDESCREEN, &gWideScreen);
         diaGetInt(diaUIConfig, UICFG_VMODE, &gVMode);
         diaGetInt(diaUIConfig, UICFG_XOFF, &gXOff);
@@ -730,7 +697,7 @@ reselect_video_mode:
         if (previousTheme != themeID && isBgmPlaying())
             bgmStop();
 
-        applyConfig(themeID, langID, 1);
+        configApply(themeID, langID, 1);
         sfxInit(0);
 
         if (gEnableBGM && !isBgmPlaying())
@@ -741,7 +708,7 @@ reselect_video_mode:
         if (guiConfirmVideoMode() == 0) {
             // Restore previous video mode, without changing the theme & language settings.
             gVMode = previousVMode;
-            applyConfig(themeID, langID, 1);
+            configApply(themeID, langID, 1);
             goto reselect_video_mode;
         }
     }
@@ -857,7 +824,7 @@ void guiShowNetConfig(void)
         if (result == NETCFG_RECONNECT && gNetworkStartup < ERROR_ETH_SMB_CONN)
             gNetworkStartup = ERROR_ETH_SMB_LOGON;
 
-        applyConfig(-1, -1, 0);
+        configApply(-1, -1, 0);
     }
 }
 
@@ -876,7 +843,7 @@ void guiShowParentalLockConfig(void)
         diaGetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password, CONFIG_KEY_VALUE_LEN);
 
         if (strlen(password) > 0) {
-            if (strncmp(OPL_PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
+            if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
                 // Store password
                 configSetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password);
             } else {
@@ -966,7 +933,7 @@ void guiShowControllerConfig(void)
             guiGameShowPadMacroConfig(1);
         }
 #endif
-        applyConfig(-1, -1, 1);
+        configApply(-1, -1, 1);
     }
 }
 
@@ -1104,7 +1071,7 @@ void guiExecDeferredOps(void)
 static void guiDrawBusy(int alpha)
 {
     if (gTheme->loadingIcon) {
-        GSTEXTURE *texture = thmGetTexture(LOAD0_ICON + (guiFrameId >> 1) % gTheme->loadingIconCount);
+        GSTEXTURE *texture = thmGetTexture(LOADING_1_ICON + (guiFrameId >> 1) % gTheme->loadingIconCount);
         if (texture && texture->Mem) {
             u64 mycolor = GS_SETREG_RGBA(0x80, 0x80, 0x80, alpha);
             rmDrawPixmap(texture, gTheme->loadingIcon->posX, gTheme->loadingIcon->posY, gTheme->loadingIcon->aligned, gTheme->loadingIcon->width, gTheme->loadingIcon->height, gTheme->loadingIcon->scaled, mycolor);
@@ -1114,12 +1081,12 @@ static void guiDrawBusy(int alpha)
 
 static void guiRenderGreeting(int alpha)
 {
-    u64 mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
+    u64 mycolor = GS_SETREG_RGBA(0x00, 0x00, 0x00, alpha);
     rmDrawRect(0, 0, screenWidth, screenHeight, mycolor);
 
-    GSTEXTURE *logo = thmGetTexture(LOGO_PICTURE);
+    GSTEXTURE *logo = thmGetTexture(LOGO_1_ICON + (guiFrameId / 6) % gTheme->logoIconCount);
     if (logo) {
-        mycolor = GS_SETREG_RGBA(0x80, 0x80, 0x80, alpha);
+        mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
         rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, logo->Width, logo->Height, SCALING_RATIO, mycolor);
     }
 }
@@ -1322,12 +1289,12 @@ void guiDrawBGPlasma()
 
     pery = ymax;
     rmInvalidateTexture(&gBackgroundTex);
-    rmDrawPixmap(&gBackgroundTex, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
+    rmSetBackground(&gBackgroundTex);
 }
 
-int guiDrawBGSettings(void)
+int guiDrawBGMain(void)
 {
-    GSTEXTURE *bg = thmGetTexture(SETTINGS_BG);
+    GSTEXTURE *bg = thmGetTexture(BG_MAIN);
     if (bg) {
         rmDrawPixmap(bg, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
         return 1;
@@ -1410,7 +1377,7 @@ int guiAlignSubMenuHints(int hintCount, int *textID, int *iconID, int font, int 
 void guiDrawSubMenuHints(void)
 {
     int subMenuHints[2] = {_STR_SELECT, _STR_GAMES_LIST};
-    int subMenuIcons[2] = {CIRCLE_ICON, CROSS_ICON};
+    int subMenuIcons[2] = {BUTTON_SYMBOL_CIRCLE_ICON, BUTTON_SYMBOL_CROSS_ICON};
 
     int x = guiAlignSubMenuHints(2, subMenuHints, subMenuIcons, gTheme->fonts[0], 12, 2);
     int y = gTheme->usedHeight - 32;
@@ -1696,9 +1663,9 @@ int guiMsgBox(const char *text, int addAccept, struct UIItem *ui)
         rmDrawLine(50, 410, screenWidth - 50, 410, gTheme->textColor);
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, text, gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
         if (addAccept)
-            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1775,7 +1742,7 @@ int guiConfirmVideoMode(void)
 
     sfxPlay(SFX_MESSAGE);
 
-    timeEnd = clock() + OPL_VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS * (CLOCKS_PER_SEC / 1000);
+    timeEnd = clock() + VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS * (CLOCKS_PER_SEC / 1000);
     while (!terminate) {
         guiStartFrame();
 
@@ -1798,8 +1765,8 @@ int guiConfirmVideoMode(void)
         rmDrawLine(50, 410, screenWidth - 50, 410, gTheme->textColor);
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_CFM_VMODE_CHG), gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1844,10 +1811,10 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_GAME_SETTINGS_PROMPT), gTheme->textColor);
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
-        guiDrawIconAndText(TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_SYMBOL_SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_SYMBOL_TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1872,6 +1839,7 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
     return 1;
 }
 
+#ifdef CHEAT
 void guiManageCheats(void)
 {
     int offset = 0;
@@ -1950,12 +1918,39 @@ void guiManageCheats(void)
             renderedCheats++;
         }
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
-        guiDrawIconAndText(START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(SQUARE_ICON, _STR_DISABLE_ALL, gTheme->fonts[0], 290, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(BUTTON_SYMBOL_SQUARE_ICON, _STR_DISABLE_ALL, gTheme->fonts[0], 290, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
 
     sfxPlay(SFX_CONFIRM);
+}
+#endif
+
+
+void guiClearErrorMessage(void)
+{
+    // reset the original frame hook
+    frameCounter = 0;
+    guiSetFrameHook(&menuUpdateHook);
+}
+
+static void errorMessageHook()
+{
+    guiMsgBox(errorMessage, 0, NULL);
+    guiClearErrorMessage();
+}
+
+void guiSetErrorMessageWithCode(int strId, int error)
+{
+    snprintf(errorMessage, sizeof(errorMessage), _l(strId), error);
+    guiSetFrameHook(&errorMessageHook);
+}
+
+void guiSetErrorMessage(int strId)
+{
+    snprintf(errorMessage, sizeof(errorMessage), _l(strId));
+    guiSetFrameHook(&errorMessageHook);
 }

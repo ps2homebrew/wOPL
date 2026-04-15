@@ -18,15 +18,9 @@ IMPORT_BIN2C(bdm_cdvdman_irx);
 
 IMPORT_BIN2C(bdm_mcemu_irx);
 
-#ifdef UDPBD
-IMPORT_BIN2C(bdm_udp_cdvdman_irx);
-#endif
-
 IMPORT_BIN2C(bdmevent_irx);
 
 IMPORT_BIN2C(bdmfs_fatfs_irx);
-
-IMPORT_BIN2C(bt_pademu_irx);
 
 IMPORT_BIN2C(cdvdfsv_irx);
 
@@ -50,13 +44,11 @@ IMPORT_BIN2C(hdd_cdvdman_irx);
 
 IMPORT_BIN2C(hdd_hdpro_cdvdman_irx);
 
-IMPORT_BIN2C(lwnbdsvr_irx);
-
 IMPORT_BIN2C(hdd_mcemu_irx);
 
 IMPORT_BIN2C(hdpro_atad_irx);
 
-IMPORT_BIN2C(httpclient_irx);
+IMPORT_BIN2C(hdd_gamestar_cdvdman_irx);
 
 IMPORT_BIN2C(IEEE1394_bd_irx);
 
@@ -76,9 +68,21 @@ IMPORT_BIN2C(iremsndpatch_irx);
 
 IMPORT_BIN2C(libsd_irx);
 
+IMPORT_BIN2C(lwnbdsvr_irx);
+
 IMPORT_BIN2C(mcman_irx);
 
 IMPORT_BIN2C(mcserv_irx);
+
+IMPORT_BIN2C(mmce_cdvdman_irx);
+
+IMPORT_BIN2C(mmce_mcemu_irx);
+
+IMPORT_BIN2C(mmceman_irx);
+
+IMPORT_BIN2C(mmcedrv_irx);
+
+IMPORT_BIN2C(mmceigr_irx);
 
 IMPORT_BIN2C(nbns_irx);
 
@@ -87,6 +91,8 @@ IMPORT_BIN2C(netman_irx);
 IMPORT_BIN2C(f2techioppatch_irx);
 
 IMPORT_BIN2C(padman_irx);
+
+IMPORT_BIN2C(pademu_irx);
 
 IMPORT_BIN2C(patch_membo_irx);
 
@@ -118,10 +124,6 @@ IMPORT_BIN2C(smap_irx);
 
 IMPORT_BIN2C(smap_ingame_irx);
 
-#ifdef UDPBD
-IMPORT_BIN2C(smap_udpbd_irx);
-#endif
-
 IMPORT_BIN2C(smb_mcemu_irx);
 
 IMPORT_BIN2C(smb_cdvdman_irx);
@@ -129,8 +131,6 @@ IMPORT_BIN2C(smb_cdvdman_irx);
 IMPORT_BIN2C(smbinit_irx);
 
 IMPORT_BIN2C(smbman_irx);
-
-IMPORT_BIN2C(smsutils_irx);
 
 IMPORT_BIN2C(tifinet_irx);
 
@@ -147,8 +147,6 @@ IMPORT_BIN2C(usbd_irx);
 IMPORT_BIN2C(usbmass_bd_irx);
 
 IMPORT_BIN2C(usbmass_bd_single_irx);
-
-IMPORT_BIN2C(usb_pademu_irx);
 
 IMPORT_BIN2C(xhdd_irx);
 

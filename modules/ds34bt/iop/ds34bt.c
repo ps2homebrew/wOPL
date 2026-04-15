@@ -13,10 +13,15 @@
 #include "thsemap.h"
 #include "ds34bt.h"
 
-IRX_ID("ds34bt", 1, 1);
+#define MODNAME "ds34bt"
+IRX_ID(MODNAME, 1, 1);
+#ifdef DEBUG
+#define DPRINTF(format, args...) \
+    printf(MODNAME ": " format, ##args)
+#else
+#define DPRINTF(args...)
+#endif
 
-//#define DPRINTF(x...) printf(x)
-#define DPRINTF(x...)
 
 static int bt_probe(int devId);
 static int bt_connect(int devId);
@@ -42,16 +47,16 @@ static int bt_probe(int devId)
     UsbConfigDescriptor *config = NULL;
     UsbInterfaceDescriptor *intf = NULL;
 
-    DPRINTF("DS34BT: probe: devId=%i\n", devId);
+    DPRINTF("probe: devId=%i\n", devId);
 
     if ((bt_dev.devId > 0) && (bt_dev.status & DS34BT_STATE_USB_AUTHORIZED)) {
-        DPRINTF("DS34BT: Error - only one device allowed !\n");
+        DPRINTF("Error - only one device allowed !\n");
         return 0;
     }
 
     device = (UsbDeviceDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_DEVICE);
     if (device == NULL) {
-        DPRINTF("DS34BT: Error - Couldn't get device descriptor\n");
+        DPRINTF("Error - Couldn't get device descriptor\n");
         return 0;
     }
 
@@ -60,18 +65,18 @@ static int bt_probe(int devId)
 
     config = (UsbConfigDescriptor *)UsbGetDeviceStaticDescriptor(devId, device, USB_DT_CONFIG);
     if (config == NULL) {
-        DPRINTF("DS34BT: Error - Couldn't get configuration descriptor\n");
+        DPRINTF("Error - Couldn't get configuration descriptor\n");
         return 0;
     }
 
     if ((config->bNumInterfaces < 1) || (config->wTotalLength < (sizeof(UsbConfigDescriptor) + sizeof(UsbInterfaceDescriptor)))) {
-        DPRINTF("DS34BT: Error - No interfaces available\n");
+        DPRINTF("Error - No interfaces available\n");
         return 0;
     }
 
     intf = (UsbInterfaceDescriptor *)((char *)config + config->bLength);
 
-    DPRINTF("DS34BT: bInterfaceClass %X bInterfaceSubClass %X bInterfaceProtocol %X\n", intf->bInterfaceClass, intf->bInterfaceSubClass, intf->bInterfaceProtocol);
+    DPRINTF("bInterfaceClass %X bInterfaceSubClass %X bInterfaceProtocol %X\n", intf->bInterfaceClass, intf->bInterfaceSubClass, intf->bInterfaceProtocol);
 
     if ((intf->bInterfaceClass != USB_CLASS_WIRELESS_CONTROLLER) ||
         (intf->bInterfaceSubClass != USB_SUBCLASS_RF_CONTROLLER) ||
@@ -91,10 +96,10 @@ static int bt_connect(int devId)
     UsbInterfaceDescriptor *interface;
     UsbEndpointDescriptor *endpoint;
 
-    DPRINTF("DS34BT: connect: devId=%i\n", devId);
+    DPRINTF("connect: devId=%i\n", devId);
 
     if (bt_dev.devId != -1) {
-        DPRINTF("DS34BT: Error - only one device allowed !\n");
+        DPRINTF("Error - only one device allowed !\n");
         return 1;
     }
 
@@ -116,7 +121,7 @@ static int bt_connect(int devId)
 
     epCount = interface->bNumEndpoints - 1;
 
-    DPRINTF("DS34BT: Endpoint Count %d \n", epCount + 1);
+    DPRINTF("Endpoint Count %d \n", epCount + 1);
 
     endpoint = (UsbEndpointDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_ENDPOINT);
 
@@ -125,15 +130,15 @@ static int bt_connect(int devId)
         if (endpoint->bmAttributes == USB_ENDPOINT_XFER_BULK) {
             if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_OUT && bt_dev.outEndp < 0) {
                 bt_dev.outEndp = UsbOpenEndpointAligned(devId, endpoint);
-                DPRINTF("DS34BT: register Output endpoint id =%i addr=%02X packetSize=%i\n", bt_dev.outEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
+                DPRINTF("register Output endpoint id =%i addr=%02X packetSize=%i\n", bt_dev.outEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
             } else if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN && bt_dev.inEndp < 0) {
                 bt_dev.inEndp = UsbOpenEndpointAligned(devId, endpoint);
-                DPRINTF("DS34BT: register Input endpoint id =%i addr=%02X packetSize=%i\n", bt_dev.inEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
+                DPRINTF("register Input endpoint id =%i addr=%02X packetSize=%i\n", bt_dev.inEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
             }
         } else if (endpoint->bmAttributes == USB_ENDPOINT_XFER_INT) {
             if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN && bt_dev.interruptEndp < 0) {
                 bt_dev.interruptEndp = UsbOpenEndpoint(devId, endpoint);
-                DPRINTF("DS34BT: register Interrupt endpoint id =%i addr=%02X packetSize=%i\n", bt_dev.interruptEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
+                DPRINTF("register Interrupt endpoint id =%i addr=%02X packetSize=%i\n", bt_dev.interruptEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
             }
         }
 
@@ -142,7 +147,7 @@ static int bt_connect(int devId)
     } while (epCount--);
 
     if (bt_dev.interruptEndp < 0 || bt_dev.inEndp < 0 || bt_dev.outEndp < 0) {
-        DPRINTF("DS34BT: Error - connect failed: not enough endpoints! \n");
+        DPRINTF("Error - connect failed: not enough endpoints! \n");
         return -1;
     }
 
@@ -156,7 +161,7 @@ static int bt_connect(int devId)
 
 static int bt_disconnect(int devId)
 {
-    DPRINTF("DS34BT: disconnect: devId=%i\n", devId);
+    DPRINTF("disconnect: devId=%i\n", devId);
 
     if (bt_dev.status & DS34BT_STATE_USB_AUTHORIZED) {
 
@@ -528,7 +533,7 @@ static int hci_link_key_request_reply(u8 *bdaddr)
     hci_cmd_buf[7] = *(bdaddr + 4);
     hci_cmd_buf[8] = *(bdaddr + 5);
 
-    mips_memcpy(&hci_cmd_buf[9], link_key, sizeof(link_key));
+    memcpy(&hci_cmd_buf[9], link_key, sizeof(link_key));
 
     return HCI_Command(9 + sizeof(link_key), hci_cmd_buf);
 }
@@ -555,7 +560,7 @@ static void HCI_event_task(int result)
                     }
                 } else if ((hci_buf[3] == HCI_OCF_READ_BDADDR) && (hci_buf[4] == HCI_OGF_INFO_PARAM)) {
                     if (hci_buf[5] == 0) {
-                        mips_memcpy(bt_bdaddr, &hci_buf[6], 6);
+                        memcpy(bt_bdaddr, &hci_buf[6], 6);
                         hci_read_local_version_information();
                     } else {
                         DelayThread(500);
@@ -563,7 +568,7 @@ static void HCI_event_task(int result)
                     }
                 } else if ((hci_buf[3] == HCI_OCF_READ_VERSION) && (hci_buf[4] == HCI_OGF_INFO_PARAM)) {
                     if (hci_buf[5] == 0) {
-                        mips_memcpy(&bt_version, &hci_buf[6], sizeof(hci_information_t));
+                        memcpy(&bt_version, &hci_buf[6], sizeof(hci_information_t));
                         hci_read_local_supported_features();
                     } else {
                         DelayThread(500);
@@ -571,7 +576,7 @@ static void HCI_event_task(int result)
                     }
                 } else if ((hci_buf[3] == HCI_OCF_READ_FEATURES) && (hci_buf[4] == HCI_OGF_INFO_PARAM)) {
                     if (hci_buf[5] == 0) {
-                        mips_memcpy(bt_features, &hci_buf[6], sizeof(bt_features));
+                        memcpy(bt_features, &hci_buf[6], sizeof(bt_features));
                         hci_write_scan_enable(SCAN_ENABLE_NOINQ_ENPAG);
                     } else {
                         DelayThread(500);
@@ -723,7 +728,7 @@ static void HCI_event_task(int result)
                     break;
                 }
                 pad = i;
-                mips_memcpy(ds34pad[pad].bdaddr, hci_buf + 2, 6);
+                memcpy(ds34pad[pad].bdaddr, hci_buf + 2, 6);
                 ds34pad[pad].isfake = 0;
                 if (!disable_fake) {
                     ds34pad[pad].isfake = 1;                            // fake ds3
@@ -799,14 +804,14 @@ static void ds34pad_clear(int pad)
     ds34pad[pad].hci_handle = 0x0FFF;
     ds34pad[pad].control_scid = 0;
     ds34pad[pad].interrupt_scid = 0;
-    mips_memset(ds34pad[pad].bdaddr, 0, 6);
+    memset(ds34pad[pad].bdaddr, 0, 6);
     ds34pad[pad].status = bt_dev.status;
     ds34pad[pad].isfake = 0;
     ds34pad[pad].type = 0;
     ds34pad[pad].data[0] = 0xFF;
     ds34pad[pad].data[1] = 0xFF;
-    mips_memset(&ds34pad[pad].data[2], 0x7F, 4);
-    mips_memset(&ds34pad[pad].data[6], 0x00, 12);
+    memset(&ds34pad[pad].data[2], 0x7F, 4);
+    memset(&ds34pad[pad].data[6], 0x00, 12);
 }
 
 static void ds34pad_init()
@@ -844,7 +849,7 @@ static int L2CAP_Command(u16 handle, u8 *data, u8 length)
     l2cap_cmd_buf[6] = 0x01; // L2CAP header: Channel ID
     l2cap_cmd_buf[7] = 0x00; // L2CAP Signalling channel over ACL-U logical link
 
-    mips_memcpy(&l2cap_cmd_buf[8], data, length);
+    memcpy(&l2cap_cmd_buf[8], data, length);
 
     // output on endpoint 2
     return UsbBulkTransfer(bt_dev.outEndp, l2cap_cmd_buf, (8 + length), NULL, NULL);
@@ -1176,7 +1181,7 @@ static int HID_command(u16 handle, u16 scid, u8 *data, u8 length, int pad)
     l2cap_cmd_buf[6] = (u8)(scid & 0xff); // L2CAP header: Channel ID
     l2cap_cmd_buf[7] = (u8)(scid >> 8);
 
-    mips_memcpy(&l2cap_cmd_buf[8], data, length);
+    memcpy(&l2cap_cmd_buf[8], data, length);
 
     // output on endpoint 2
     return UsbBulkTransfer(bt_dev.outEndp, l2cap_cmd_buf, (8 + length), NULL, NULL);
@@ -1216,7 +1221,7 @@ static int hid_LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
 
         led_buf[1] = PS3_01_REPORT_ID; // Report ID
 
-        mips_memcpy(&led_buf[2], output_01_report, sizeof(output_01_report)); // PS3_01_REPORT_LEN);
+        memcpy(&led_buf[2], output_01_report, sizeof(output_01_report)); // PS3_01_REPORT_LEN);
 
         if (ds34pad[pad].isfake) {
             if (rrum < 5)
@@ -1240,7 +1245,7 @@ static int hid_LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
 
         size += sizeof(output_01_report);
     } else if (ds34pad[pad].type == DS4) {
-        mips_memset(led_buf, 0, PS3_01_REPORT_LEN + 2);
+        memset(led_buf, 0, PS3_01_REPORT_LEN + 2);
 
         led_buf[0] = HID_THDR_SET_REPORT_OUTPUT; // THdr
         led_buf[1] = PS4_11_REPORT_ID;           // Report ID
@@ -1487,7 +1492,7 @@ int ds34bt_get_bdaddr(u8 *data)
     if (!(bt_dev.status & DS34BT_STATE_USB_CONFIGURED))
         return 0;
 
-    mips_memcpy(data, bt_bdaddr, 6);
+    memcpy(data, bt_bdaddr, 6);
 
     return 1;
 }
@@ -1501,7 +1506,7 @@ int ds34bt_get_ver(u8 *data)
     bt_version.pid = bt_dev.pid;
     bt_version.rev = bt_dev.rev;
 
-    mips_memcpy(data, &bt_version, sizeof(hci_information_t));
+    memcpy(data, &bt_version, sizeof(hci_information_t));
 
     return 1;
 }
@@ -1511,7 +1516,7 @@ int ds34bt_get_feat(u8 *data)
     if (!(bt_dev.status & DS34BT_STATE_USB_CONFIGURED))
         return 0;
 
-    mips_memcpy(data, bt_features, sizeof(bt_features));
+    memcpy(data, bt_features, sizeof(bt_features));
 
     return 1;
 }
@@ -1526,7 +1531,7 @@ void ds34bt_get_data(char *dst, int size, int port)
 
     WaitSema(bt_dev.hid_sema);
 
-    mips_memcpy(dst, ds34pad[port].data, size);
+    memcpy(dst, ds34pad[port].data, size);
 
     SignalSema(bt_dev.hid_sema);
 }
@@ -1595,7 +1600,7 @@ void ds34bt_init_charging()
     if (!chrg_inited) {
         ret = UsbRegisterDriver(&chrg_driver);
         if (ret != USB_RC_OK) {
-            DPRINTF("DS34BT: Error registering charging 0x%02X \n", ret);
+            DPRINTF("Error registering charging 0x%02X \n", ret);
             chrg_inited = 0;
         } else {
             chrg_inited = 1;
@@ -1689,14 +1694,14 @@ int _start(int argc, char *argv[])
     bt_dev.hid_sema = CreateMutex(IOP_MUTEX_UNLOCKED);
 
     if (bt_dev.hid_sema < 0) {
-        DPRINTF("DS34BT: Failed to allocate I/O semaphore.\n");
+        DPRINTF("Failed to allocate I/O semaphore.\n");
         return MODULE_NO_RESIDENT_END;
     }
 
     ret = UsbRegisterDriver(&bt_driver);
 
     if (ret != USB_RC_OK) {
-        DPRINTF("DS34BT: Error registering BT devices 0x%02X \n", ret);
+        DPRINTF("Error registering BT devices 0x%02X \n", ret);
         return MODULE_NO_RESIDENT_END;
     }
 

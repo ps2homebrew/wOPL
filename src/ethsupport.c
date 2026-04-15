@@ -1,4 +1,5 @@
-#include "include/opl.h"
+
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
@@ -10,14 +11,36 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
+#include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include <stdio.h>
+#include <ps2smb.h>
+#include <ps2ips.h>
+#include <netman.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <kernel.h>
+#include <errno.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioDevctl(ethBase, SMB_***)
 
 #include "include/nbns.h"
-#include "httpclient.h"
+
+#define ETH_MODE_UPDATE_DELAY 300
+
+#include "include/mcemu.h"
+typedef struct
+{
+    int active;       /* Activation flag */
+    char fname[64];   /* File name (memorycard?.bin) */
+    u16 fid;          /* SMB File ID */
+    int flags;        /* Card flag */
+    vmc_spec_t specs; /* Card specifications */
+} smb_vmc_infos_t;
 
 static char ethPrefix[40]; // Contains the full path to the folder where all the games are.
 static char *ethBase;
@@ -42,6 +65,24 @@ static int ethApplyIPConfig(void);
 static int ethReadNetConfig(void);
 
 static int ethInitSemaID = -1;
+
+int ps2_ip_use_dhcp;
+int ps2_ip[4];
+int ps2_netmask[4];
+int ps2_gateway[4];
+int ps2_dns[4];
+int gETHOpMode; // See ETH_OP_MODES.
+int gPCShareAddressIsNetBIOS;
+int pc_ip[4];
+int gPCPort;
+char gPCShareNBAddress[17];
+char gPCShareName[32];
+char gPCUserName[32];
+char gPCPassword[32];
+int gNetworkStartup;
+int smbCacheSize;
+char gETHPrefix[32];
+int gETHStartMode;
 
 // Initializes locking semaphore for network support (not for just SMB support, but for the network subsystem).
 static int ethInitSema(void)
@@ -282,8 +323,6 @@ static int ethLoadModules(void)
         LOG("[NETMAN]:\n");
         if (sysLoadModuleBuffer(&netman_irx, size_netman_irx, 0, NULL) >= 0) {
             NetManInit();
-            LOG("[SMSUTILS]:\n");
-            sysLoadModuleBuffer(&smsutils_irx, size_smsutils_irx, 0, NULL);
             LOG("[SMAP]:\n");
             if (sysLoadModuleBuffer(&smap_irx, size_smap_irx, 0, NULL) >= 0) {
                 // Before the network stack is loaded, attempt to set the link settings in order to avoid needing double-initialization of the IF.
@@ -293,10 +332,7 @@ static int ethLoadModules(void)
                 if (sysLoadModuleBuffer(&ps2ip_irx, size_ps2ip_irx, 0, NULL) >= 0) {
                     LOG("[PS2IPS]:\n");
                     sysLoadModuleBuffer(&ps2ips_irx, size_ps2ips_irx, 0, NULL);
-                    LOG("[HTTPCLIENT]:\n");
-                    sysLoadModuleBuffer(&httpclient_irx, size_httpclient_irx, 0, NULL);
                     ps2ip_init();
-                    HttpInit();
 
                     LOG("ETHSUPPORT Modules loaded\n");
                     return 0;
@@ -317,7 +353,6 @@ void ethDeinitModules(void)
         if (ethInitSemaID >= 0)
             WaitSema(ethInitSemaID);
 
-        HttpDeinit();
         nbnsDeinit();
         NetManDeinit();
         ethModulesLoaded = 0;
@@ -358,33 +393,33 @@ void ethDisplayErrorStatus(void)
         case 0: // No error
             break;
         case ERROR_ETH_MODULE_NETIF_FAILURE:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_NETIF, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_NETIF, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_CONN:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_CONN, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_CONN, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LOGON:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_LOGON, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_LOGON, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_OPENSHARE:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_SHARE, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR_SHARE, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LISTSHARES:
-            setErrorMessageWithCode(_STR_NETWORK_SHARE_LIST_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_SHARE_LIST_ERROR, gNetworkStartup);
             break;
         case ERROR_ETH_SMB_LISTGAMES:
-            setErrorMessageWithCode(_STR_NETWORK_GAMES_LIST_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_GAMES_LIST_ERROR, gNetworkStartup);
             break;
         case ERROR_ETH_LINK_FAIL:
             LOG("ETH: Unable to get valid link status.\n");
-            setErrorMessageWithCode(_STR_NETWORK_ERROR_LINK_FAIL, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_ERROR_LINK_FAIL, gNetworkStartup);
             break;
         case ERROR_ETH_DHCP_FAIL:
             LOG("ETH: Unable to get valid IP address via DHCP.\n");
-            setErrorMessageWithCode(_STR_NETWORK_ERROR_DHCP_FAIL, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_ERROR_DHCP_FAIL, gNetworkStartup);
             break;
         default:
-            setErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR, gNetworkStartup);
+            guiSetErrorMessageWithCode(_STR_NETWORK_STARTUP_ERROR, gNetworkStartup);
     }
 }
 
@@ -415,7 +450,7 @@ static void smbLoadModules(void)
     ethDisplayErrorStatus();
 }
 
-void ethInit(item_list_t *itemList)
+static void ethInit(item_list_t *itemList)
 {
     if (ethInitSema() < 0)
         return;
@@ -476,6 +511,11 @@ static int ethNeedsUpdate(item_list_t *itemList)
         if (ethModifiedDVDPrev != st.st_mtime) {
             ethModifiedDVDPrev = st.st_mtime;
             result = 1;
+        }
+
+        if (gEnableArchivedArt) {
+            sprintf(path, "%sART/art.tar", ethPrefix);
+            loadTarFile(path);
         }
 
         if (!sbIsSameSize(ethPrefix, ethULSizePrev))
@@ -575,7 +615,9 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
 {
     int i, compatmask;
     int EnablePS2Logo = 0;
+#ifdef CHEAT
     int result;
+#endif
     char filename[32], partname[256];
     base_game_info_t *game = &ethGames[id];
     struct cdvdman_settings_smb *settings;
@@ -633,11 +675,11 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     compatmask = sbPrepare(game, configSet, size_smb_cdvdman_irx, smb_cdvdman_irx, &i);
-
+#ifdef CHEAT
     if ((result = sbLoadCheats(ethPrefix, game->startup)) < 0) {
         switch (result) {
             case -ENOENT:
@@ -647,7 +689,7 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
                 guiWarning(_l(_STR_ERR_CHEATS_LOAD_FAILED), 10);
         }
     }
-
+#endif
     settings = (struct cdvdman_settings_smb *)((u8 *)(&smb_cdvdman_irx) + i);
 
     switch (game->format) {
@@ -723,11 +765,13 @@ static config_set_t *ethGetConfig(item_list_t *itemList, int id)
 static int ethGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
-    if (isRelative)
+    if (gEnableArchivedArt)
+        snprintf(path, sizeof(path), "%s_%s", value, suffix);
+    else if (isRelative)
         snprintf(path, sizeof(path), "%s%s\\%s_%s", ethPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1);
+    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
 }
 
 static int ethGetTextId(item_list_t *itemList)
@@ -737,7 +781,7 @@ static int ethGetTextId(item_list_t *itemList)
 
 static int ethGetIconId(item_list_t *itemList)
 {
-    return ETH_ICON;
+    return CATEGORY_NET_SMB_ICON;
 }
 
 // This may be called, even if ethInit() was not.

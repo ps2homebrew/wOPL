@@ -4,20 +4,24 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/opl.h"
-#include "include/menusys.h"
 #include "include/iosupport.h"
+#include "include/lang.h"
+#include "include/lwnbd.h"
+#include "include/menusys.h"
+#include "include/common.h"
+#include "include/pad.h"
 #include "include/renderman.h"
 #include "include/fntsys.h"
-#include "include/lang.h"
-#include "include/themes.h"
-#include "include/pad.h"
 #include "include/gui.h"
 #include "include/guigame.h"
-#include "include/system.h"
 #include "include/ioman.h"
 #include "include/sound.h"
+#include "include/system.h"
+#include "include/themes.h"
 #include <assert.h>
+
+#include <kernel.h>
+#include <errno.h>
 
 enum MENU_IDs {
     MENU_SETTINGS = 0,
@@ -27,8 +31,8 @@ enum MENU_IDs {
     MENU_OSD_LANGUAGE_SETTINGS,
     MENU_PARENTAL_LOCK,
     MENU_NET_CONFIG,
-    MENU_NET_UPDATE,
     MENU_START_NBD,
+    MENU_MMCE_SETTINGS,
     MENU_ABOUT,
     MENU_SAVE_CHANGES,
     MENU_EXIT,
@@ -78,6 +82,15 @@ static submenu_list_t *appMenuCurrent;
 static s32 menuSemaId;
 static s32 menuListSemaId = -1;
 static ee_sema_t menuSema;
+
+int RemainSecs, DisableCron;
+int gSelectButton;
+
+extern unsigned char shouldAppsUpdate;
+extern unsigned int frameCounter;
+
+
+#define MENU_GENERAL_UPDATE_DELAY 60
 
 static void menuRenameGame(submenu_list_t **submenu)
 {
@@ -177,7 +190,7 @@ static void _menuSaveConfig()
     SignalSema(menuSemaId);
 
     if (!result)
-        setErrorMessage(_STR_ERROR_SAVING_SETTINGS);
+        guiSetErrorMessage(_STR_ERROR_SAVING_SETTINGS);
 }
 
 static void _menuRequestConfig()
@@ -235,7 +248,7 @@ static void menuInitMainMenu(void)
     submenuAppendItem(&mainMenu, -1, NULL, MENU_OSD_LANGUAGE_SETTINGS, _STR_OSD_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG, NULL);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_UPDATE, _STR_NET_UPDATE, NULL);
+    submenuAppendItem(&mainMenu, -1, NULL, MENU_MMCE_SETTINGS, _STR_MMCE_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES, NULL);
@@ -257,8 +270,12 @@ void menuInitGameMenu(void)
 
     // initialize the menu
     submenuAppendItem(&gameMenu, -1, NULL, GAME_COMPAT_SETTINGS, _STR_COMPAT_SETTINGS, NULL);
+#ifdef CHEAT
     submenuAppendItem(&gameMenu, -1, NULL, GAME_CHEAT_SETTINGS, _STR_CHEAT_SETTINGS, NULL);
+#endif
+#ifdef GSM
     submenuAppendItem(&gameMenu, -1, NULL, GAME_GSM_SETTINGS, _STR_GSCONFIG, NULL);
+#endif
     submenuAppendItem(&gameMenu, -1, NULL, GAME_VMC_SETTINGS, _STR_VMC_SCREEN, NULL);
 #ifdef PADEMU
     submenuAppendItem(&gameMenu, -1, NULL, GAME_PADEMU_SETTINGS, _STR_PADEMUCONFIG, NULL);
@@ -823,7 +840,7 @@ void menuSetSelectedItem(menu_item_t *item)
 
 void menuRenderMenu()
 {
-    if (guiDrawBGSettings() == 0)
+    if (guiDrawBGMain() == 0)
         guiDrawBGPlasma();
 
     if (!mainMenu)
@@ -885,11 +902,11 @@ int menuCheckParentalLock(void)
                 if (strncmp(parentalLockPassword, password, CONFIG_KEY_VALUE_LEN) == 0) {
                     result = 0;
                     parentalLockCheckEnabled = 0; // Stop asking for the password.
-                } else if (strncmp(OPL_PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) == 0) {
+                } else if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) == 0) {
                     guiMsgBox(_l(_STR_PARENLOCK_DISABLE_WARNING), 0, NULL);
 
                     configRemoveKey(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD);
-                    saveConfig(CONFIG_OPL, 1);
+                    configSave(CONFIG_OPL, 1);
 
                     result = 0;
                     parentalLockCheckEnabled = 0; // Stop asking for the password.
@@ -957,12 +974,12 @@ void menuHandleInputMenu()
         } else if (id == MENU_NET_CONFIG) {
             if (menuCheckParentalLock() == 0)
                 guiShowNetConfig();
-        } else if (id == MENU_NET_UPDATE) {
-            if (menuCheckParentalLock() == 0)
-                guiShowNetCompatUpdate();
         } else if (id == MENU_START_NBD) {
             if (menuCheckParentalLock() == 0)
                 handleLwnbdSrv();
+        } else if (id == MENU_MMCE_SETTINGS) {
+            if (menuCheckParentalLock() == 0)
+                guiShowMMCEConfig();
         } else if (id == MENU_ABOUT) {
             guiShowAbout();
         } else if (id == MENU_SAVE_CHANGES) {
@@ -972,7 +989,7 @@ void menuHandleInputMenu()
                 guiGameSavePadEmuGlobalConfig(configGetByType(CONFIG_GAME));
                 guiGameSavePadMacroGlobalConfig(configGetByType(CONFIG_GAME));
 #endif
-                saveConfig(CONFIG_OPL | CONFIG_NETWORK | CONFIG_GAME, 1);
+                configSave(CONFIG_OPL | CONFIG_NETWORK | CONFIG_GAME, 1);
                 menuSetParentalLockCheckState(1); // Re-enable parental lock check.
             }
         } else if (id == MENU_EXIT) {
@@ -989,7 +1006,7 @@ void menuHandleInputMenu()
 
     if (getKeyOn(KEY_START) || getKeyOn(gSelectButton == KEY_CIRCLE ? KEY_CROSS : KEY_CIRCLE)) {
         // Check if there is anything to show the user, at all.
-        if (gAPPStartMode || gETHStartMode || gBDMStartMode || gHDDStartMode || gFAVStartMode) {
+        if (gAPPStartMode || gETHStartMode || gBDMStartMode || gHDDStartMode || gFAVStartMode || gMMCEStartMode) {
             guiSwitchScreen(GUI_SCREEN_MAIN);
             refreshMenuPosition();
         }
@@ -1130,7 +1147,7 @@ void menuHandleInputInfo()
 
 void menuRenderGameMenu()
 {
-    if (guiDrawBGSettings() == 0)
+    if (guiDrawBGMain() == 0)
         guiDrawBGPlasma();
 
     if (!gameMenu)
@@ -1220,11 +1237,18 @@ void menuHandleInputGameMenu()
 
         if (menuID == GAME_COMPAT_SETTINGS) {
             guiGameShowCompatConfig(selected_item->item->current->item.id, selected_item->item->userdata, itemConfig);
-        } else if (menuID == GAME_CHEAT_SETTINGS) {
+        }
+#ifdef CHEAT // TODO: Organize this
+        else if (menuID == GAME_CHEAT_SETTINGS) {
             guiGameShowCheatConfig();
-        } else if (menuID == GAME_GSM_SETTINGS) {
+        }
+#endif
+#ifdef GSM
+        else if (menuID == GAME_GSM_SETTINGS) {
             guiGameShowGSConfig();
-        } else if (menuID == GAME_VMC_SETTINGS) {
+        }
+#endif
+        else if (menuID == GAME_VMC_SETTINGS) {
             guiGameShowVMCMenu(selected_item->item->current->item.id, selected_item->item->userdata);
 #ifdef PADEMU
         } else if (menuID == GAME_PADEMU_SETTINGS) {
@@ -1238,7 +1262,7 @@ void menuHandleInputGameMenu()
             if (guiGameSaveConfig(itemConfig, selected_item->item->userdata))
                 configSetInt(itemConfig, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_USER);
             menuSaveConfig();
-            saveConfig(CONFIG_GAME, 0);
+            configSave(CONFIG_GAME, 0);
             guiMsgBox(_l(_STR_GAME_SETTINGS_SAVED), 0, NULL);
             guiGameLoadConfig(selected_item->item->userdata, gameMenuLoadConfig(NULL));
         } else if (menuID == GAME_TEST_CHANGES) {
@@ -1263,7 +1287,7 @@ void menuHandleInputGameMenu()
 
 void menuRenderAppMenu()
 {
-    if (guiDrawBGSettings() == 0)
+    if (guiDrawBGMain() == 0)
         guiDrawBGPlasma();
 
     if (!appMenu)
@@ -1342,5 +1366,116 @@ void menuHandleInputAppMenu()
 
     if (getKeyOn(KEY_START) || getKeyOn(gSelectButton == KEY_CIRCLE ? KEY_CROSS : KEY_CIRCLE)) {
         guiSwitchScreen(GUI_SCREEN_MAIN);
+    }
+}
+
+void menuUpdateHook()
+{
+    int i;
+
+    // if timer exceeds some threshold, schedule updates of the available input sources
+    frameCounter++;
+
+    // schedule updates of all the list handlers
+    if (gAutoRefresh) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            if ((list_support[i].support && list_support[i].support->enabled) && ((list_support[i].support->updateDelay > 0) && (frameCounter % list_support[i].support->updateDelay == 0)))
+                ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[i].support->mode);
+        }
+    }
+
+    // Schedule updates of all list handlers that are to run every frame, regardless of whether auto refresh is active or not.
+    if (frameCounter % MENU_GENERAL_UPDATE_DELAY == 0) {
+        for (i = 0; i < MODE_COUNT; i++) {
+            if ((list_support[i].support && list_support[i].support->enabled) && (list_support[i].support->updateDelay == 0))
+                ioPutRequest(IO_MENU_UPDATE_DEFFERED, &list_support[i].support->mode);
+        }
+    }
+}
+
+void menuClearGameList(opl_io_module_t *mdl)
+{
+    if (mdl->subMenu != NULL) {
+        // lock - gui has to be unused here
+        guiLock();
+
+        submenuDestroy(&mdl->subMenu);
+        mdl->menuItem.submenu = NULL;
+        mdl->menuItem.current = NULL;
+        mdl->menuItem.pagestart = NULL;
+        mdl->menuItem.remindLast = 0;
+
+        // unlock
+        guiUnlock();
+    }
+}
+
+static void updateMenuFromGameList(opl_io_module_t *mdl)
+{
+    guiExecDeferredOps();
+    menuClearGameList(mdl);
+
+    const char *temp = NULL;
+    if (gRememberLastPlayed)
+        configGetStr(configGetByType(CONFIG_LAST), "last_played", &temp);
+
+    // refresh device icon and text (for bdm)
+    mdl->menuItem.icon_id = mdl->support->itemIconId(mdl->support);
+    mdl->menuItem.text_id = mdl->support->itemTextId(mdl->support);
+
+    // read the new game list
+    struct gui_update_t *gup = NULL;
+    int count = mdl->support->itemUpdate(mdl->support);
+    if (count > 0) {
+        int i;
+
+        for (i = 0; i < count; ++i) {
+
+            gup = guiOpCreate(GUI_OP_APPEND_MENU);
+
+            gup->menu.menu = &mdl->menuItem;
+            gup->menu.subMenu = &mdl->subMenu;
+
+            gup->submenu.icon_id = -1;
+            gup->submenu.id = i;
+            gup->submenu.text = mdl->support->itemGetName(mdl->support, i);
+            gup->submenu.text_id = -1;
+            gup->submenu.selected = 0;
+            gup->submenu.owner = (void *)mdl->support;
+
+            if (gRememberLastPlayed && temp && strcmp(temp, mdl->support->itemGetStartup(mdl->support, i)) == 0) {
+                gup->submenu.selected = 1; // Select Last Played Game
+            }
+
+            guiDeferUpdate(gup);
+        }
+    }
+
+    if (gAutosort) {
+        gup = guiOpCreate(GUI_OP_SORT);
+        gup->menu.menu = &mdl->menuItem;
+        gup->menu.subMenu = &mdl->subMenu;
+        guiDeferUpdate(gup);
+    }
+}
+
+void menuDeferredUpdate(void *data)
+{
+    short int *mode = data;
+
+    opl_io_module_t *mod = &list_support[*mode];
+    if (!mod->support)
+        return;
+
+    // see if we have to update
+    if (mod->support->itemNeedsUpdate(mod->support)) {
+        updateMenuFromGameList(mod);
+
+        // If other modes have been updated, then the apps list should be updated too.
+        if (mod->support->mode != APP_MODE)
+            shouldAppsUpdate = 1;
+
+        if (mod->support->mode != FAV_MODE)
+            loadFavourites();
     }
 }

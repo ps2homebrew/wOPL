@@ -4,7 +4,6 @@
   Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#include "include/opl.h"
 #include "include/ethsupport.h"
 #include "include/system.h"
 #include "include/ioman.h"
@@ -33,12 +32,10 @@ int debugSetActive(void)
     if (ret < 0)
         return -9;
 #elif defined(TTY_UDP)
-#ifndef UDPBD
     LOG("[UDPTTY]:\n");
     ret = sysLoadModuleBuffer(&udptty_irx, size_udptty_irx, 0, NULL);
     if (ret < 0)
         return -8;
-#endif
     LOG("[IOPTRAP]:\n");
     ret = sysLoadModuleBuffer(&ioptrap_irx, size_ioptrap_irx, 0, NULL);
     if (ret < 0)

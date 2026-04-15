@@ -79,8 +79,6 @@ gui_strings:
   string: The system will be powered off.
 - label: CONFIRMATION_EXIT
   string: Exit to Browser?
-- label: CONFIRMATION_CANCEL_UPDATE
-  string: Cancel updating?
 - label: HDD_NOT_CONNECTED_ERROR
   string: '%d: HardDisk Drive not detected.'
 - label: HDD_NOT_FORMATTED_ERROR
@@ -150,6 +148,12 @@ gui_strings:
   string: No controller detected, waiting...
 - label: COVERART
   string: Cover Art
+- label: ARCHIVEDART
+  string: Archived Art
+- label: DISCART
+  string: Enable Disc Art
+- label: HINT_DISCART
+  string: To apply this you will need to restart wOPL
 - label: WIDE_SCREEN
   string: Widescreen
 - label: POWEROFF
@@ -414,26 +418,6 @@ gui_strings:
   string: 'Error: failed to load cheat file.'
 - label: NO_CHEATS_FOUND
   string: No cheats found.
-- label: DL_DEFAULTS
-  string: Download Defaults
-- label: NET_UPDATE
-  string: Network Update
-- label: NET_UPDATE_ALL
-  string: Overwrite Existing Records
-- label: NET_UPDATE_FAILED
-  string: Update failed.
-- label: NET_UPDATE_CONN_FAILED
-  string: Failed to connect to update server.
-- label: NET_UPDATE_DONE
-  string: Update completed.
-- label: NET_UPDATE_CANCELLED
-  string: Update cancelled.
-- label: CONFIRMATION_SETTINGS_UPDATE
-  string: Download settings from the network?
-- label: CUSTOMIZED_SETTINGS
-  string: Customized Settings
-- label: DOWNLOADED_DEFAULTS
-  string: Downloaded Defaults
 - label: AUTO_START_IN_N_SECS
   string: Auto start in %i s...
 - label: AUTOSTARTLAST
@@ -452,14 +436,6 @@ gui_strings:
   string: Pad Emulator
 - label: HINT_PADEMU_ENABLE
   string: Turns on/off Pad Emulator for selected game.
-- label: PADEMU_MODE
-  string: Pad Emulator Mode
-- label: HINT_PADEMU_MODE
-  string: Select Pad Emulator mode.
-- label: DS34USB_MODE
-  string: DualShock3/4 USB
-- label: DS34BT_MODE
-  string: DualShock3/4 BT
 - label: PADPORT
   string: 'Settings For Port:'
 - label: HINT_PAD_PORT
@@ -710,5 +686,33 @@ gui_strings:
   string: Patch IOP Buffer Overrun
 - label: DISABLE_ALL
   string: Disable All
-- label: UDPBD_GAMES
-  string: UDPBD Games
+- label: MMCE
+  string: MMCE
+- label: MMCE_GAMES
+  string: MMCE Games
+- label: MMCEMODE
+  string: MMCE Start Mode
+- label: MMCE_PREFIX
+  string: MMCE Prefix Path
+- label: MMCE_SLOT
+  string: MMCE Slot
+- label: MMCEIGR_SLOT
+  string: IGR Bootcard Slot(s)
+- label: HINT_MMCEIGR_SLOT
+  string: Switch to bootcard cmd will be sent to the selected slot(s) on IGR
+- label: MMCE_ADVANCED
+  string: Advanced
+- label: MMCE_SETTINGS
+  string: MMCE Settings
+- label: MMCE_SEMA
+  string: Lock Sema Enqueuing Method
+- label: HINT_MMCE_SEMA
+  string: THFIFO may help with compatibility but worsen performance
+- label: MMCE_WAIT_CYCLES
+  string: Wait cycles after /ACK low
+- label: HINT_MMCE_WAIT_CYCLES
+  string: Lower values may improve performance but result in instabilities
+- label: MMCE_USE_ALARMS
+  string: Use timeout alarms
+- label: HINT_MMCE_USE_ALARMS
+  string: OFF may help performance but can cause MMCE timeouts to result in freezes

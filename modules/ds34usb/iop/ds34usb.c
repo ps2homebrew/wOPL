@@ -9,10 +9,15 @@
 #include "thsemap.h"
 #include "ds34usb.h"
 
-IRX_ID("ds34usb", 1, 1);
+#define MODNAME "ds34usb"
+IRX_ID(MODNAME, 1, 1);
 
-//#define DPRINTF(x...) printf(x)
-#define DPRINTF(x...)
+#ifdef DEBUG
+#define DPRINTF(format, args...) \
+    printf(MODNAME ": " format, ##args)
+#else
+#define DPRINTF(args...)
+#endif
 
 #define REQ_USB_OUT (USB_DIR_OUT | USB_TYPE_CLASS | USB_RECIP_INTERFACE)
 #define REQ_USB_IN  (USB_DIR_IN | USB_TYPE_CLASS | USB_RECIP_INTERFACE)
@@ -81,15 +86,15 @@ int usb_probe(int devId)
 {
     UsbDeviceDescriptor *device = NULL;
 
-    DPRINTF("DS34USB: probe: devId=%i\n", devId);
+    DPRINTF("probe: devId=%i\n", devId);
 
     device = (UsbDeviceDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_DEVICE);
     if (device == NULL) {
-        DPRINTF("DS34USB: Error - Couldn't get device descriptor\n");
+        DPRINTF("Error - Couldn't get device descriptor\n");
         return 0;
     }
 
-    if (device->idVendor == DS34_VID && (device->idProduct == DS3_PID || device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM))
+    if (device->idVendor == DS34_VID && (device->idProduct == DS3_PID || device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM || device->idProduct == DS5_PID))
         return 1;
 
     return 0;
@@ -103,7 +108,7 @@ int usb_connect(int devId)
     UsbInterfaceDescriptor *interface;
     UsbEndpointDescriptor *endpoint;
 
-    DPRINTF("DS34USB: connect: devId=%i\n", devId);
+    DPRINTF("connect: devId=%i\n", devId);
 
     for (pad = 0; pad < MAX_PADS; pad++) {
         if (ds34pad[pad].devId == -1 && ds34pad[pad].enabled)
@@ -111,7 +116,7 @@ int usb_connect(int devId)
     }
 
     if (pad >= MAX_PADS) {
-        DPRINTF("DS34USB: Error - only %d device allowed !\n", MAX_PADS);
+        DPRINTF("Error - only %d device allowed !\n", MAX_PADS);
         return 1;
     }
 
@@ -130,9 +135,12 @@ int usb_connect(int devId)
     if (device->idProduct == DS3_PID) {
         ds34pad[pad].type = DS3;
         epCount = interface->bNumEndpoints - 1;
-    } else {
+    } else if (device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM) {
         ds34pad[pad].type = DS4;
         epCount = 20; // ds4 v2 returns interface->bNumEndpoints as 0
+    } else if (device->idProduct == DS5_PID) {
+        ds34pad[pad].type = DS5;
+        epCount = 20;
     }
 
     endpoint = (UsbEndpointDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_ENDPOINT);
@@ -141,11 +149,11 @@ int usb_connect(int devId)
         if (endpoint->bmAttributes == USB_ENDPOINT_XFER_INT) {
             if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN && ds34pad[pad].interruptEndp < 0) {
                 ds34pad[pad].interruptEndp = UsbOpenEndpointAligned(devId, endpoint);
-                DPRINTF("DS34USB: register Event endpoint id =%i addr=%02X packetSize=%i\n", ds34pad[pad].interruptEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
+                DPRINTF("register Event endpoint id =%i addr=%02X packetSize=%i\n", ds34pad[pad].interruptEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
             }
             if ((endpoint->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_OUT && ds34pad[pad].outEndp < 0) {
                 ds34pad[pad].outEndp = UsbOpenEndpointAligned(devId, endpoint);
-                DPRINTF("DS34USB: register Output endpoint id =%i addr=%02X packetSize=%i\n", ds34pad[pad].outEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
+                DPRINTF("register Output endpoint id =%i addr=%02X packetSize=%i\n", ds34pad[pad].outEndp, endpoint->bEndpointAddress, (unsigned short int)endpoint->wMaxPacketSizeHB << 8 | endpoint->wMaxPacketSizeLB);
             }
         }
 
@@ -170,7 +178,7 @@ int usb_disconnect(int devId)
 {
     u8 pad;
 
-    DPRINTF("DS34USB: disconnect: devId=%i\n", devId);
+    DPRINTF("disconnect: devId=%i\n", devId);
 
     for (pad = 0; pad < MAX_PADS; pad++) {
         if (ds34pad[pad].devId == devId)
@@ -208,7 +216,7 @@ static void usb_data_cb(int resultCode, int bytes, void *arg)
 {
     int pad = (int)arg;
 
-    // DPRINTF("DS34USB: usb_data_cb: res %d, bytes %d, arg %p \n", resultCode, bytes, arg);
+    // DPRINTF("usb_data_cb: res %d, bytes %d, arg %p \n", resultCode, bytes, arg);
 
     usb_resulCode = resultCode;
 
@@ -219,7 +227,7 @@ static void usb_cmd_cb(int resultCode, int bytes, void *arg)
 {
     int pad = (int)arg;
 
-    // DPRINTF("DS34USB: usb_cmd_cb: res %d, bytes %d, arg %p \n", resultCode, bytes, arg);
+    // DPRINTF("usb_cmd_cb: res %d, bytes %d, arg %p \n", resultCode, bytes, arg);
 
     SignalSema(ds34pad[pad].cmd_sema);
 }
@@ -238,7 +246,7 @@ static void usb_config_set(int result, int count, void *arg)
         DelayThread(10000);
         led[0] = led_patterns[pad][1];
         led[3] = 0;
-    } else if (ds34pad[pad].type == DS4) {
+    } else if (ds34pad[pad].type == DS4 || ds34pad[pad].type == DS5) {
         led[0] = rgbled_patterns[pad][1][0];
         led[1] = rgbled_patterns[pad][1][1];
         led[2] = rgbled_patterns[pad][1][2];
@@ -401,6 +409,102 @@ static void readReport(u8 *data, int pad)
                 ds34pad[pad].oldled[3] = 1;
             else
                 ds34pad[pad].oldled[3] = 0;
+        } else if (ds34pad[pad].type == DS5) {
+            struct ds5report *report;
+            u8 up = 0, down = 0, left = 0, right = 0;
+
+            report = (struct ds5report *)data;
+
+            switch (report->Dpad) {
+                case 0:
+                    up = 1;
+                    break;
+                case 1:
+                    up = 1;
+                    right = 1;
+                    break;
+                case 2:
+                    right = 1;
+                    break;
+                case 3:
+                    down = 1;
+                    right = 1;
+                    break;
+                case 4:
+                    down = 1;
+                    break;
+                case 5:
+                    down = 1;
+                    left = 1;
+                    break;
+                case 6:
+                    left = 1;
+                    break;
+                case 7:
+                    up = 1;
+                    left = 1;
+                    break;
+                case 8:
+                    up = 0;
+                    down = 0;
+                    left = 0;
+                    right = 0;
+                    break;
+            }
+
+            if (report->TPad) {
+                if (!report->nFinger1Active) {
+                    if (report->Finger1X < 960)
+                        report->Create = 1;
+                    else
+                        report->Option = 1;
+                }
+
+                if (!report->nFinger2Active) {
+                    if (report->Finger2X < 960)
+                        report->Create = 1;
+                    else
+                        report->Option = 1;
+                }
+            }
+
+            ds34pad[pad].data[0] = ~(report->Create | report->L3 << 1 | report->R3 << 2 | report->Option << 3 | up << 4 | right << 5 | down << 6 | left << 7);
+            ds34pad[pad].data[1] = ~(report->L2 | report->R2 << 1 | report->L1 << 2 | report->R1 << 3 | report->Triangle << 4 | report->Circle << 5 | report->Cross << 6 | report->Square << 7);
+
+            ds34pad[pad].data[2] = report->RightStickX; // rx
+            ds34pad[pad].data[3] = report->RightStickY; // ry
+            ds34pad[pad].data[4] = report->LeftStickX;  // lx
+            ds34pad[pad].data[5] = report->LeftStickY;  // ly
+
+            ds34pad[pad].data[6] = right * 255; // right
+            ds34pad[pad].data[7] = left * 255;  // left
+            ds34pad[pad].data[8] = up * 255;    // up
+            ds34pad[pad].data[9] = down * 255;  // down
+
+            ds34pad[pad].data[10] = report->Triangle * 255; // triangle
+            ds34pad[pad].data[11] = report->Circle * 255;   // circle
+            ds34pad[pad].data[12] = report->Cross * 255;    // cross
+            ds34pad[pad].data[13] = report->Square * 255;   // square
+
+            ds34pad[pad].data[14] = report->L1 * 255;   // L1
+            ds34pad[pad].data[15] = report->R1 * 255;   // R1
+            ds34pad[pad].data[16] = report->PressureL2; // L2
+            ds34pad[pad].data[17] = report->PressureR2; // R2
+
+            if (report->PSButton) { // display battery level
+                ds34pad[pad].oldled[0] = (report->Battery * 255) / 15;
+                ds34pad[pad].oldled[1] = 0;
+                ds34pad[pad].oldled[2] = 0;
+            } else {
+                ds34pad[pad].oldled[0] = rgbled_patterns[pad][1][0];
+                ds34pad[pad].oldled[1] = rgbled_patterns[pad][1][1];
+                ds34pad[pad].oldled[2] = rgbled_patterns[pad][1][2];
+            }
+
+            if (report->Power != 0xB && report->Usb_plugged) // charging
+                ds34pad[pad].oldled[3] = 1;
+            else
+                ds34pad[pad].oldled[3] = 0;
         }
     }
 }
@@ -411,10 +515,10 @@ static int LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
 
     PollSema(ds34pad[pad].cmd_sema);
 
-    mips_memset(usb_buf, 0, sizeof(usb_buf));
+    memset(usb_buf, 0, sizeof(usb_buf));
 
     if (ds34pad[pad].type == DS3) {
-        mips_memcpy(usb_buf, output_01_report, sizeof(output_01_report));
+        memcpy(usb_buf, output_01_report, sizeof(output_01_report));
 
         usb_buf[1] = 0xFE; // rt
         usb_buf[2] = rrum; // rp
@@ -448,6 +552,24 @@ static int LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
         }
 
         ret = UsbInterruptTransfer(ds34pad[pad].outEndp, usb_buf, 32, usb_cmd_cb, (void *)pad);
+    } else if (ds34pad[pad].type == DS5) {
+        usb_buf[0] = 0x02; // ReportID
+        usb_buf[1] = 0x03; // EnableRumbleEmulation & RumbleUseRumbleNotHaptics
+        usb_buf[2] = 0x17;
+
+        usb_buf[3] = rrum; // light weight
+        usb_buf[4] = lrum; // heavy weight
+
+        usb_buf[39] = 0x07; // AllowLightBrightnessChange & AllowColorLightFadeAnimation & EnableImprovedRumbleEmulation
+        usb_buf[42] = 0x80; // LightFadeAnimation
+        usb_buf[43] = 0xFF; // LightBrightness
+        usb_buf[44] = 0x04; // PlayerLight - - X - -
+
+        usb_buf[45] = led[0]; // r
+        usb_buf[46] = led[1]; // g
+        usb_buf[47] = led[2]; // b
+
+        ret = UsbInterruptTransfer(ds34pad[pad].outEndp, usb_buf, 48, usb_cmd_cb, (void *)pad);
     }
 
     ds34pad[pad].oldled[0] = led[0];
@@ -493,7 +615,7 @@ static int LEDRUM(u8 *led, u8 lrum, u8 rrum, int pad)
         if (ret == USB_RC_OK)
             TransferWait(ds34pad[pad].cmd_sema);
         else
-            DPRINTF("DS34USB: LEDRUM usb transfer error 0x%02X\n", ret);
+            DPRINTF("LEDRUM usb transfer error 0x%02X\n", ret);
     }
 
     SignalSema(ds34pad[pad].sema);
@@ -547,10 +669,10 @@ void ds34usb_get_data(char *dst, int size, int port)
 
         usb_resulCode = 1;
     } else {
-        DPRINTF("DS34USB: ds34usb_get_data usb transfer error %d\n", ret);
+        DPRINTF("ds34usb_get_data usb transfer error %d\n", ret);
     }
 
-    mips_memcpy(dst, ds34pad[port].data, size);
+    memcpy(dst, ds34pad[port].data, size);
 
     SignalSema(ds34pad[port].sema);
 }
@@ -582,10 +704,10 @@ int ds34usb_get_bdaddr(u8 *data, int port)
 
             ret = 1;
         } else {
-            DPRINTF("DS34USB: ds3usb_get_bdaddr usb transfer error %d\n", ret);
+            DPRINTF("ds3usb_get_bdaddr usb transfer error %d\n", ret);
             ret = 0;
         }
-    } else {
+    } else if (ds34pad[port].type == DS4) {
         ret = UsbControlTransfer(ds34pad[port].controlEndp, REQ_USB_IN, USB_REQ_GET_REPORT, (HID_USB_GET_REPORT_FEATURE << 8) | 0x12, 0, 16, usb_buf, usb_cmd_cb, (void *)port);
 
         if (ret == USB_RC_OK) {
@@ -596,7 +718,21 @@ int ds34usb_get_bdaddr(u8 *data, int port)
 
             ret = 1;
         } else {
-            DPRINTF("DS34USB: ds3usb_get_bdaddr usb transfer error %d\n", ret);
+            DPRINTF("ds4usb_get_bdaddr usb transfer error %d\n", ret);
+            ret = 0;
+        }
+    } else if (ds34pad[port].type == DS5) {
+        ret = UsbControlTransfer(ds34pad[port].controlEndp, REQ_USB_IN, USB_REQ_GET_REPORT, (HID_USB_GET_REPORT_FEATURE << 8) | 0x09, 0, 8, usb_buf, usb_cmd_cb, (void *)port);
+
+        if (ret == USB_RC_OK) {
+            TransferWait(ds34pad[port].cmd_sema);
+
+            for (i = 0; i < 6; i++)
+                data[5 - i] = usb_buf[2 + i];
+
+            ret = 1;
+        } else {
+            DPRINTF("ds5usb_get_bdaddr usb transfer error %d\n", ret);
             ret = 0;
         }
     }
@@ -641,7 +777,7 @@ void ds34usb_set_bdaddr(u8 *data, int port)
     if (ret == USB_RC_OK)
         TransferWait(ds34pad[port].cmd_sema);
     else
-        DPRINTF("DS34USB: ds3usb_set_bdaddr usb transfer error %d\n", ret);
+        DPRINTF("ds3usb_set_bdaddr usb transfer error %d\n", ret);
 
     SignalSema(ds34pad[port].sema);
 }
@@ -770,20 +906,20 @@ int _start(int argc, char *argv[])
         ds34pad[pad].data[0] = 0xFF;
         ds34pad[pad].data[1] = 0xFF;
 
-        mips_memset(&ds34pad[pad].data[2], 0x7F, 4);
-        mips_memset(&ds34pad[pad].data[6], 0x00, 12);
+        memset(&ds34pad[pad].data[2], 0x7F, 4);
+        memset(&ds34pad[pad].data[6], 0x00, 12);
 
         ds34pad[pad].sema = CreateMutex(IOP_MUTEX_UNLOCKED);
         ds34pad[pad].cmd_sema = CreateMutex(IOP_MUTEX_UNLOCKED);
 
         if (ds34pad[pad].sema < 0 || ds34pad[pad].cmd_sema < 0) {
-            DPRINTF("DS34USB: Failed to allocate I/O semaphore.\n");
+            DPRINTF("Failed to allocate I/O semaphore.\n");
             return MODULE_NO_RESIDENT_END;
         }
     }
 
     if (UsbRegisterDriver(&usb_driver) != USB_RC_OK) {
-        DPRINTF("DS34USB: Error registering USB devices\n");
+        DPRINTF("Error registering USB devices\n");
         return MODULE_NO_RESIDENT_END;
     }
 

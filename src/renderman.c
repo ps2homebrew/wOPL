@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <kernel.h>
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/renderman.h"
 #include "include/ioman.h"
 
@@ -25,6 +25,12 @@ static int vsync_id = -1;
 
 #define NUM_RM_VMODES 14
 #define RM_VMODE_AUTO 0
+
+int gWideScreen;
+int gVMode; // 0 - Auto, 1 - PAL, 2 - NTSC
+int gXOff;
+int gYOff;
+int gOverscan;
 
 // RM Vmode -> GS Vmode conversion table
 struct rm_mode
@@ -273,8 +279,10 @@ void rmEnd(void)
     vmode = -1;
 }
 
+// clang-format off
 #define X_SCALE(x) (((x)*iDisplayWidth) / 640)
 #define Y_SCALE(y) (((y)*iDisplayHeight) / 480)
+// clang-format on
 /** If txt is null, don't use DIM_UNDEF size */
 static void rmSetupQuad(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color, rm_quad_t *q)
 {
@@ -336,6 +344,19 @@ void rmDrawQuad(rm_quad_t *q)
                               q->ul.u, q->ul.v,
                               q->br.x + fRenderXOff, q->br.y + fRenderYOff,
                               q->br.u, q->br.v, order, q->color);
+    order++;
+}
+
+void rmSetBackground(GSTEXTURE *txt)
+{
+    gsGlobal->PrimAlphaEnable = GS_SETTING_OFF;
+    gsKit_set_test(gsGlobal, GS_ATEST_OFF);
+    gsKit_TexManager_bind(gsGlobal, txt);
+    gsKit_prim_sprite_texture(gsGlobal, txt,
+                              0, 0,
+                              0, 0,
+                              gsGlobal->Width, gsGlobal->Height,
+                              txt->Width, txt->Height, order, gDefaultCol);
     order++;
 }
 

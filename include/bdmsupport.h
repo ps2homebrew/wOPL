@@ -1,31 +1,8 @@
 #ifndef __BDM_SUPPORT_H
 #define __BDM_SUPPORT_H
 
+#include "include/supportbase.h"
 #include "include/iosupport.h"
-
-#define BDM_MODE_UPDATE_DELAY MENU_UPD_DELAY_GENREFRESH
-
-#include "include/mcemu.h"
-
-typedef struct
-{
-    int active;       /* Activation flag */
-    u64 start_sector; /* Start sector of vmc file */
-    int flags;        /* Card flag */
-    vmc_spec_t specs; /* Card specifications */
-} bdm_vmc_infos_t;
-
-#define MAX_BDM_DEVICES 5
-
-#define BDM_TYPE_UNKNOWN -1
-#define BDM_TYPE_USB     0
-#define BDM_TYPE_ILINK   1
-#define BDM_TYPE_SDC     2
-#define BDM_TYPE_ATA     3
-
-#ifdef UDPBD
-#define BDM_TYPE_UDPBD 4
-#endif
 
 typedef struct
 {
@@ -46,7 +23,26 @@ typedef struct
     unsigned char ForceRefresh;
 } bdm_device_data_t;
 
-void bdmInit(item_list_t *itemList);
+#define MAX_BDM_DEVICES 5
+
+#define BDM_TYPE_UNKNOWN -1
+#define BDM_TYPE_USB     0
+#define BDM_TYPE_ILINK   1
+#define BDM_TYPE_SDC     2
+#define BDM_TYPE_ATA     3
+
+extern int gBDMStartMode;
+extern int bdmCacheSize;
+extern char gBDMPrefix[32];
+
+extern int gEnableILK;
+extern int gEnableMX4SIO;
+extern int gEnableBdmHDD;
+
+extern base_game_info_t *gAutoLaunchBDMGame;
+extern bdm_device_data_t *gAutoLaunchDeviceData;
+
+
 int bdmFindPartition(char *target, const char *name, int write);
 void bdmLoadModules(void);
 void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
@@ -55,5 +51,8 @@ void bdmInitSemaphore();
 void bdmEnumerateDevices();
 
 void bdmResolveLBA_UDMA(bdm_device_data_t *pDeviceData);
+int bdmHDDIsPresent(u32 timeoutMs);
+
+void autoLaunchBDMGame(char *argv[]);
 
 #endif

@@ -1,8 +1,10 @@
-#include "include/opl.h"
+
+#include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/supportbase.h"
 #include "include/bdmsupport.h"
+#include "include/hddsupport.h"
 #include "include/util.h"
 #include "include/themes.h"
 #include "include/textures.h"
@@ -11,24 +13,56 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
+#include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include "include/module.h"
+#include "include/initializer.h"
+#include <fcntl.h>
+#include <stdlib.h>
+#include <ps2sdkapi.h>
 
 #include <usbhdfsd-common.h>
+#include <sifrpc.h>
+#include <kernel.h>
+#include "opl-hdd-ioctl.h"
+#include <errno.h>
+#include <stdio.h>
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl
+#include <libcdvd-common.h>
+#include <delaythread.h>
+
+#define BDM_MODE_UPDATE_DELAY MENU_UPD_DELAY_GENREFRESH
+
+#include "include/mcemu.h"
+
+typedef struct
+{
+    int active;       /* Activation flag */
+    u64 start_sector; /* Start sector of vmc file */
+    int flags;        /* Card flag */
+    vmc_spec_t specs; /* Card specifications */
+} bdm_vmc_infos_t;
 
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
-#ifdef UDPBD
-static int udpbdModLoaded = 0;
-#endif
 static s32 bdmLoadModuleLock;
-int bdmDeviceModeStarted;
 
 static item_list_t bdmDeviceList[MAX_BDM_DEVICES];
 static int bdmDeviceListInitialized = 0;
+
+int bdmDeviceModeStarted;
+int gBDMStartMode;
+int bdmCacheSize;
+char gBDMPrefix[32];
+int gEnableILK;
+int gEnableMX4SIO;
+int gEnableBdmHDD;
+base_game_info_t *gAutoLaunchBDMGame;
+bdm_device_data_t *gAutoLaunchDeviceData;
+
 
 void bdmInitDevicesData();
 int bdmUpdateDeviceData(item_list_t *itemList);
@@ -104,47 +138,6 @@ static void bdmLoadBlockDeviceModules(void)
         hddModLoaded = 1;
     }
 
-#ifdef UDPBD
-    if (gEnableUDPBD && !udpbdModLoaded) {
-        static int dev9ModLoaded = 0; // TODO: should probably check globally so hdd & udp don't both load it
-        if (!dev9ModLoaded) {
-            LOG("Loading DEV9\n");
-            sysLoadModuleBuffer(&ps2dev9_irx, size_ps2dev9_irx, 0, NULL);
-            dev9ModLoaded = 1;
-        }
-
-        if (dev9ModLoaded && !udpbdModLoaded) {
-            static int udpbdModShouldWaitBeforeLoading = 1;
-            if (udpbdModShouldWaitBeforeLoading-- == 0) {
-
-                /*
-                Load me only on the second call, wtf??
-                Dunno exactly why this works, but basically we want to load the network config before we load the udpbd module,
-                otherwise ps2_ip, ps2_dns and ps2_gateway are not initialized yet
-                */
-
-                LOG("Loading UDPBD\n");
-                char argsnetconfig[4 * 4 * 3];
-                snprintf(argsnetconfig, sizeof(argsnetconfig),
-                         "%03d.%03d.%03d.%03dX"
-                         "%03d.%03d.%03d.%03dX"
-                         "%03d.%03d.%03d.%03dX",
-                         ps2_ip[0], ps2_ip[1], ps2_ip[2], ps2_ip[3],
-                         ps2_netmask[0], ps2_netmask[1], ps2_netmask[2], ps2_netmask[3], // this is actually the UDPBD server!
-                         ps2_gateway[0], ps2_gateway[1], ps2_gateway[2], ps2_gateway[3]);
-
-                for (int i = 0; i < sizeof(argsnetconfig); i++) {
-                    if (argsnetconfig[i] == 'X')
-                        argsnetconfig[i] = '\0';
-                }
-
-                sysLoadModuleBuffer(&smap_udpbd_irx, size_smap_udpbd_irx, sizeof(argsnetconfig), argsnetconfig);
-                udpbdModLoaded = 1;
-            }
-        }
-    }
-#endif
-
     SignalSema(bdmLoadModuleLock);
 }
 
@@ -176,7 +169,7 @@ void bdmLoadModules(void)
     LOG("BDMSUPPORT Modules loaded\n");
 }
 
-void bdmInit(item_list_t *itemList)
+static void bdmInit(item_list_t *itemList)
 {
     LOG("BDMSUPPORT Init\n");
 
@@ -231,11 +224,6 @@ static int bdmNeedsUpdate(item_list_t *itemList)
             case BDM_TYPE_ATA:
                 deviceEnabled = gEnableBdmHDD;
                 break;
-#ifdef UDPBD
-            case BDM_TYPE_UDPBD:
-                deviceEnabled = gEnableUDPBD;
-                break;
-#endif
             default:
                 deviceEnabled = 0;
                 break;
@@ -285,6 +273,11 @@ static int bdmNeedsUpdate(item_list_t *itemList)
         sprintf(path, "%sTHM", pDeviceData->bdmPrefix);
         if (thmAddElements(path, "/", 1) > 0)
             pDeviceData->ThemesLoaded = 1;
+    }
+
+    if (gEnableArchivedArt) {
+        sprintf(path, "%sART/art.tar", pDeviceData->bdmPrefix);
+        loadTarFile(path);
     }
 
     // update Languages
@@ -362,9 +355,11 @@ static void bdmRenameGame(item_list_t *itemList, int id, char *newName)
 
 void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 {
-    int i, fd, index, compatmask = 0;
+    int i, fd, iop_fd, index, compatmask = 0;
     int EnablePS2Logo = 0;
+#ifdef CHEAT
     int result;
+#endif
     u64 startingLBA;
     unsigned int startCluster;
     char partname[256], filename[32];
@@ -405,7 +400,8 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
                 fd = open(vmc_path, O_RDONLY);
                 if (fd >= 0) {
-                    if (fileXioIoctl2(fd, USBMASS_IOCTL_GET_LBA, NULL, 0, &startingLBA, sizeof(startingLBA)) == 0 && (startCluster = (unsigned int)fileXioIoctl(fd, USBMASS_IOCTL_GET_CLUSTER, vmc_path)) != 0) {
+                    iop_fd = ps2sdk_get_iop_fd(fd);
+                    if (fileXioIoctl2(iop_fd, USBMASS_IOCTL_GET_LBA, NULL, 0, &startingLBA, sizeof(startingLBA)) == 0 && (startCluster = (unsigned int)fileXioIoctl(iop_fd, USBMASS_IOCTL_GET_CLUSTER, vmc_path)) != 0) {
 
                         // VMC only supports 32bit LBAs at the moment, so if the starting LBA + size of the VMC crosses the 32bit boundary
                         // just report the VMC as being fragmented to prevent file system corruption.
@@ -415,7 +411,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
                             have_error = 2;
                         }
                         // Check VMC cluster chain for fragmentation (write operation can cause damage to the filesystem).
-                        else if (fileXioIoctl(fd, USBMASS_IOCTL_CHECK_CHAIN, "") == 1) {
+                        else if (fileXioIoctl(iop_fd, USBMASS_IOCTL_CHECK_CHAIN, "") == 1) {
                             LOG("BDMSUPPORT Cluster Chain OK\n");
                             have_error = 0;
                             bdm_vmc_infos.active = 1;
@@ -461,11 +457,6 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     if (!strcmp(pDeviceData->bdmDriver, "ata") && strlen(pDeviceData->bdmDriver) == 3) {
         irx = &bdm_ata_cdvdman_irx;
         irx_size = size_bdm_ata_cdvdman_irx;
-#ifdef UDPBD
-    } else if (!strcmp(pDeviceData->bdmDriver, "udp") && strlen(pDeviceData->bdmDriver) == 3) {
-        irx = &bdm_udp_cdvdman_irx;
-        irx_size = size_bdm_udp_cdvdman_irx;
-#endif
     } else {
         irx = &bdm_cdvdman_irx;
         irx_size = size_bdm_cdvdman_irx;
@@ -491,6 +482,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         // Open file
         sbCreatePath(game, partname, pDeviceData->bdmPrefix, "/", i);
         fd = open(partname, O_RDONLY);
+        iop_fd = ps2sdk_get_iop_fd(fd);
         if (fd < 0) {
             sbUnprepare(&settings->common);
             guiMsgBox(_l(_STR_ERR_FILE_INVALID), 0, NULL);
@@ -498,7 +490,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         }
 
         // Get fragment list
-        int iFragCount = fileXioIoctl2(fd, USBMASS_IOCTL_GET_FRAGLIST, NULL, 0, (void *)&settings->frags[iTotalFragCount], sizeof(bd_fragment_t) * (BDM_MAX_FRAGS - iTotalFragCount));
+        int iFragCount = fileXioIoctl2(iop_fd, USBMASS_IOCTL_GET_FRAGLIST, NULL, 0, (void *)&settings->frags[iTotalFragCount], sizeof(bd_fragment_t) * (BDM_MAX_FRAGS - iTotalFragCount));
         if (iFragCount > BDM_MAX_FRAGS) {
             // Too many fragments
             close(fd);
@@ -541,7 +533,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     // adjust ZSO cache
     settings->common.zso_cache = bdmCacheSize;
-
+#ifdef CHEAT
     if ((result = sbLoadCheats(pDeviceData->bdmPrefix, game->startup)) < 0) {
         if (gAutoLaunchBDMGame == NULL) {
             switch (result) {
@@ -554,10 +546,11 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+#endif
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        saveConfig(CONFIG_LAST, 0);
+        configSave(CONFIG_LAST, 0);
     }
 
     if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
@@ -641,12 +634,6 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_DEV9;
         settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_ATAD;
         sysLaunchLoaderElf(filename, "BDM_ATA_MODE", irx_size, irx, size_mcemu_irx, bdm_mcemu_irx, EnablePS2Logo, compatmask);
-#ifdef UDPBD
-    } else if (!strcmp(bdmCurrentDriver, "udp") && strlen(bdmCurrentDriver) == 3) {
-        settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_DEV9;
-        settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_SMAP;
-        sysLaunchLoaderElf(filename, "BDM_UDP_MODE", irx_size, irx, size_mcemu_irx, bdm_mcemu_irx, EnablePS2Logo, compatmask);
-#endif
     }
 }
 
@@ -662,11 +649,14 @@ static int bdmGetImage(item_list_t *itemList, char *folder, int isRelative, char
 
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
 
-    if (isRelative)
+    if (gEnableArchivedArt)
+        snprintf(path, sizeof(path), "%s_%s", value, suffix);
+    else if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", pDeviceData->bdmPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1);
+
+    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
 }
 
 static int bdmGetTextId(item_list_t *itemList)
@@ -683,32 +673,24 @@ static int bdmGetTextId(item_list_t *itemList)
         mode = _STR_MX4SIO_GAMES;
     else if (!strcmp(pDeviceData->bdmDriver, "ata") && strlen(pDeviceData->bdmDriver) == 3)
         mode = _STR_HDD_GAMES;
-#ifdef UDPBD
-    else if (!strcmp(pDeviceData->bdmDriver, "udp") && strlen(pDeviceData->bdmDriver) == 3)
-        mode = _STR_UDPBD_GAMES;
-#endif
 
     return mode;
 }
 
 static int bdmGetIconId(item_list_t *itemList)
 {
-    int mode = BDM_ICON;
+    int mode = CATEGORY_EMPTY_BDM_ICON;
 
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
 
     if (!strcmp(pDeviceData->bdmDriver, "usb"))
-        mode = USB_ICON;
+        mode = CATEGORY_USB_ICON;
     else if (!strcmp(pDeviceData->bdmDriver, "sd") && strlen(pDeviceData->bdmDriver) == 2)
-        mode = ILINK_ICON;
+        mode = CATEGORY_ILINK_ICON;
     else if (!strcmp(pDeviceData->bdmDriver, "sdc") && strlen(pDeviceData->bdmDriver) == 3)
-        mode = MX4SIO_ICON;
+        mode = CATEGORY_MX4SIO_ICON;
     else if (!strcmp(pDeviceData->bdmDriver, "ata") && strlen(pDeviceData->bdmDriver) == 3)
-        mode = HDD_BD_ICON;
-#ifdef UDPBD
-    else if (!strcmp(pDeviceData->bdmDriver, "udp") && strlen(pDeviceData->bdmDriver) == 3)
-        mode = UDP_BD_ICON;
-#endif
+        mode = CATEGORY_HDD_BDM_ICON;
 
     return mode;
 }
@@ -874,7 +856,7 @@ int bdmUpdateDeviceData(item_list_t *itemList)
     if (gBDMStartMode == START_MODE_DISABLED)
         return 0;
 
-    //LOG("bdmUpdateDeviceData: %d\n", itemList->mode);
+    // LOG("bdmUpdateDeviceData: %d\n", itemList->mode);
 
     // Get the per-device data and check if the menu item is currently visible.
     bdm_device_data_t *pDeviceData = itemList->priv;
@@ -883,7 +865,7 @@ int bdmUpdateDeviceData(item_list_t *itemList)
     // Format the device path and try to open the device.
     sprintf(path, "mass%d:/", itemList->mode);
     int dir = fileXioDopen(path);
-    //LOG("opendir %s -> %d\n", path, dir);
+    // LOG("opendir %s -> %d\n", path, dir);
 
     // If we opened the device and the menu isn't visible (OR is visible but hasn't been initialized ex: manual device start) initialize device info.
     if (dir >= 0 && (visible == 0 || pDeviceData->bdmPrefix[0] == '\0')) {
@@ -905,10 +887,6 @@ int bdmUpdateDeviceData(item_list_t *itemList)
             pDeviceData->bdmDeviceType = BDM_TYPE_ILINK;
         else if (!strcmp(pDeviceData->bdmDriver, "sdc") && strlen(pDeviceData->bdmDriver) == 3)
             pDeviceData->bdmDeviceType = BDM_TYPE_SDC;
-#ifdef UDPBD
-        else if (!strcmp(pDeviceData->bdmDriver, "udp") && strlen(pDeviceData->bdmDriver) == 3)
-            pDeviceData->bdmDeviceType = BDM_TYPE_UDPBD;
-#endif
         else if (!strcmp(pDeviceData->bdmDriver, "ata") && strlen(pDeviceData->bdmDriver) == 3) {
             pDeviceData->bdmDeviceType = BDM_TYPE_ATA;
             itemList->flags = MODE_FLAG_COMPAT_DMA;
@@ -947,4 +925,179 @@ int bdmUpdateDeviceData(item_list_t *itemList)
     if (dir >= 0)
         fileXioDclose(dir);
     return 0;
+}
+
+void autoLaunchBDMGame(char *argv[])
+{
+    char path[256];
+    config_set_t *configSet;
+
+    miniInit(BDM_MODE);
+
+    gAutoLaunchBDMGame = malloc(sizeof(base_game_info_t));
+    memset(gAutoLaunchBDMGame, 0, sizeof(base_game_info_t));
+
+    int nameLen;
+    int format = isValidIsoName(argv[1], &nameLen);
+    if (format == GAME_FORMAT_OLD_ISO) {
+        strncpy(gAutoLaunchBDMGame->name, &argv[1][GAME_STARTUP_MAX], nameLen);
+        gAutoLaunchBDMGame->name[nameLen] = '\0';
+        strncpy(gAutoLaunchBDMGame->extension, &argv[1][GAME_STARTUP_MAX + nameLen], sizeof(gAutoLaunchBDMGame->extension));
+        gAutoLaunchBDMGame->extension[sizeof(gAutoLaunchBDMGame->extension) - 1] = '\0';
+    } else {
+        strncpy(gAutoLaunchBDMGame->name, argv[1], nameLen);
+        gAutoLaunchBDMGame->name[nameLen] = '\0';
+        strncpy(gAutoLaunchBDMGame->extension, &argv[1][nameLen], sizeof(gAutoLaunchBDMGame->extension));
+        gAutoLaunchBDMGame->extension[sizeof(gAutoLaunchBDMGame->extension) - 1] = '\0';
+    }
+
+    snprintf(gAutoLaunchBDMGame->startup, sizeof(gAutoLaunchBDMGame->startup), argv[2]);
+
+    if (strcasecmp("DVD", argv[3]) == 0)
+        gAutoLaunchBDMGame->media = SCECdPS2DVD;
+    else if (strcasecmp("CD", argv[3]) == 0)
+        gAutoLaunchBDMGame->media = SCECdPS2CD;
+
+    gAutoLaunchBDMGame->format = format;
+    gAutoLaunchBDMGame->parts = 1; // ul not supported.
+
+    gAutoLaunchDeviceData = malloc(sizeof(bdm_device_data_t));
+    memset(gAutoLaunchDeviceData, 0, sizeof(bdm_device_data_t));
+
+    snprintf(path, sizeof(path), "mass0:");
+    int dir = fileXioDopen(path);
+    if (dir >= 0) {
+        fileXioIoctl2(dir, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0, &gAutoLaunchDeviceData->bdmDriver, sizeof(gAutoLaunchDeviceData->bdmDriver) - 1);
+        fileXioIoctl2(dir, USBMASS_IOCTL_GET_DEVICE_NUMBER, NULL, 0, &gAutoLaunchDeviceData->massDeviceIndex, sizeof(gAutoLaunchDeviceData->massDeviceIndex));
+
+        if (!strcmp(gAutoLaunchDeviceData->bdmDriver, "ata") && strlen(gAutoLaunchDeviceData->bdmDriver) == 3)
+            bdmResolveLBA_UDMA(gAutoLaunchDeviceData);
+
+        fileXioDclose(dir);
+    }
+
+    if (gBDMPrefix[0] != '\0') {
+        snprintf(path, sizeof(path), "mass0:%s/CFG/%s.cfg", gBDMPrefix, gAutoLaunchBDMGame->startup);
+        snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "mass0:%s/", gBDMPrefix);
+    } else {
+        snprintf(path, sizeof(path), "mass0:CFG/%s.cfg", gAutoLaunchBDMGame->startup);
+        snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "mass0:");
+    }
+
+    configSet = configAlloc(0, NULL, path);
+    configRead(configSet);
+
+    bdmLaunchGame(NULL, -1, configSet);
+}
+
+static int bdmWaitForDevice(int deviceId, u32 timeoutMs)
+{
+    const int RETRY_DELAY = 100;
+    char path[16];
+
+    u32 start = GetTimerSystemTime();
+    sprintf(path, "mass%d:/", deviceId);
+
+    while (1) {
+        int dir = fileXioDopen(path);
+
+        if (dir >= 0) {
+            fileXioDclose(dir);
+            return 1; // ready
+        }
+
+        u32 now = GetTimerSystemTime();
+        u32 elapsed_ms = (now - start) / (kBUSCLK / 1000);
+
+        if (elapsed_ms > timeoutMs) {
+            return 0; // timeout
+        }
+
+        DelayThread(RETRY_DELAY * 1000);
+    }
+}
+
+static int bdmDeviceIsPresent(int deviceId)
+{
+    char path[16];
+    sprintf(path, "mass%d:/", deviceId);
+    int dir = fileXioDopen(path);
+
+    if (dir >= 0) {
+        fileXioDclose(dir);
+        return 1; // ready
+    }
+
+    return 0;
+}
+
+static int bdmDeviceIsATA(int deviceId)
+{
+    char path[16];
+    bdm_device_data_t data;
+
+    sprintf(path, "mass%d:/", deviceId);
+    int dir = fileXioDopen(path);
+    if (dir < 0)
+        return 0;
+
+    fileXioIoctl2(dir, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0, &data.bdmDriver, sizeof(data.bdmDriver) - 1);
+    fileXioDclose(dir);
+
+    return (!strcmp(data.bdmDriver, "ata") && strlen(data.bdmDriver) == 3);
+}
+
+static int bdmGetATADeviceId()
+{
+    for (int i = 0; i < MAX_BDM_DEVICES; i++) {
+        if (bdmDeviceIsATA(i)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int bdmHDDIsPresent(u32 timeoutMs)
+{
+    int hdd_id = -1;
+    int timedout = 0;
+
+    if (!hddIsPresent())
+        return 0;
+
+    // 1. scan via normal methods first...
+    hdd_id = bdmGetATADeviceId();
+    if (hdd_id >= 0)
+        return 1;
+
+    // 2. try to scan as fast as possible if the previous scan fails...
+    hdd_id = 0;
+
+    for (int i = 0; i < MAX_BDM_DEVICES; i++) {
+        // find the first inaccessible device - this one should be the HDD once it's mounted (we don't have access to device data at this point yet!)
+        if (!bdmDeviceIsPresent(i)) {
+            hdd_id = i;
+            break;
+        }
+    }
+
+    if (bdmWaitForDevice(hdd_id, timeoutMs)) {
+        // double-check to see if this indeed is the HDD, and if it is, we can exit early without stalling any further
+        if (bdmDeviceIsATA(hdd_id)) {
+            return 1;
+        } else
+            LOG("bdmHDDIsPresent: device at id %d is not an ATA HDD...\n", hdd_id);
+    } else {
+        timedout = 1;
+        LOG("bdmHDDIsPresent: waiting for hdd at id %d timed out...\n", hdd_id);
+    }
+
+    // 3. last resort - time out (if needed) and scan again...
+    if (!timedout) {
+        // if we haven't timed out already, then we need to wait for the devices to wake up... wait for the timeout...
+        LOG("bdmHDDIsPresent: waiting for timeout before scanning again...\n", hdd_id);
+        DelayThread(timeoutMs * 1000);
+    }
+
+    return bdmGetATADeviceId() >= 0;
 }

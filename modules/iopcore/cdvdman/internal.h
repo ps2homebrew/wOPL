@@ -29,8 +29,6 @@
 
 #include <defs.h>
 
-#include "smsutils.h"
-
 #ifdef __IOPCORE_DEBUG
 #define DPRINTF(args...)  printf(args)
 #define iDPRINTF(args...) Kprintf(args)
@@ -47,6 +45,9 @@
 #define CDVDMAN_SETTINGS_DEFAULT_DEVICE_SETTINGS CDVDMAN_SETTINGS_DEFAULT_SMB,
 #elif BDM_DRIVER
 #define CDVDMAN_SETTINGS_TYPE cdvdman_settings_bdm
+#define CDVDMAN_SETTINGS_DEFAULT_DEVICE_SETTINGS
+#elif MMCE_DRIVER
+#define CDVDMAN_SETTINGS_TYPE cdvdman_settings_mmce
 #define CDVDMAN_SETTINGS_DEFAULT_DEVICE_SETTINGS
 #else
 #error Unknown driver type. Please check the Makefile.

@@ -3,10 +3,11 @@
 
 #include "irx.h"
 
-#include <ds34common.h>
+#include "ds34common.h"
 
 #define DS3 0
 #define DS4 1
+#define DS5 2
 
 #define MAX_BUFFER_SIZE 64 // Size of general purpose data buffer
 
@@ -65,8 +66,5 @@ enum eHID {
     PS4_11_REPORT_LEN = 0x4D,
     // }}}
 };
-
-void mips_memcpy(void *, const void *, unsigned);
-void mips_memset(void *, int, unsigned);
 
 #endif

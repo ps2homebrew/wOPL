@@ -18,7 +18,6 @@ struct CDVDMAN_SETTINGS_TYPE cdvdman_settings = {
 //----------------------------------------------------
 extern struct irx_export_table _exp_cdvdman;
 extern struct irx_export_table _exp_cdvdstm;
-extern struct irx_export_table _exp_smsutils;
 extern struct irx_export_table _exp_oplutils;
 #ifdef __USE_DEV9
 extern struct irx_export_table _exp_dev9;
@@ -104,7 +103,7 @@ static void oplShutdown(int poff)
     if (poff) {
         DeviceStop();
 #ifdef __USE_DEV9
-        dev9Shutdown();
+        Dev9CardStop();
 #endif
         sceCdPowerOff(&stat);
     }
@@ -831,7 +830,6 @@ int _start(int argc, char **argv)
     RegisterLibraryEntries(&_exp_cdvdman);
     RegisterLibraryEntries(&_exp_cdvdstm);
 
-    RegisterLibraryEntries(&_exp_smsutils);
 #ifdef __USE_DEV9
     RegisterLibraryEntries(&_exp_dev9);
     dev9d_init();

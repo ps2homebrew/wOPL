@@ -129,6 +129,12 @@ typedef struct theme
     int gameCacheCount;
 
     theme_element_t *itemsList;
+
+    // Icon Logo
+    theme_element_t *logoIcon;
+    int logoIconCount;
+
+    // Icon Loading
     theme_element_t *loadingIcon;
     int loadingIconCount;
 
@@ -139,6 +145,8 @@ typedef struct theme
 } theme_t;
 
 extern theme_t *gTheme;
+
+extern int gDiscEnableArt;
 
 void thmInit(void);
 void thmReinit(const char *path);

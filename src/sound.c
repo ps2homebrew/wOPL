@@ -8,9 +8,15 @@
 #include <vorbis/vorbisfile.h>
 
 #include "include/sound.h"
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/ioman.h"
 #include "include/themes.h"
+#include <fcntl.h>
+#include <dirent.h>
+#include <malloc.h>
+#include <kernel.h>
+#include <errno.h>
+#include <unistd.h>
 
 // Silence unused variable warnings from vorbisfile.h
 static ov_callbacks OV_CALLBACKS_NOCLOSE __attribute__((unused));
@@ -66,6 +72,14 @@ static struct sfxEffect sfx_files[SFX_COUNT] = {
 
 static struct audsrv_adpcm_t sfx[SFX_COUNT];
 static int audio_initialized = 0;
+
+int gEnableSFX;
+int gEnableBootSND;
+int gEnableBGM;
+int gSFXVolume;
+int gBootSndVolume;
+int gBGMVolume;
+char gDefaultBGMPath[128];
 
 // Returns 0 if the specified file was read. The sfxEffect structure will not be updated unless the file is successfully read.
 static int sfxRead(const char *full_path, struct sfxEffect *sfx)
@@ -267,15 +281,17 @@ static void bgmThread(void *arg)
     bgmThreadRunning = 1;
 
     while (!terminateFlag) {
-        SleepThread();
+        WaitSema(outSema);
+        if (terminateFlag)
+            break;
 
-        while (PollSema(outSema) == outSema) {
-            audsrv_wait_audio(BGM_RING_BUFFER_SIZE);
-            audsrv_play_audio(bgmBuffer[rdPtr], BGM_RING_BUFFER_SIZE);
-            rdPtr = (rdPtr + 1) % BGM_RING_BUFFER_COUNT;
+        audsrv_wait_audio(BGM_RING_BUFFER_SIZE);
+        audsrv_play_audio(bgmBuffer[rdPtr], BGM_RING_BUFFER_SIZE);
+        rdPtr = (rdPtr + 1) % BGM_RING_BUFFER_COUNT;
 
-            SignalSema(inSema);
-        }
+
+        SignalSema(inSema);
+        SignalSema(outSema);
     }
 
     audsrv_stop_audio();
@@ -314,15 +330,17 @@ static void bgmIoThread(void *arg)
                 ov_pcm_seek(vorbisFile, 0);
         } while (decodeTotal > 0);
 
+        if (terminateFlag)
+            break;
+
         wrPtr = (wrPtr + partsToRead) % BGM_RING_BUFFER_COUNT;
         for (i = 0; i < partsToRead; i++)
             SignalSema(outSema);
-        WakeupThread(bgmThreadID);
     } while (!terminateFlag && gEnableBGM);
 
     bgmIoThreadRunning = 0;
     terminateFlag = 1;
-    WakeupThread(bgmThreadID);
+    SignalSema(outSema);
 }
 
 static int bgmLoad(void)

@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         ### __Disclaimer:__
-        Issue reports for the OPL app that was not downloaded from the official GitHub repo releases section or official Mega mirror are not accepted.
+        Issue reports for the wOPL app that was not downloaded from the official GitHub repo releases section are not accepted.
         Issue reports for 3rd party HDD adapters (like Gamestar) are not accepted.
         Issue reports for consoles with installed and enabled modchip are not accepted.
         Before posting the issue confirm that you meet the below requirements.
@@ -18,8 +18,8 @@ body:
       label: Checks
       description: "Check before posting"
       options:
-        - label: I have checked existing [__OPL issues__](https://github.com/ps2homebrew/Open-PS2-Loader/issues) for duplicates and found none
-        - label: I am using either OPL [latest stable version](https://github.com/ps2homebrew/Open-PS2-Loader/releases/latest), or [archived version](https://mega.nz/folder/Ndwi1bAK#oLWNhH_g-h0p4BoT4c556A) or [__OPL beta version__](https://github.com/ps2homebrew/open-ps2-loader/releases)
+        - label: I have checked existing [__wOPL issues__](https://github.com/NathanNeurotic/wOPL/issues) for duplicates and found none
+        - label: I am using either wOPL [latest stable version](https://github.com/NathanNeurotic/wOPL/releases) or [__wOPL beta version__](https://github.com/NathanNeurotic/wOPL/releases)
 
   - type: textarea
     id: explanation
@@ -48,9 +48,9 @@ body:
   - type: input
     id: oplver
     attributes:
-      label: "OPL version / revision"
+      label: "wOPL version / revision"
       description: "you can see it on the About option from the settings menu (press start in game list)"
-      placeholder: "eg: OPL stable 1.0.0 | OPL beta 1.1.0 1732"
+      placeholder: "eg: wOPL stable 1.0.0 | wOPL beta 1.1.0 1XXX"
     validations:
       required: true
 

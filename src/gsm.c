@@ -11,7 +11,7 @@
 #
 */
 
-#include "include/opl.h"
+#include "include/common.h"
 #include "include/config.h"
 #include "include/util.h"
 #include "include/system.h"
@@ -20,12 +20,19 @@
 #include "../ee_core/include/coreconfig.h"
 
 #include "include/pggsm.h"
+#include <fcntl.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <unistd.h>
 
 static int gEnableGSM;   // Enables GSM - 0 for Off, 1 for On
 static int gGSMVMode;    // See the related predef_vmode
 static int gGSMXOffset;  // 0 - Off, Any other positive or negative value - Relative position for X Offset
 static int gGSMYOffset;  // 0 - Off, Any other positive or negative value - Relative position for Y Offset
 static int gGSMFIELDFix; // Enables/disables the FIELD flipping emulation option. 0 for Off, 1 for On.
+
+
+int gGSMSource;
 
 void InitGSMConfig(config_set_t *configSet)
 {

@@ -45,7 +45,9 @@ struct EECoreConfig_t
     char g_ps2_gateway[16];
     unsigned char g_ps2_ETHOpMode;
 
+#ifdef CHEAT
     u32 *gCheatList; // Store hooks/codes addr+val pairs
+#endif
 
     void *eeloadCopy;
     void *initUserMemory;
@@ -64,9 +66,12 @@ struct EECoreConfig_t
     int EnablePadEmuOp;
     int PadEmuSettings;
     int PadMacroSettings;
-
+#ifdef GSM
     int EnableGSMOp;
+#endif
     struct GsmConfig_t GsmConfig;
+
+    int MMCEIGRSettings;
 };
 
 #define USE_LOCAL_EECORE_CONFIG struct EECoreConfig_t *config = &g_ee_core_config;

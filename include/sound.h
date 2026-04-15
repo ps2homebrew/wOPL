@@ -14,6 +14,14 @@ enum SFX {
     SFX_COUNT
 };
 
+extern int gEnableSFX;
+extern int gEnableBootSND;
+extern int gEnableBGM;
+extern int gSFXVolume;
+extern int gBootSndVolume;
+extern int gBGMVolume;
+extern char gDefaultBGMPath[128];
+
 void audioInit(void);
 void audioEnd(void);
 void audioSetVolume(void);

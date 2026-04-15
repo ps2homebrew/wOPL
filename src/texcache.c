@@ -1,10 +1,11 @@
-#include "include/opl.h"
+
 #include "include/texcache.h"
 #include "include/textures.h"
 #include "include/ioman.h"
 #include "include/gui.h"
 #include "include/util.h"
 #include "include/renderman.h"
+#include <stdlib.h>
 
 typedef struct
 {
@@ -70,6 +71,7 @@ static void cacheClearItem(cache_entry_t *item, int freeTxt)
     item->texture.Mem = NULL;
     item->texture.Vram = 0;
     item->texture.Clut = NULL;
+    item->texture.ClutStorageMode = GS_CLUT_STORAGE_CSM1; // Default
     item->texture.VramClut = 0;
     item->qr = NULL;
     item->lastUsed = -1;

@@ -6,6 +6,7 @@
 enum UI_ITEMS {
     UIID_BTN_CANCEL = 0,
     UIID_BTN_OK,
+    UIID_BTN_SECRET,
 
     UICFG_THEME = 10,
     UICFG_LANG,
@@ -17,6 +18,8 @@ enum UI_ITEMS {
     UICFG_RESETCOL,
     UICFG_AUTOSORT,
     UICFG_COVERART,
+    UICFG_ARCHIVEDART,
+    UICFG_DISCART,
     UICFG_WIDESCREEN,
     UICFG_AUTOREFRESH,
     UICFG_VMODE,
@@ -42,9 +45,13 @@ enum UI_ITEMS {
     CFG_ENABLEILK,
     CFG_ENABLEMX4SIO,
     CFG_ENABLEBDMHDD,
-#ifdef UDPBD
-    CFG_ENABLEUDPBD,
-#endif
+    CFG_MMCEMODE,
+    CFG_MMCEPREFIX,
+    CFG_MMCESLOT,
+    CFG_MMCEIGRSLOT,
+    CFG_MMCE_WAIT_CYCLES,
+    CFG_MMCE_USE_ALARMS,
+    CFG_MMCEGAMEID,
     CFG_LASTPLAYED,
     CFG_LBL_AUTOSTARTLAST,
     CFG_AUTOSTARTLAST,
@@ -105,12 +112,13 @@ enum UI_ITEMS {
     NETCFG_ETHOPMODE,
     NETCFG_RECONNECT,
     NETCFG_OK,
-
+#ifdef CHEAT
     CHTCFG_CHEATSOURCE,
     CHTCFG_CHEATCFG,
     CHTCFG_ENABLECHEAT,
     CHTCFG_CHEATMODE,
-
+#endif
+#ifdef GSM
     GSMCFG_GSMSOURCE,
     GSMCFG_GSCONFIG,
     GSMCFG_ENABLEGSM,
@@ -118,11 +126,10 @@ enum UI_ITEMS {
     GSMCFG_GSMXOFFSET,
     GSMCFG_GSMYOFFSET,
     GSMCFG_GSMFIELDFIX,
-
+#endif
     COMPAT_DMA = 100,
     COMPAT_ALTSTARTUP,
     COMPAT_GAMEID,
-    COMPAT_DL_DEFAULTS,
     COMPAT_LOADER,
 
     COMPAT_LOADFROMDISC_ID,
@@ -159,7 +166,6 @@ enum UI_ITEMS {
     PADCFG_PADEMU_SOURCE,
     PADCFG_PADEMU_CONFIG,
     PADCFG_PADEMU_ENABLE,
-    PADCFG_PADEMU_MODE,
     PADCFG_PADEMU_PORT,
     PADCFG_PADEMU_VIB,
     PADCFG_PADPORT,
@@ -222,8 +228,13 @@ extern struct UIItem diaAudioConfig[];
 extern struct UIItem diaControllerConfig[];
 extern struct UIItem diaCompatConfig[];
 extern struct UIItem diaVMCConfig[];
+#ifdef GSM
 extern struct UIItem diaGSConfig[];
+#endif
+
+#ifdef CHEAT
 extern struct UIItem diaCheatConfig[];
+#endif
 
 extern struct UIItem diaConfig[];
 extern struct UIItem diaAbout[];
@@ -233,4 +244,6 @@ extern struct UIItem diaParentalLockConfig[];
 extern struct UIItem diaBlockDevicesConfig[];
 
 extern struct UIItem diaOSDConfig[];
+extern struct UIItem diaMMCEConfig[];
+
 #endif

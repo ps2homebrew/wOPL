@@ -67,6 +67,12 @@ enum rm_aratio {
     RM_ARATIO_16_9,
 };
 
+extern int gWideScreen;
+extern int gVMode; // 0 - Auto, 1 - PAL, 2 - NTSC
+extern int gXOff;
+extern int gYOff;
+extern int gOverscan;
+
 /** Initializes the rendering manager */
 void rmInit();
 
@@ -89,6 +95,8 @@ void rmInvalidateTexture(GSTEXTURE *txt);
 void rmUnloadTexture(GSTEXTURE *txt);
 
 void rmDrawQuad(rm_quad_t *q);
+
+void rmSetBackground(GSTEXTURE *txt);
 
 /** Queues a specified pixmap (tinted with colour) to be rendered on specified position */
 void rmDrawPixmap(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color);

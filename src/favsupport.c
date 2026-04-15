@@ -4,16 +4,20 @@
  Review OpenPS2Loader README & LICENSE files for further details.
  */
 
-#include "include/opl.h"
 #include "include/ioman.h"
 #include "include/gui.h"
 #include "include/lang.h"
 #include "include/themes.h"
 #include "include/favsupport.h"
+#include "include/common.h"
+#include <malloc.h>
+#include <stdio.h>
 
 static int favItemCount = 0;
 
 static item_list_t favItemList;
+
+int gFAVStartMode;
 
 void favInit(item_list_t *itemList)
 {
@@ -115,7 +119,7 @@ static int favGetTextId(item_list_t *itemList)
 
 static int favGetIconId(item_list_t *itemList)
 {
-    return FAV_ICON;
+    return CATEGORY_FAV_ICON;
 }
 
 static void favLaunchItem(item_list_t *itemList, int id, config_set_t *configSet)

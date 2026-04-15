@@ -1,9 +1,10 @@
-#include "include/opl.h"
+#include "include/iosupport.h"
 #include "include/ioman.h"
 #include <kernel.h>
 #include <string.h>
 #include <malloc.h>
 #include <stdio.h>
+#include <dirent.h>
 #include <unistd.h>
 #ifdef __EESIO_DEBUG
 #include <sio.h>
@@ -56,6 +57,7 @@ static ee_sema_t gQueueSema;
 
 static int isIOBlocked = 0;
 static int isIORunning = 0;
+int gBDMDebug;
 
 int ioRegisterHandler(int type, io_request_handler_t handler)
 {
@@ -366,7 +368,7 @@ void writeLogToBD(const char *format, ...)
     vsnprintf(logMessage, sizeof(logMessage), format, args);
     va_end(args);
 
-    FILE *logFile = fopen("mass0:opllog.txt", "a");
+    FILE *logFile = fopen("mass0:wopllog.txt", "a");
     if (logFile) {
         fprintf(logFile, "%s", logMessage);
         fclose(logFile);

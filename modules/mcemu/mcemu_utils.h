@@ -18,18 +18,6 @@ typedef struct
 
 typedef void (*oplShutdownCb_t)(void);
 
-/* SMS Utils Imports */
-#define smsutils_IMPORTS_start DECLARE_IMPORT_TABLE(smsutils, 1, 1)
-
-void mips_memcpy(void *, const void *, unsigned);
-#define I_mips_memcpy DECLARE_IMPORT(4, mips_memcpy)
-
-void mips_memset(void *, int, unsigned);
-#define I_mips_memset DECLARE_IMPORT(5, mips_memset)
-
-#define smsutils_IMPORTS_end END_IMPORT_TABLE
-
-
 #define oplutils_IMPORTS_start DECLARE_IMPORT_TABLE(oplutils, 1, 2)
 
 int getModInfo(char *modname, modinfo_t *info);
@@ -49,15 +37,23 @@ void bdm_writeSector(u64 lba, unsigned short int nsectors, const unsigned char *
 
 #endif
 
+#ifdef MMCE_DRIVER
+void mmce_read_offset(int fd, unsigned int offset, unsigned int size, unsigned char *buffer);
+#define I_mmce_read_offset DECLARE_IMPORT(6, mmce_read_offset)
+
+void mmce_write_offset(int fd, unsigned int offset, unsigned int size, const unsigned char *buffer);
+#define I_mmce_write_offset DECLARE_IMPORT(7, mmce_write_offset)
+#endif
+
 /* ATAD Transfer Imports */
 #ifdef HDD_DRIVER
 
-/* These are used with the dir parameter of ata_device_dma_transfer().  */
+/* These are used with the dir parameter of sceAtaDmaTransfer().  */
 #define ATA_DIR_READ  0
 #define ATA_DIR_WRITE 1
 
-int ata_device_sector_io(unsigned int unit, void *buf, unsigned int lba, unsigned int sectors, int dir);
-#define I_ata_device_sector_io DECLARE_IMPORT(6, ata_device_sector_io)
+int sceAtaDmaTransfer(unsigned int unit, void *buf, unsigned int lba, unsigned int sectors, int dir);
+#define I_sceAtaDmaTransfer DECLARE_IMPORT(6, sceAtaDmaTransfer)
 
 #endif
 

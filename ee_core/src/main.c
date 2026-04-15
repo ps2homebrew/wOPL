@@ -11,8 +11,12 @@
 #include "modmgr.h"
 #include "util.h"
 #include "syshook.h"
+#ifdef GSM
 #include "gsm_api.h"
+#endif
+#ifdef CHEAT
 #include "cheat_api.h"
+#endif
 #include "coreconfig.h"
 
 int isInit = 0;
@@ -57,6 +61,8 @@ static int eecoreInit(int argc, char **argv)
         config->GameMode = ETH_MODE;
     else if (!_strncmp(config->GameModeDesc, "HDD_MODE", 8))
         config->GameMode = HDD_MODE;
+    else if (!_strncmp(config->GameModeDesc, "MMCE_MODE", 8))
+        config->GameMode = MMCE_MODE;
     DPRINTF("Game Mode = %d %s\n", config->GameMode, config->GameModeDesc);
 
     EnableDebug = config->EnableDebug;
@@ -69,11 +75,12 @@ static int eecoreInit(int argc, char **argv)
     DPRINTF("HDD Spindown = %d\n", config->HDDSpindown);
 
     DPRINTF("IP=%s NM=%s GW=%s mode: %d\n", config->g_ps2_ip, config->g_ps2_netmask, config->g_ps2_gateway, config->g_ps2_ETHOpMode);
-
+#ifdef CHEAT
     DPRINTF("PS2RD Cheat Engine = %s\n", config->gCheatList == NULL ? "Disabled" : "Enabled");
-
+#endif
+#ifdef GSM
     DPRINTF("GSM = %s\n", config->EnableGSMOp == 0 ? "Disabled" : "Enabled");
-
+#endif
 #ifdef PADEMU
     DPRINTF("PADEMU = %s\n", config->EnablePadEmuOp == 0 ? "Disabled" : "Enabled");
 #endif
@@ -92,10 +99,12 @@ static int eecoreInit(int argc, char **argv)
     g_compat_mask = config->_CompatMask;
     DPRINTF("Compat Mask = 0x%02x\n", g_compat_mask);
 
+#ifdef CHEAT
     if (config->gCheatList) {
         EnableCheats();
     }
-
+#endif
+#ifdef GSM
     if (config->EnableGSMOp) {
         UpdateGSMParams(
             config->GsmConfig.interlace,
@@ -111,7 +120,7 @@ static int eecoreInit(int argc, char **argv)
             config->GsmConfig.FIELD_fix);
         EnableGSM();
     }
-
+#endif
     set_ipconfig();
 
     /* installing kernel hooks */

@@ -22,12 +22,21 @@
  * $Id$
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <fcntl.h>
+#include <malloc.h>
+#include <ctype.h>
+#include <string.h>
 #include <unistd.h>
 #include "include/cheatman.h"
 #include "include/ioman.h"
+#include "include/common.h"
 
 static int gEnableCheat; // Enables PS2RD Cheat Engine - 0 for Off, 1 for On
 static int gCheatMode;   // Cheat Mode - 0 Enable all cheats, 1 Cheats selected by user
+int gCheatSource;
 
 static u32 gCheatList[MAX_CHEATLIST]; // Store hooks/codes addr+val pairs
 cheat_entry_t gCheats[MAX_CODES];
@@ -58,7 +67,7 @@ int GetCheatsEnabled(void)
     return gEnableCheat;
 }
 
-const u32 *GetCheatsList(void)
+u32 *GetCheatsList(void)
 {
     return gCheatList;
 }

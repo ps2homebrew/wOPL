@@ -8,7 +8,6 @@
 #include <iopcontrol_special.h>
 #endif
 
-#include "include/opl.h"
 #include "include/gui.h"
 #include "include/ethsupport.h"
 #include "include/hddsupport.h"
@@ -18,15 +17,34 @@
 #include "include/ioman.h"
 #include "include/ioprp.h"
 #include "include/bdmsupport.h"
+#include "include/mmcesupport.h"
 #include "include/OSDHistory.h"
 #include "include/renderman.h"
 #include "include/extern_irx.h"
 #include "../ee_core/include/modules.h"
 #include "../ee_core/include/coreconfig.h"
 #include <osd_config.h>
+#ifdef GSM
 #include "include/pggsm.h"
+#endif
+#ifdef CHEAT
 #include "include/cheatman.h"
+#endif
 #include "include/xparam.h"
+#include "include/initializer.h"
+#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <dirent.h>
+#include <stdlib.h>
+#include <libpwroff.h>
+#include <loadfile.h>
+#include <sifrpc.h>
+#include <iopcontrol.h>
+#include <iopheap.h>
+#include <kernel.h>
+#include <sbv_patches.h>
+
 
 #ifdef PADEMU
 #include <libds34bt.h>
@@ -90,6 +108,14 @@ typedef struct
     u32 flags;
     u32 align;
 } elf_pheader_t;
+
+int gOSDLanguageValue;
+int gOSDTVAspectRatio;
+int gOSDVideOutput;
+int gOSDLanguageEnable;
+int gOSDLanguageSource;
+int gEnableDebug;
+char gExitPath[256];
 
 void guiWarning(const char *text, int count);
 void guiEnd();
@@ -393,10 +419,7 @@ void sysExecExit(void)
 #define CORE_IRX_ILINK  0x80
 #define CORE_IRX_MX4SIO 0x100
 
-#ifdef UDPBD
-#define CORE_IRX_UDPBD 0x200
-#endif
-
+#define CORE_IRX_MMCE 0x200
 typedef struct
 {
     char *game;
@@ -482,14 +505,12 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         modules |= CORE_IRX_MX4SIO;
     else if (!strcmp(mode_str, "BDM_ATA_MODE"))
         modules |= CORE_IRX_HDD;
-#ifdef UDPBD
-    else if (!strcmp(mode_str, "BDM_UDP_MODE"))
-        modules |= CORE_IRX_UDPBD;
-#endif
     else if (!strcmp(mode_str, "ETH_MODE"))
         modules |= CORE_IRX_ETH | CORE_IRX_SMB;
-    else
+    else if (!strcmp(mode_str, "HDD_MODE"))
         modules |= CORE_IRX_HDD;
+    else if (!strcmp(mode_str, "MMCE_MODE"))
+        modules |= CORE_IRX_MMCE;
 
     irxtable = (irxtab_t *)ModuleStorage;
     irxptr_tab = (irxptr_t *)((unsigned char *)irxtable + sizeof(irxtab_t));
@@ -509,6 +530,12 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     irxptr_tab[modcount++].ptr = (void *)&imgdrv_irx;
     irxptr_tab[modcount].info = size_resetspu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_RESETSPU);
     irxptr_tab[modcount++].ptr = (void *)&resetspu_irx;
+
+    // Load MMCEIGR module (~1.4KB) on reset if bootcard switch is enabled for either slot
+    if (gMMCEIGRSlot != 0) {
+        irxptr_tab[modcount].info = size_mmceigr_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MMCEIGR);
+        irxptr_tab[modcount++].ptr = (void *)&mmceigr_irx;
+    }
 
     irxptr_tab[modcount].info = size_patch_membo_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MODE7);
     irxptr_tab[modcount++].ptr = (void *)&patch_membo_irx;
@@ -541,12 +568,6 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         irxptr_tab[modcount].info = size_mx4sio_bd_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MX4SIOBD);
         irxptr_tab[modcount++].ptr = (void *)&mx4sio_bd_irx;
     }
-#ifdef UDPBD
-    if (modules & CORE_IRX_UDPBD) {
-        irxptr_tab[modcount].info = size_smap_udpbd_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_SMAP);
-        irxptr_tab[modcount++].ptr = (void *)&smap_udpbd_irx;
-    }
-#endif
     if (modules & CORE_IRX_ETH) {
         irxptr_tab[modcount].info = size_smap_ingame_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_SMAP);
         irxptr_tab[modcount++].ptr = (void *)&smap_ingame_irx;
@@ -563,15 +584,15 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
         irxptr_tab[modcount++].ptr = (void *)mcemu_irx;
     }
 
+    if (modules & CORE_IRX_MMCE) {
+        irxptr_tab[modcount].info = size_mmcedrv_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_MMCEDRV);
+        irxptr_tab[modcount++].ptr = (void *)mmcedrv_irx;
+    }
+
 #ifdef PADEMU
     if (gEnablePadEmu) {
-        if (gPadEmuSettings & 0xFF) {
-            irxptr_tab[modcount].info = size_bt_pademu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_PADEMU);
-            irxptr_tab[modcount++].ptr = (void *)&bt_pademu_irx;
-        } else {
-            irxptr_tab[modcount].info = size_usb_pademu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_PADEMU);
-            irxptr_tab[modcount++].ptr = (void *)&usb_pademu_irx;
-        }
+        irxptr_tab[modcount].info = size_pademu_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_PADEMU);
+        irxptr_tab[modcount++].ptr = (void *)&pademu_irx;
     }
 #endif
 
@@ -585,10 +606,8 @@ static unsigned int sendIrxKernelRAM(const char *startup, const char *mode_str, 
     }
 #elif defined(TTY_UDP)
     if (modules & CORE_IRX_DEBUG) {
-#ifndef UDPBD
         irxptr_tab[modcount].info = size_udptty_ingame_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_UDPTTY);
         irxptr_tab[modcount++].ptr = (void *)&udptty_ingame_irx;
-#endif
         irxptr_tab[modcount].info = size_ioptrap_irx | SET_OPL_MOD_ID(OPL_MODULE_ID_IOPTRAP);
         irxptr_tab[modcount++].ptr = (void *)&ioptrap_irx;
     }
@@ -798,11 +817,15 @@ void sysPrintEECoreConfig(struct EECoreConfig_t *config)
 
     LOG("IP=%s NM=%s GW=%s mode: %d\n", config->g_ps2_ip, config->g_ps2_netmask, config->g_ps2_gateway, config->g_ps2_ETHOpMode);
 
+#ifdef CHEAT
     LOG("PS2RD Cheat Engine = %s\n", config->gCheatList == NULL ? "Disabled" : "Enabled");
+#endif
 
     LOG("EnforceLanguage = %s\n", config->enforceLanguage == 0 ? "Disabled" : "Enabled");
 
+#ifdef GSM
     LOG("GSM = %s\n", config->EnableGSMOp == 0 ? "Disabled" : "Enabled");
+#endif
 
     LOG("PADEMU = %s\n", config->EnablePadEmuOp == 0 ? "Disabled" : "Enabled");
 
@@ -833,19 +856,12 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
     char ElfPath[32];
     char *argv[4];
     void *eeloadCopy, *initUserMemory;
+#ifdef GSM
     struct GsmConfig_t gsm_config;
-
-#ifdef UDPBD
-    if (ethGetNetConfig(local_ip_address, local_netmask, local_gateway) < 0) {
-        for (int i = 0; i < 4; i++) {
-            local_ip_address[i] = ps2_ip[i];
-            local_netmask[i] = ps2_netmask[i];
-            local_gateway[i] = ps2_gateway[i];
-        }
-    }
-#else
-    ethGetNetConfig(local_ip_address, local_netmask, local_gateway);
 #endif
+
+    ethGetNetConfig(local_ip_address, local_netmask, local_gateway);
+
 #if (!defined(__DEBUG) && !defined(_DTL_T10000))
     AddHistoryRecordUsingFullPath(filename);
 #endif
@@ -937,20 +953,25 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
     strncpy(config->ExitPath, gExitPath, CORE_EXIT_PATH_MAX_LEN);
     strncpy(config->GameModeDesc, mode_str, CORE_GAME_MODE_DESC_MAX_LEN);
 
+    // MMCEIGR Settings
+    config->MMCEIGRSettings = gMMCEIGRSlot;
+
     config->EnableDebug = gEnableDebug;
     config->HDDSpindown = gHDDSpindown;
     config->g_ps2_ETHOpMode = gETHOpMode;
-
+#ifdef CHEAT
     if (GetCheatsEnabled()) {
         set_cheats_list();
         config->gCheatList = GetCheatsList();
     } else
         config->gCheatList = NULL;
+#endif
 
     sprintf(config->g_ps2_ip, "%u.%u.%u.%u", local_ip_address[0], local_ip_address[1], local_ip_address[2], local_ip_address[3]);
     sprintf(config->g_ps2_netmask, "%u.%u.%u.%u", local_netmask[0], local_netmask[1], local_netmask[2], local_netmask[3]);
     sprintf(config->g_ps2_gateway, "%u.%u.%u.%u", local_gateway[0], local_gateway[1], local_gateway[2], local_gateway[3]);
 
+#ifdef GSM
     // GSM now.
     config->EnableGSMOp = GetGSMEnabled();
     if (config->EnableGSMOp) {
@@ -967,6 +988,7 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
         config->GsmConfig.kGsDxDyOffsetSupported = gsm_config.kGsDxDyOffsetSupported;
         config->GsmConfig.FIELD_fix = gsm_config.FIELD_fix;
     }
+#endif
 
 #ifdef PADEMU
     config->EnablePadEmuOp = gEnablePadEmu;

@@ -55,8 +55,8 @@ static void (*p_dev9_intr_cb)(int flag) = NULL;
 static int dma_lock_sem = -1; /* used to arbitrate DMA */
 
 static s16 eeprom_data[5]; /* 2-byte EEPROM status (0/-1 = invalid, 1 = valid),
-				   6-byte MAC address,
-				   2-byte MAC address checksum.  */
+                   6-byte MAC address,
+                   2-byte MAC address checksum.  */
 
 /* Each driver can register callbacks that correspond to each bit of the
    SMAP interrupt status register (0xbx000028).  */
@@ -88,8 +88,8 @@ static int dev9x_devctl(iop_file_t *f, const char *name, int cmd, void *args, in
         case DDIOC_MODEL:
             return dev9type;
         case DDIOC_OFF:
-            //Do not let the DEV9 interface to be switched off by other software.
-            //dev9Shutdown();
+            // Do not let the DEV9 interface to be switched off by other software.
+            // Dev9CardStop();
             return 0;
         default:
             return 0;
@@ -161,10 +161,10 @@ int dev9d_init(void)
 }
 
 /* Export 4 */
-void dev9RegisterIntrCb(int intr, dev9_intr_cb_t cb)
+void SpdRegisterIntrHandler(int intr, dev9_intr_cb_t cb)
 {
 #if defined(HDD_DRIVER) || defined(USE_BDM_ATA)
-    //Don't let anything else change the HDD interrupt handlers.
+    // Don't let anything else change the HDD interrupt handlers.
     if (intr < 2) {
         if (atad_inited)
             return;
@@ -221,7 +221,7 @@ static void dev9_set_stat(int stat)
 }
 
 /* Export 6 */
-void dev9Shutdown(void)
+void Dev9CardStop(void)
 {
     int idx;
     USE_DEV9_REGS;
@@ -244,7 +244,7 @@ void dev9Shutdown(void)
 }
 
 /* Export 7 */
-void dev9IntrEnable(int mask)
+void SpdIntrEnable(int mask)
 {
     USE_SPD_REGS;
     int flags;
@@ -255,7 +255,7 @@ void dev9IntrEnable(int mask)
 }
 
 /* Export 8 */
-void dev9IntrDisable(int mask)
+void SpdIntrDisable(int mask)
 {
     USE_SPD_REGS;
     int flags;
@@ -266,7 +266,7 @@ void dev9IntrDisable(int mask)
 }
 
 /* Export 5 */
-int dev9DmaTransfer(int ctrl, void *buf, int bcr, int dir)
+int SpdDmaTransfer(int ctrl, void *buf, int bcr, int dir)
 {
     USE_SPD_REGS;
     volatile iop_dmac_chan_t *dev9_chan = (iop_dmac_chan_t *)DEV9_DMAC_BASE;
@@ -383,7 +383,7 @@ out:
 }
 
 /* Export 9 */
-int dev9GetEEPROM(u16 *buf)
+int SpdGetEthernetID(u16 *buf)
 {
     int i;
 
@@ -400,14 +400,14 @@ int dev9GetEEPROM(u16 *buf)
 }
 
 /* Export 10 */
-void dev9LEDCtl(int ctl)
+void SpdSetLED(int ctl)
 {
     USE_SPD_REGS;
     SPD_REG8(SPD_R_PIO_DATA) = (ctl == 0);
 }
 
 /* Export 11 */
-int dev9RegisterShutdownCb(int idx, dev9_shutdown_cb_t cb)
+int Dev9RegisterPowerOffHandler(int idx, dev9_shutdown_cb_t cb)
 {
     if (idx < 16) {
         dev9_shutdown_cbs[idx] = cb;
@@ -436,7 +436,7 @@ static int dev9_init(void)
     dev9_set_stat(0x103);
 
     /* Disable all device interrupts.  */
-    dev9IntrDisable(0xffff);
+    SpdIntrDisable(0xffff);
 
     /* Register interrupt dispatch callback handler. */
     p_dev9_intr_cb = (void *)dev9_intr_dispatch;
@@ -453,7 +453,7 @@ static int dev9_init(void)
     /* Read in the MAC address.  */
     read_eeprom_data();
     /* Turn the LED off.  */
-    dev9LEDCtl(0);
+    SpdSetLED(0);
     return 0;
 }
 
@@ -599,7 +599,7 @@ static int pcmcia_init(void)
         }
     }
 
-    //The DEV9 interface and SPEED should be already initialized.
+    // The DEV9 interface and SPEED should be already initialized.
     _sw(0xe01a3043, SSBUS_R_1418);
 
     if (dev9_init() != 0)
@@ -642,7 +642,7 @@ static int expbay_init(void)
     _sw(0xe01a3043, SSBUS_R_1418);
     _sw(0xef1a3043, SSBUS_R_141c);
 
-    //The DEV9 interface and SPEED should be already initialized.
+    // The DEV9 interface and SPEED should be already initialized.
 
     if (dev9_init() != 0)
         return 1;

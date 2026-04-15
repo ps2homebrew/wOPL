@@ -14,11 +14,10 @@ EE_SRC_DIR = src/
 EE_OBJS_DIR = obj/
 
 GSMCORE_EE_OBJS = gsm_engine.o gsm_api.o dve_reg.o
-IGSCORE_EE_OBJS = igs_api.o
 CHEATCORE_EE_OBJS = cheat_engine.o cheat_api.o
 
 EE_OBJS = main.o syshook.o iopmgr.o modmgr.o util.o patches.o patches_asm.o \
-	  padhook.o cd_igr_rpc.o tlb.o asm.o crt0.o $(GSMCORE_EE_OBJS) $(CHEATCORE_EE_OBJS)
+	  padhook.o cd_igr_rpc.o tlb.o asm.o crt0.o
 MAPFILE = ee_core.map
 
 EE_INCS := -I$(PS2SDK)/ee/include -I$(PS2SDK)/common/include -I$(PS2SDK)/ports/include -Iinclude -I.
@@ -44,9 +43,14 @@ EE_CFLAGS += -D__LOAD_DEBUG_MODULES
     endif
 endif
 
-ifeq ($(IGS),1)
-EE_OBJS += $(IGSCORE_EE_OBJS)
-EE_CFLAGS += -DIGS
+ifeq ($(GSM),1)
+EE_OBJS += $(GSMCORE_EE_OBJS)
+EE_CFLAGS += -DGSM
+endif
+
+ifeq ($(CHEAT),1)
+EE_OBJS += $(CHEATCORE_EE_OBJS)
+EE_CFLAGS += -DCHEAT
 endif
 
 EE_OBJS := $(EE_OBJS:%=$(EE_OBJS_DIR)%)

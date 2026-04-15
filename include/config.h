@@ -1,6 +1,9 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
+#include <sys/stat.h>
+#include <tamtypes.h>
+
 // Enum for the different types of config files. Game-specific config files (<game ID>.cfg) will always have an ID of 0.
 enum CONFIG_INDEX {
     CONFIG_INDEX_OPL = 0,
@@ -45,17 +48,21 @@ enum CONFIG_INDEX {
 #define CONFIG_ITEM_OSD_SETTINGS_TV_ASP "$OSDAspectRatio"
 #define CONFIG_ITEM_OSD_SETTINGS_VMODE  "$OSDVideoMode"
 // Per-Game GSM keys. -Bat-
-#define CONFIG_ITEM_GSMSOURCE           "$GSMSource"
-#define CONFIG_ITEM_ENABLEGSM           "$EnableGSM"
-#define CONFIG_ITEM_GSMVMODE            "$GSMVMode"
-#define CONFIG_ITEM_GSMXOFFSET          "$GSMXOffset"
-#define CONFIG_ITEM_GSMYOFFSET          "$GSMYOffset"
-#define CONFIG_ITEM_GSMFIELDFIX         "$GSMFIELDFix"
+#ifdef GSM
+#define CONFIG_ITEM_GSMSOURCE   "$GSMSource"
+#define CONFIG_ITEM_ENABLEGSM   "$EnableGSM"
+#define CONFIG_ITEM_GSMVMODE    "$GSMVMode"
+#define CONFIG_ITEM_GSMXOFFSET  "$GSMXOffset"
+#define CONFIG_ITEM_GSMYOFFSET  "$GSMYOffset"
+#define CONFIG_ITEM_GSMFIELDFIX "$GSMFIELDFix"
+#endif
 
 // Per-Game CHEAT keys. -Bat-
+#ifdef CHEAT
 #define CONFIG_ITEM_CHEATSSOURCE "$CheatsSource"
 #define CONFIG_ITEM_ENABLECHEAT  "$EnableCheat"
 #define CONFIG_ITEM_CHEATMODE    "$CheatMode"
+#endif
 
 #define CONFIG_ITEM_PADEMUSOURCE     "$PADEMUSource"
 #define CONFIG_ITEM_ENABLEPADEMU     "$EnablePadEmu"
@@ -74,6 +81,8 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_PLAS_BLEND_COLOR     "plasma_blend_color"
 #define CONFIG_OPL_ENABLE_NOTIFICATIONS "enable_notifications"
 #define CONFIG_OPL_ENABLE_COVERART      "enable_coverart"
+#define CONFIG_OPL_ENABLE_ARCHIVEDART   "enable_archivedart"
+#define CONFIG_OPL_ENABLE_DISCART       "enable_discart"
 #define CONFIG_OPL_WIDESCREEN           "wide_screen"
 #define CONFIG_OPL_VMODE                "vmode"
 #define CONFIG_OPL_XOFF                 "xoff"
@@ -98,16 +107,20 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ETH_MODE             "eth_mode"
 #define CONFIG_OPL_APP_MODE             "app_mode"
 #define CONFIG_OPL_FAV_MODE             "fav_mode"
+#define CONFIG_OPL_MMCE_MODE            "mmce_mode"
 #define CONFIG_OPL_BDM_CACHE            "bdm_cache"
 #define CONFIG_OPL_HDD_CACHE            "hdd_cache"
 #define CONFIG_OPL_SMB_CACHE            "smb_cache"
+#define CONFIG_OPL_MMCE_PREFIX          "mmce_prefix"
+#define CONFIG_OPL_MMCE_SLOT            "mmce_slot"
+#define CONFIG_OPL_MMCEIGR_SLOT         "mmceigr_slot"
+#define CONFIG_OPL_MMCE_GAMEID          "mmce_gameid"
+#define CONFIG_OPL_MMCE_WAIT_CYCLES     "mmce_wait_cylces"
+#define CONFIG_OPL_MMCE_USE_ALARMS      "mmce_use_alarms"
+#define CONFIG_OPL_ENABLE_USB           "enable_usb"
 #define CONFIG_OPL_ENABLE_ILINK         "enable_ilink"
 #define CONFIG_OPL_ENABLE_MX4SIO        "enable_mx4sio"
 #define CONFIG_OPL_ENABLE_BDMHDD        "enable_bdm_hdd"
-
-#ifdef UDPBD
-#define CONFIG_OPL_ENABLE_UDPBD "enable_udpbd"
-#endif
 
 #define CONFIG_OPL_SWAP_SEL_BUTTON   "swap_select_btn"
 #define CONFIG_OPL_PARENTAL_LOCK_PWD "parental_lock_password"
@@ -159,6 +172,8 @@ typedef struct
     u32 uid;
 } config_set_t;
 
+extern char *gBaseMCDir;
+
 void configInit(char *prefix);
 void configSetMove(char *prefix);
 void configMove(config_set_t *configSet, const char *fileName);
@@ -174,7 +189,6 @@ int configGetInt(config_set_t *configSet, const char *key, int *value);
 int configSetColor(config_set_t *configSet, const char *key, unsigned char *color);
 int configGetColor(config_set_t *configSet, const char *key, unsigned char *color);
 int configRemoveKey(config_set_t *configSet, const char *key);
-void configMerge(config_set_t *dest, const config_set_t *source);
 
 void configGetDiscIDBinary(config_set_t *configSet, void *dst);
 
@@ -191,5 +205,15 @@ void configRemoveVMC(config_set_t *configSet, int slot);
 
 char *configGetDir(void);
 void configPrepareNotifications(char *prefix);
+
+void loadConfig();
+
+int configCheckLoadConfigBDM(int types);
+
+int configCheckLoadConfigHDD(int types);
+
+int configLoad(int types);
+int configSave(int types, int showUI);
+void configApply(int themeID, int langID, int skipDeviceRefresh);
 
 #endif
