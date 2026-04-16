@@ -369,6 +369,54 @@ static void guiShowBlockDeviceConfig(void)
     }
 }
 
+static void guiShowMMCEConfig()
+{
+    int ret;
+    const char *deviceSlots[] = {"0", "1", _l(_STR_AUTO), NULL};
+    const char *deviceAckWaitCycles[] = {"0", "1", "2", "3", "4", "5", NULL};
+    const char *deviceOnOff[] = {"OFF", "ON", NULL};
+    const char *deviceIGRSlots[] = {"NONE", "0", "1", "BOTH", NULL};
+
+    diaSetEnabled(diaMMCEConfig, CFG_ENABLEMMCE, !gEnableMX4SIO);
+    diaSetInt(diaMMCEConfig, CFG_ENABLEMMCE, gEnableMMCE);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCESLOT, deviceSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCESLOT, gMMCESlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCEIGRSLOT, deviceIGRSlots);
+    diaSetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, gMMCEIGRSlot);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, deviceAckWaitCycles);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, gMMCEAckWaitCycles);
+
+    diaSetEnum(diaMMCEConfig, CFG_MMCE_USE_ALARMS, deviceOnOff);
+    diaSetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, gMMCEUseAlarms);
+
+    diaSetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix);
+
+#ifdef __DEBUG
+    diaSetInt(diaMMCEConfig, CFG_MMCEGAMEID, gMMCEEnableGameID);
+#endif
+
+    ret = diaExecuteDialog(diaMMCEConfig, -1, 1, NULL);
+    if (ret) {
+        diaGetInt(diaMMCEConfig, CFG_ENABLEMMCE, &gEnableMMCE);
+        diaGetInt(diaMMCEConfig, CFG_MMCESLOT, &gMMCESlot);
+#ifdef __DEBUG
+        diaGetInt(diaMMCEConfig, CFG_MMCEGAMEID, &gMMCEEnableGameID);
+#endif
+        diaGetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, &gMMCEIGRSlot);
+
+        diaGetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
+        diaGetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, &gMMCEUseAlarms);
+
+        diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
+    }
+
+    configApply(-1, -1, 0);
+    menuReinitMainMenu();
+}
+
 static int guiUpdater(int modified)
 {
     int showAutoStartLast;
@@ -380,6 +428,8 @@ static int guiUpdater(int modified)
 
         diaGetInt(diaConfig, CFG_BDMMODE, &gBDMStartMode);
         diaSetVisible(diaConfig, BLOCKDEVICE_BUTTON, gBDMStartMode);
+        diaGetInt(diaConfig, CFG_MMCEMODE, &gMMCEStartMode);
+        diaSetVisible(diaConfig, MMCEDEVICE_BUTTON, gMMCEStartMode);
     }
     return 0;
 }
@@ -435,6 +485,7 @@ void guiShowConfig()
     diaSetEnum(diaConfig, CFG_BDMMODE, deviceModes);
     diaSetEnum(diaConfig, CFG_HDDMODE, deviceModes);
     diaSetEnum(diaConfig, CFG_ETHMODE, deviceModes);
+    diaSetEnum(diaConfig, CFG_MMCEMODE, deviceModes);
     diaSetEnum(diaConfig, CFG_APPMODE, deviceModes);
     diaSetEnum(diaConfig, CFG_FAVMODE, deviceModes);
 
@@ -462,6 +513,8 @@ void guiShowConfig()
     diaSetInt(diaConfig, CFG_DEFDEVICE, deviceModeIndex);
     diaSetInt(diaConfig, CFG_BDMMODE, gBDMStartMode);
     diaSetVisible(diaConfig, BLOCKDEVICE_BUTTON, gBDMStartMode);
+    diaSetInt(diaConfig, CFG_MMCEMODE, gMMCEStartMode);
+    diaSetVisible(diaConfig, MMCEDEVICE_BUTTON, gMMCEStartMode);
     diaSetEnabled(diaConfig, CFG_HDDMODE, !gEnableBdmHDD);
     diaSetInt(diaConfig, CFG_HDDMODE, gHDDStartMode);
     diaSetInt(diaConfig, CFG_ETHMODE, gETHStartMode);
@@ -497,58 +550,12 @@ void guiShowConfig()
         if (ret == BLOCKDEVICE_BUTTON)
             guiShowBlockDeviceConfig();
 
+        if (ret == MMCEDEVICE_BUTTON)
+            guiShowMMCEConfig();
+
         configApply(-1, -1, 0);
         menuReinitMainMenu();
     }
-}
-
-void guiShowMMCEConfig()
-{
-    int ret;
-    const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
-    const char *deviceSlots[] = {"0", "1", _l(_STR_AUTO), NULL};
-    const char *deviceAckWaitCycles[] = {"0", "1", "2", "3", "4", "5", NULL};
-    const char *deviceOnOff[] = {"OFF", "ON", NULL};
-    const char *deviceIGRSlots[] = {"NONE", "0", "1", "BOTH", NULL};
-
-    diaSetEnum(diaMMCEConfig, CFG_MMCEMODE, deviceModes);
-    diaSetInt(diaMMCEConfig, CFG_MMCEMODE, gMMCEStartMode);
-
-    diaSetEnum(diaMMCEConfig, CFG_MMCESLOT, deviceSlots);
-    diaSetInt(diaMMCEConfig, CFG_MMCESLOT, gMMCESlot);
-
-    diaSetEnum(diaMMCEConfig, CFG_MMCEIGRSLOT, deviceIGRSlots);
-    diaSetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, gMMCEIGRSlot);
-
-    diaSetEnum(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, deviceAckWaitCycles);
-    diaSetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, gMMCEAckWaitCycles);
-
-    diaSetEnum(diaMMCEConfig, CFG_MMCE_USE_ALARMS, deviceOnOff);
-    diaSetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, gMMCEUseAlarms);
-
-    diaSetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix);
-
-#ifdef __DEBUG
-    diaSetInt(diaMMCEConfig, CFG_MMCEGAMEID, gMMCEEnableGameID);
-#endif
-
-    ret = diaExecuteDialog(diaMMCEConfig, -1, 1, NULL);
-    if (ret) {
-        diaGetInt(diaMMCEConfig, CFG_MMCEMODE, &gMMCEStartMode);
-        diaGetInt(diaMMCEConfig, CFG_MMCESLOT, &gMMCESlot);
-#ifdef __DEBUG
-        diaGetInt(diaMMCEConfig, CFG_MMCEGAMEID, &gMMCEEnableGameID);
-#endif
-        diaGetInt(diaMMCEConfig, CFG_MMCEIGRSLOT, &gMMCEIGRSlot);
-
-        diaGetInt(diaMMCEConfig, CFG_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
-        diaGetInt(diaMMCEConfig, CFG_MMCE_USE_ALARMS, &gMMCEUseAlarms);
-
-        diaGetString(diaMMCEConfig, CFG_MMCEPREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
-    }
-
-    configApply(-1, -1, 0);
-    menuReinitMainMenu();
 }
 
 static int curTheme = -1;

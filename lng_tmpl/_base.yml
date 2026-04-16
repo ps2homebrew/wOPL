@@ -704,6 +704,10 @@ gui_strings:
   string: Advanced
 - label: MMCE_SETTINGS
   string: MMCE Settings
+- label: HINT_MMCE_DEVICES
+  string: Enable MMCE manually
+- label: MMCEDEVICE_SETTINGS
+  string: MMCE Device Settings
 - label: MMCE_SEMA
   string: Lock Sema Enqueuing Method
 - label: HINT_MMCE_SEMA
