@@ -330,29 +330,29 @@ jobs:
           cp -f "WOPNPS2LD-LANGS-${wOPL_VERSION}.7z" WOPNPS2LD-LANGS.7z || true
           cp -f "WOPNPS2LD-DEBUG-${wOPL_VERSION}.7z" WOPNPS2LD-DEBUG.7z || true
 
-#      - name: Create GitHub prerelease (new tag every run)
-#        uses: softprops/action-gh-release@v2
-#        with:
-#          tag_name: ${{ steps.meta.outputs.tag }}
-#          name: ${{ steps.meta.outputs.name }}
-#          prerelease: false
-#          generate_release_notes: true
-#          target_commitish: ${{ github.sha }}
-#          body: |
-#            [![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
-#            [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
-#            [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
-#            [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
-#
-#          files: |
-#            WOPNPS2LD.ELF
-#            WOPNPS2LD.7z
-#            WOPNPS2LD-VARIANTS.7z
-#            WOPNPS2LD-LANGS.7z
-#            WOPNPS2LD-DEBUG.7z
-#            INFO/DETAILED_CHANGELOG
-#            INFO/README.md
-#            INFO/LICENSE
-#            INFO/CREDITS
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub prerelease (new tag every run)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.name }}
+          prerelease: true
+          generate_release_notes: true
+          target_commitish: ${{ github.sha }}
+          body: |
+            [![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
+            [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+            [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
+            [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
+
+          files: |
+            WOPNPS2LD.ELF
+            WOPNPS2LD.7z
+            WOPNPS2LD-VARIANTS.7z
+            WOPNPS2LD-LANGS.7z
+            WOPNPS2LD-DEBUG.7z
+            INFO/DETAILED_CHANGELOG
+            INFO/README.md
+            INFO/LICENSE
+            INFO/CREDITS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
