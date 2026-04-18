@@ -1458,7 +1458,7 @@ static void thmLoad(const char *themePath, int themeID)
     newT->logoIcon = NULL;
     newT->logoIconCount = LOGO_21_ICON - LOGO_1_ICON + 1;
     newT->loadingIcon = NULL;
-    newT->loadingIconCount = LOADING_7_ICON - LOADING_1_ICON + 1;
+    newT->loadingIconCount = LOADING_8_ICON - LOADING_1_ICON + 1;
     newT->coverflow = NULL;
 
     config_set_t *themeConfig = NULL;
@@ -1737,7 +1737,7 @@ int thmFindGuiID(const char *theme)
                 return i + 2;
         }
     }
-    return (strcasecmp(theme, "<OPL>") == 0) ? 0 : (strcasecmp(theme, "<OPL-CF>") == 0) ? 1 :
+    return (strcasecmp(theme, "<wOPL>") == 0) ? 0 : (strcasecmp(theme, "<wOPL-CF>") == 0) ? 1 :
                                                                                           0;
 }
 
