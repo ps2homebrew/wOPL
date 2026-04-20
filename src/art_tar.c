@@ -163,6 +163,11 @@ static int writeTarCache(const char *cachePath, const char *tarPath)
 
 int loadTarFile(const char *path)
 {
+    struct stat st;
+    if (stat(path, &st) < 0) {
+        return -1;
+    }
+
     char dirPath[256];
     strncpy(dirPath, path, sizeof(dirPath));
     dirPath[sizeof(dirPath) - 1] = '\0';
