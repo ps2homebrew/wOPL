@@ -288,7 +288,7 @@ jobs:
           TAG="pre-v${wOPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
           echo "wOPL_VERSION=${wOPL_VERSION}" >> "$GITHUB_ENV"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "name=Pre-release v${wOPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
+          echo "name=Double Unofficial OPL ${wOPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
