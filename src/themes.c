@@ -1738,7 +1738,7 @@ int thmFindGuiID(const char *theme)
         }
     }
     return (strcasecmp(theme, "<wOPL>") == 0) ? 0 : (strcasecmp(theme, "<wOPL-CF>") == 0) ? 1 :
-                                                                                          0;
+                                                                                            0;
 }
 
 const char **thmGetGuiList(void)
