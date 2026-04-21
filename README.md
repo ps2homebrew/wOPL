@@ -23,6 +23,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
   <summary> <b> Changes in wOPL </b> </summary>
 <p>
 
+v1.0
 * Removal of UDPBD since there are not much users using this.
 * Add a easter egg when booting on wOPL.
 * Code cleanups/fixes and compiler warning fixes.
@@ -33,6 +34,9 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * Added daf0x gamestar module.
 * Modular pademu, Play your games without selecting modules.
 * Disc cover enable.
+
+v1.1
+* Added USB option in BDM
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
