@@ -3,10 +3,6 @@
 
 #include "include/mcemu.h"
 
-#define SYS_LOAD_MC_MODULES   0x01
-#define SYS_LOAD_USB_MODULES  0x02
-#define SYS_LOAD_ISOFS_MODULE 0x04
-
 #define NEUTRINO_PATH     "mc0:NEUTRINO/neutrino.elf"
 #define NEUTRINO_ALT_PATH "mc1:NEUTRINO/neutrino.elf"
 
@@ -26,7 +22,7 @@ unsigned int USBA_crc32(const char *string);
 int sysGetDiscID(char *discID);
 void sysInitDev9(void);
 void sysShutdownDev9(void);
-void sysReset(int modload_mask);
+void sysReset();
 void sysExecExit(void);
 void sysPowerOff(void);
 #ifdef __DECI2_DEBUG

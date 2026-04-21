@@ -23,7 +23,7 @@ extern unsigned int frameCounter;
 // ----------------------------------------------------------
 void reset(void)
 {
-    sysReset(SYS_LOAD_MC_MODULES | SYS_LOAD_USB_MODULES | SYS_LOAD_ISOFS_MODULE);
+    sysReset();
 
     mcInit(MC_TYPE_XMC);
 }

@@ -203,6 +203,7 @@ static void setDefaults(void)
     gMMCEAckWaitCycles = 5;
     gMMCEUseAlarms = 1;
 
+    gEnableUSB = 0;
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
@@ -333,6 +334,7 @@ void miniInit(int mode)
         bdmInitSemaphore();
 
         // Force load iLink & mx4sio modules.. we aren't using the gui so this is fine.
+        gEnableUSB = 1;
         gEnableILK = 1; // iLink will break pcsx2 however.
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;

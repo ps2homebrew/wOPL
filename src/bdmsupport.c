@@ -45,6 +45,7 @@ typedef struct
     vmc_spec_t specs; /* Card specifications */
 } bdm_vmc_infos_t;
 
+static int iUSBModLoaded = 0;
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
@@ -57,6 +58,7 @@ int bdmDeviceModeStarted;
 int gBDMStartMode;
 int bdmCacheSize;
 char gBDMPrefix[32];
+int gEnableUSB;
 int gEnableILK;
 int gEnableMX4SIO;
 int gEnableBdmHDD;
@@ -112,6 +114,14 @@ static void bdmLoadBlockDeviceModules(void)
 {
     WaitSema(bdmLoadModuleLock);
 
+    if (gEnableUSB && !iUSBModLoaded) {
+        // Load USB Block Device drivers
+        LOG("[USBMASS_BD]:\n");
+        sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
+
+        iUSBModLoaded = 1;
+    }
+
     if (gEnableILK && !iLinkModLoaded) {
         // Load iLink Block Device drivers
         LOG("[ILINKMAN]:\n");
@@ -153,12 +163,6 @@ void bdmLoadModules(void)
     LOG("[BDMFS_FATFS]:\n");
     sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
 
-    // Load USB Block Device drivers
-    LOG("[USBD]:\n");
-    sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
-    LOG("[USBMASS_BD]:\n");
-    sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
-
     // Load Optional Block Device drivers
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &bdmLoadBlockDeviceModules);
 
@@ -179,6 +183,7 @@ static void bdmInit(item_list_t *itemList)
     pDeviceData->bdmModifiedDVDPrev = 0;
     pDeviceData->bdmGameCount = 0;
     pDeviceData->bdmGames = NULL;
+    bdmLoadModules();
     configGetInt(configGetByType(CONFIG_OPL), "usb_frames_delay", &itemList->delay);
     itemList->enabled = 1;
 }
@@ -213,7 +218,7 @@ static int bdmNeedsUpdate(item_list_t *itemList)
         int deviceEnabled = 0;
         switch (pDeviceData->bdmDeviceType) {
             case BDM_TYPE_USB:
-                deviceEnabled = (gBDMStartMode != START_MODE_DISABLED);
+                deviceEnabled = gEnableUSB;
                 break;
             case BDM_TYPE_ILINK:
                 deviceEnabled = gEnableILK;
