@@ -21,8 +21,6 @@ extern int gMMCEUseAlarms;
 extern int gMMCEEnableGameID;
 extern int gMMCEStartMode;
 extern char gMMCEPrefix[32];
-extern int gEnableMMCE;
-
 
 void mmceInit(item_list_t *itemList);
 item_list_t *mmceGetObject(int initOnly);

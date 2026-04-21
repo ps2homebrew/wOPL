@@ -35,8 +35,6 @@ static base_game_info_t *mmceGames;
 // forward declaration
 static item_list_t mmceGameList;
 
-static int MMCEModLoaded = 0;
-
 int gMMCEIGRSlot;
 int gMMCESlot;
 int gMMCEAckWaitCycles;
@@ -44,7 +42,6 @@ int gMMCEUseAlarms;
 int gMMCEEnableGameID;
 int gMMCEStartMode;
 char gMMCEPrefix[32];
-int gEnableMMCE;
 
 int mmceDetectSlot(void)
 {
@@ -71,12 +68,9 @@ void mmceSetPrefix(void)
 
 void mmceLoadModules(void)
 {
-    if (gEnableMMCE && !MMCEModLoaded) {
-        LOG("MMCESUPPORT LoadModules\n");
-        LOG("[MMCEMAN]:\n");
-        sysLoadModuleBuffer(&mmceman_irx, size_mmceman_irx, 0, NULL);
-        MMCEModLoaded = 1;
-    }
+    LOG("MMCESUPPORT LoadModules\n");
+    LOG("[MMCEMAN]:\n");
+    sysLoadModuleBuffer(&mmceman_irx, size_mmceman_irx, 0, NULL);
 }
 
 void mmceInit(item_list_t *itemList)

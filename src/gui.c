@@ -377,9 +377,6 @@ static void guiShowMMCEConfig()
     const char *deviceOnOff[] = {"OFF", "ON", NULL};
     const char *deviceIGRSlots[] = {"NONE", "0", "1", "BOTH", NULL};
 
-    diaSetEnabled(diaMMCEConfig, CFG_ENABLEMMCE, !gEnableMX4SIO);
-    diaSetInt(diaMMCEConfig, CFG_ENABLEMMCE, gEnableMMCE);
-
     diaSetEnum(diaMMCEConfig, CFG_MMCESLOT, deviceSlots);
     diaSetInt(diaMMCEConfig, CFG_MMCESLOT, gMMCESlot);
 
@@ -400,7 +397,6 @@ static void guiShowMMCEConfig()
 
     ret = diaExecuteDialog(diaMMCEConfig, -1, 1, NULL);
     if (ret) {
-        diaGetInt(diaMMCEConfig, CFG_ENABLEMMCE, &gEnableMMCE);
         diaGetInt(diaMMCEConfig, CFG_MMCESLOT, &gMMCESlot);
 #ifdef __DEBUG
         diaGetInt(diaMMCEConfig, CFG_MMCEGAMEID, &gMMCEEnableGameID);
@@ -513,11 +509,12 @@ void guiShowConfig()
     diaSetInt(diaConfig, CFG_DEFDEVICE, deviceModeIndex);
     diaSetInt(diaConfig, CFG_BDMMODE, gBDMStartMode);
     diaSetVisible(diaConfig, BLOCKDEVICE_BUTTON, gBDMStartMode);
-    diaSetInt(diaConfig, CFG_MMCEMODE, gMMCEStartMode);
-    diaSetVisible(diaConfig, MMCEDEVICE_BUTTON, gMMCEStartMode);
     diaSetEnabled(diaConfig, CFG_HDDMODE, !gEnableBdmHDD);
     diaSetInt(diaConfig, CFG_HDDMODE, gHDDStartMode);
     diaSetInt(diaConfig, CFG_ETHMODE, gETHStartMode);
+    diaSetInt(diaConfig, CFG_MMCEMODE, gMMCEStartMode);
+    diaSetVisible(diaConfig, MMCEDEVICE_BUTTON, gMMCEStartMode);
+    diaSetEnabled(diaConfig, CFG_BDMMODE, !gMMCEStartMode);
     diaSetInt(diaConfig, CFG_APPMODE, gAPPStartMode);
     diaSetInt(diaConfig, CFG_FAVMODE, gFAVStartMode);
 
