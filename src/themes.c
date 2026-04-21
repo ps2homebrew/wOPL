@@ -21,11 +21,11 @@
 #define DECORATOR_SIZE  20
 #define COVERFLOW_COUNT 3
 
-extern const char conf_theme_wOPL_cfg;
-extern u16 size_conf_theme_wOPL_cfg;
+extern const char theme_list_cfg;
+extern u16 size_theme_list_cfg;
 
-extern const char conf_theme_wOPL_CF_cfg;
-extern u16 size_conf_theme_wOPL_CF_cfg;
+extern const char theme_coverflow_cfg;
+extern u16 size_theme_coverflow_cfg;
 
 static int screenWidth;
 static int screenHeight;
@@ -1465,10 +1465,10 @@ static void thmLoad(const char *themePath, int themeID)
     if (!themePath && themeID == 0) {
         // No theme specified. Prepare and load the default theme.
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_wOPL_cfg, size_conf_theme_wOPL_cfg);
+        configReadBuffer(themeConfig, &theme_list_cfg, size_theme_list_cfg);
     } else if (!themePath && themeID == 1) {
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_wOPL_CF_cfg, size_conf_theme_wOPL_CF_cfg);
+        configReadBuffer(themeConfig, &theme_coverflow_cfg, size_theme_coverflow_cfg);
     } else {
         snprintf(path, sizeof(path), "%sconf_theme.cfg", themePath);
         themeConfig = configAlloc(0, NULL, path);
