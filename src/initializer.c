@@ -173,13 +173,13 @@ static void setDefaults(void)
     gMMCEPrefix[0] = '\0';
     gBDMPrefix[0] = '\0';
     gETHPrefix[0] = '\0';
-    gEnableNotifications = 0;
+    gEnableNotifications = 1;
     gEnableArt = 1;
     gEnableArchivedArt = 0;
     gDiscEnableArt = 1;
     gWideScreen = 0;
-    gEnableSFX = 0;
-    gEnableBootSND = 0;
+    gEnableSFX = 1;
+    gEnableBootSND = 1;
     gEnableBGM = 0;
     gSFXVolume = 80;
     gBootSndVolume = 80;
