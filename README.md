@@ -38,6 +38,7 @@ v1.0
 v1.1
 * Added USB option in BDM
 * Reworked the mmce option(Suggestion by Hardlevel)
+* Enabled sfx/boot sounds by standard
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
