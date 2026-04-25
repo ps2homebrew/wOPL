@@ -339,7 +339,6 @@ void miniInit(int mode)
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;
         bdmLoadModules();
-        delay(6); // Wait for the device to be detected.
     } else if (mode == HDD_MODE) {
         hddLoadModules();
         hddLoadSupportModules();
