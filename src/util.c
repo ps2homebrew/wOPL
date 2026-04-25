@@ -192,7 +192,6 @@ int sysDeleteFolder(const char *folder)
     char *path;
     struct dirent *dirent;
     DIR *dir;
-    struct stat st;
     struct DirentToDelete *head, *start;
 
     result = 0;
@@ -205,9 +204,8 @@ int sysDeleteFolder(const char *folder)
 
             path = malloc(strlen(folder) + strlen(dirent->d_name) + 2);
             sprintf(path, "%s/%s", folder, dirent->d_name);
-            stat(path, &st);
 
-            if (S_ISDIR(st.st_mode)) {
+            if (dirent->d_type == DT_DIR) {
                 /* Recursive, delete all subfolders */
                 result = sysDeleteFolder(path);
                 free(path);

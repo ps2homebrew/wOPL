@@ -552,7 +552,6 @@ static item_list_t appItemList = {
 static int scanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg, char *appsPath, int exception)
 {
     struct dirent *pdirent;
-    struct stat st;
     DIR *pdir;
     int count, ret;
     config_set_t *appConfig;
@@ -569,9 +568,7 @@ static int scanApps(int (*callback)(const char *path, config_set_t *appConfig, v
                 continue;
 
             snprintf(dir, sizeof(dir), "%s/%s", appsPath, pdirent->d_name);
-            if (stat(dir, &st) < 0)
-                continue;
-            if (!S_ISDIR(st.st_mode))
+            if (pdirent->d_type != DT_DIR)
                 continue;
 
             snprintf(path, sizeof(path), "%s/%s", dir, APP_TITLE_CONFIG_FILE);
