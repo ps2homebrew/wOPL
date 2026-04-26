@@ -22,11 +22,11 @@
 #define DECORATOR_SIZE  20
 #define COVERFLOW_COUNT 3
 
-extern const char conf_theme_wOPL_cfg;
-extern u16 size_conf_theme_wOPL_cfg;
+extern const char theme_list_cfg;
+extern u16 size_theme_list_cfg;
 
-extern const char conf_theme_wOPL_CF_cfg;
-extern u16 size_conf_theme_wOPL_CF_cfg;
+extern const char theme_coverflow_cfg;
+extern u16 size_theme_coverflow_cfg;
 
 static int screenWidth;
 static int screenHeight;
@@ -1459,17 +1459,17 @@ static void thmLoad(const char *themePath, int themeID)
     newT->logoIcon = NULL;
     newT->logoIconCount = LOGO_21_ICON - LOGO_1_ICON + 1;
     newT->loadingIcon = NULL;
-    newT->loadingIconCount = LOADING_7_ICON - LOADING_1_ICON + 1;
+    newT->loadingIconCount = LOADING_8_ICON - LOADING_1_ICON + 1;
     newT->coverflow = NULL;
 
     config_set_t *themeConfig = NULL;
     if (!themePath && themeID == 0) {
         // No theme specified. Prepare and load the default theme.
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_wOPL_cfg, size_conf_theme_wOPL_cfg);
+        configReadBuffer(themeConfig, &theme_list_cfg, size_theme_list_cfg);
     } else if (!themePath && themeID == 1) {
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_wOPL_CF_cfg, size_conf_theme_wOPL_CF_cfg);
+        configReadBuffer(themeConfig, &theme_coverflow_cfg, size_theme_coverflow_cfg);
     } else {
         snprintf(path, sizeof(path), "%sconf_theme.cfg", themePath);
         themeConfig = configAlloc(0, NULL, path);
@@ -1738,8 +1738,8 @@ int thmFindGuiID(const char *theme)
                 return i + 2;
         }
     }
-    return (strcasecmp(theme, "<OPL>") == 0) ? 0 : (strcasecmp(theme, "<OPL-CF>") == 0) ? 1 :
-                                                                                          0;
+    return (strcasecmp(theme, "<wOPL>") == 0) ? 0 : (strcasecmp(theme, "<wOPL-CF>") == 0) ? 1 :
+                                                                                            0;
 }
 
 const char **thmGetGuiList(void)
