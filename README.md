@@ -1,6 +1,6 @@
 # Double Unofficial-Open-PS2-Loader
 
-![logo](https://github.com/NathanNeurotic/wOPL/blob/wOPL-base/gfx/logo_15.png)
+![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo_15.png)
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
@@ -9,10 +9,10 @@ Copyright 2025-Present, Wolf3s and Ripto<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![CI](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/ps2homebree/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
-[![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
+[![Downloads](https://img.shields.io/github/downloads/ps2homebrew/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/releases)
 
 ## Introduction
 
@@ -228,7 +228,7 @@ For example, to use `hdl_dump` to install a game to the HDD:
 
 To use the NBD server in wOPL:
 
-* Grab the latest beta version - go to the [Releases](https://github.com/NathanNeurotic/wOPL/releases) section and grab the one at the top.
+* Grab the latest beta version - go to the [Releases](https://github.com/ps2homebrew/wOPL/releases) section and grab the one at the top.
 * Ensure OPL is configured with an IP address (either static or DHCP).
 * Open the menu and select "Start NBD server". Once it's ready, it should update the screen to say "NBD Server running..."
 * Now you can connect with any of the following NBD clients.
