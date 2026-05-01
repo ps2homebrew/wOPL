@@ -16,6 +16,7 @@
 #include "include/pad.h"
 #include "include/renderman.h"
 #include "include/themes.h"
+#include "include/lwnbd.h"
 
 #ifdef __DEBUG
 #include "include/debug.h"

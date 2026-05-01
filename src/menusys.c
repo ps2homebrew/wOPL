@@ -84,9 +84,10 @@ static ee_sema_t menuSema;
 
 int RemainSecs, DisableCron;
 int gSelectButton;
+int gAutosort;
+int gAutoRefresh;
 
 extern unsigned char shouldAppsUpdate;
-extern unsigned int frameCounter;
 
 
 #define MENU_GENERAL_UPDATE_DELAY 60

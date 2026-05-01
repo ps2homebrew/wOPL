@@ -19,6 +19,8 @@ static item_list_t favItemList;
 
 int gFAVStartMode;
 
+void menuClearGameList(opl_io_module_t *mdl);
+
 void favInit(item_list_t *itemList)
 {
     LOG("FAVSUPPORT Init\n");
@@ -217,6 +219,11 @@ void writeFavouritesFile(submenu_item_t *items, int size)
     }
 }
 
+static item_list_t *getFavouritesOwnerPointer(short int mode)
+{
+    return list_support[mode].support;
+}
+
 submenu_item_t *readFavouritesFile(int *out_size)
 {
     char filename[256];
@@ -265,6 +272,97 @@ submenu_item_t *readFavouritesFile(int *out_size)
     favItemCount = count;
     return items;
 }
+
+static void updateFavouritesMenu(submenu_item_t *item, opl_io_module_t *mdl)
+{
+    struct gui_update_t *gup = NULL;
+    gup = guiOpCreate(GUI_OP_APPEND_MENU);
+
+    gup->menu.menu = &mdl->menuItem;
+    gup->menu.subMenu = &mdl->subMenu;
+
+    gup->submenu.icon_id = item->icon_id;
+    gup->submenu.id = item->id;
+    gup->submenu.text = item->text;
+    gup->submenu.text_id = item->text_id;
+    gup->submenu.selected = 0;
+    gup->submenu.owner = (void *)item->owner;
+
+    guiDeferUpdate(gup);
+
+    if (gAutosort) {
+        gup = guiOpCreate(GUI_OP_SORT);
+        gup->menu.menu = &mdl->menuItem;
+        gup->menu.subMenu = &mdl->subMenu;
+        guiDeferUpdate(gup);
+    }
+}
+
+static int validateFavouriteItem(submenu_item_t *item)
+{
+    item_list_t *itemOwner = (item_list_t *)item->owner;
+    int i, startMode = itemOwner->mode;
+
+    LOG("Validating favourite: text=%s, id=%d, startMode=%d\n", item->text, item->id, startMode);
+
+    // make sure item from favourites.bin is on a connected device before adding it to the favourites submenu list
+    // if item was on a bdm device, hot plugging could result in a different mount point.. might need to check them all..
+    if (startMode >= BDM_MODE && startMode <= BDM_MODE4) {
+        for (i = BDM_MODE; i <= BDM_MODE4; i++) {
+            opl_io_module_t *mdl = &list_support[i];
+
+            if (mdl->support && mdl->support->enabled) {
+                submenu_list_t *cur = submenuFindItemByIdAndText(mdl->menuItem.submenu, item->id, item->text);
+                if (cur != NULL) {
+                    if (startMode != i) {                   // item found on a new mount point
+                        item->owner = (void *)mdl->support; // update submenu_item owner to the new mode, only in the list.. leave the file alone
+                        LOG("Favourite item found on new mount point, adjusting startMode to %d\n", i);
+                    }
+                    cur->item.favourited = 1;
+                    return 1;
+                }
+            }
+        }
+    } else {
+        opl_io_module_t *mdl = &list_support[startMode];
+
+        if (mdl->support && mdl->support->enabled) {
+            submenu_list_t *cur = submenuFindItemByIdAndText(mdl->menuItem.submenu, item->id, item->text);
+            if (cur != NULL) {
+                cur->item.favourited = 1;
+                return 1;
+            }
+        }
+    }
+
+    LOG("Favourite item not found %s\n", item->text);
+
+    // can't find the item on a connected device.. keep it in favourites.bin but don't add it to the list for render or execution.
+    return 0;
+}
+
+void loadFavourites(void)
+{
+    int size, i;
+    submenu_item_t *items = readFavouritesFile(&size);
+
+    guiExecDeferredOps();
+    menuClearGameList(&list_support[FAV_MODE]);
+
+    if (items != NULL) {
+        int count = size / sizeof(submenu_item_t);
+        for (i = 0; i < count; ++i) {
+            if (validateFavouriteItem(&items[i])) {
+                LOG("Favourite found, adding to list\n");
+                updateFavouritesMenu(&items[i], &list_support[FAV_MODE]);
+            }
+        }
+
+        free(items);
+    } else
+        LOG("Failed to load favourites.\n");
+}
+
 
 void addFavouriteItem(const submenu_item_t *item)
 {

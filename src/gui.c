@@ -38,7 +38,6 @@
 // Last Played Auto Start
 #include <time.h>
 
-extern unsigned int frameCounter;
 
 static int gScheduledOps;
 static int gCompletedOps;

@@ -18,4 +18,6 @@ void handleLwnbdSrv();
 int NBDInit(void);
 void NBDDeinit(void);
 
+extern char gExportName[32];
+
 #endif /* INCLUDE_LWNBDSUPPORT_H_ */

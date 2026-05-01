@@ -29,9 +29,9 @@ enum ETH_OP_MODES {
 
     ETH_OP_MODE_COUNT
 };
+// frame counter
+extern unsigned int frameCounter;
 
-extern int gAutosort;
-extern int gAutoRefresh;
 extern int gEnableArt;
 extern int gEnableArchivedArt;
 
@@ -46,13 +46,9 @@ extern int gEnableWrite;
 
 extern int gRememberLastPlayed;
 
-extern char gExportName[32];
-
+void reset(void);
 
 void setDefaultColors(void);
-
-item_list_t *getFavouritesOwnerPointer(short int mode);
-void loadFavourites(void);
 
 #define MENU_ITEM_HEIGHT 19
 
