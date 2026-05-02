@@ -63,7 +63,6 @@
 #define HPERM_OP(a, t, n, m) ((t) = ((((a) << (16 - (n))) ^ (a)) & (m)), \
                               (a) = (a) ^ (t) ^ (t >> (16 - (n))))
 
-
 static const unsigned int des_SPtrans[8][64] = {
     /* nibble 0 */
     {
@@ -362,6 +361,7 @@ static const unsigned int des_skb[8][64] = {
  * DO NOT use the alternative version on machines with 8 byte longs. */
 
 /* original version */
+// clang-format off
 #define D_ENCRYPT(L, R, S)                  \
     u = (R ^ s[S]);                         \
     t = R ^ s[S + 1];                       \
@@ -374,7 +374,7 @@ static const unsigned int des_skb[8][64] = {
          des_SPtrans[2][(u >> 8) & 0x3f] |  \
          des_SPtrans[4][(u >> 16) & 0x3f] | \
          des_SPtrans[6][(u >> 24) & 0x3f];
-
+// clang-format on 
 /* IP and FP
      * The problem is more of a geometric problem that random bit fiddling.
      0  1  2  3  4  5  6  7      62 54 46 38 30 22 14  6
@@ -471,7 +471,7 @@ static unsigned char *DES_createkeys(unsigned char *key)
     d = (((d & 0x000000ff) << 16) | (d & 0x0000ff00) |
          ((d & 0x00ff0000) >> 16) | ((c & 0xf0000000) >> 4));
     c &= 0x0fffffff;
-
+// clang-forat off
     for (i = 0; i < ITERATIONS; i++) {
         if (shifts[i]) {
             c = ((c >> 2) | (c << 26));
@@ -501,6 +501,7 @@ static unsigned char *DES_createkeys(unsigned char *key)
         s = (s << 4) | (s >> 28);
         *(k++) = s & 0xffffffff;
     }
+    // clang-format on
 
     return (unsigned char *)DES_Keys;
 }
