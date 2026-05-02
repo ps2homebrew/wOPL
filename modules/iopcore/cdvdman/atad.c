@@ -88,7 +88,9 @@ typedef struct _ata_cmd_info
 } ata_cmd_info_t;
 
 #define ata_cmd_command_mask      0x1f
-#define ata_cmd_command_bits(x)   ((x)&ata_cmd_command_mask)
+// clang-format off
+#define ata_cmd_command_bits(x)   ((x) & ata_cmd_command_mask)
+// clang-format on
 #define ata_cmd_flag_write_twice  0x80
 #define ata_cmd_flag_use_timeout  0x40
 #define ata_cmd_flag_dir          0x20 // DMA direction: read from RAM if set, write to to RAM if unset.

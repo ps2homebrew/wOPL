@@ -7,8 +7,9 @@
 
 #define MODNAME "iremsndpatch"
 IRX_ID(MODNAME, 1, 1);
-
-#define JAL(addr) (0x0c000000 | (((addr)&0x03ffffff) >> 2))
+// clang-format off
+#define JAL(addr) (0x0c000000 | (((addr) & 0x03ffffff) >> 2))
+// clang-format on
 #define JMP(addr) (0x08000000 | (0x3ffffff & ((addr) >> 2)))
 
 /* There was a memo dated July 2000, which went along the lines of saying that the atick functions of modmidi and modhsyn should be called,
