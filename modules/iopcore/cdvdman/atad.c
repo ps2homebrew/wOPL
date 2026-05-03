@@ -253,13 +253,11 @@ int atad_start(void)
     bdm_connect_bd(&g_ata_bd);
 #endif
 
-    res = ata_wait_for_busy_clear(30000);
-    if (res < 0)
-        goto out;
+    if (ata_wait_for_busy_clear(30000) < 0)
+        return 1;
 
-    res = ata_wait_for_ready(5000);
-    if (res < 0)
-        goto out;
+    if (ata_wait_for_ready(5000) < 0)
+        return 1;
 
     M_PRINTF("Driver loaded.\n");
     return 0;
