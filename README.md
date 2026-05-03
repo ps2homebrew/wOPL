@@ -41,6 +41,7 @@ v1.1
 * Enabled sfx/boot sounds by standard
 * Fixes on game background thanks to berion
 * Implementation of readiness checks during init on atad thanks to mystyq
+* Re-added back the game id on list theme(Coverflow it´s not supported).
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
