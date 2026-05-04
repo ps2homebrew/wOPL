@@ -515,7 +515,6 @@ void guiShowConfig()
     diaSetInt(diaConfig, CFG_ETHMODE, gETHStartMode);
     diaSetInt(diaConfig, CFG_MMCEMODE, gMMCEStartMode);
     diaSetVisible(diaConfig, MMCEDEVICE_BUTTON, gMMCEStartMode);
-    diaSetEnabled(diaConfig, CFG_BDMMODE, !gMMCEStartMode);
     diaSetInt(diaConfig, CFG_APPMODE, gAPPStartMode);
     diaSetInt(diaConfig, CFG_FAVMODE, gFAVStartMode);
 
