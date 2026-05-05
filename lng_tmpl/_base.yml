@@ -42,681 +42,683 @@ string_array_specifiers: ''
 gui_strings:
 - comment: Localized language name
   label: LOCALE
-  string: English (internal)
+  string: 中文字体anyi1
 - label: SAVE_CHANGES
-  string: Save Changes
+  string: 保存设置VX：youxiange1
 - label: BACK
-  string: Back
+  string: 返回
 - label: NETCONFIG
-  string: Network Settings
+  string: 网络设置
 - label: SHOW_ADVANCED_OPTS
-  string: Advanced Options
+  string: 进阶设置
 - label: NO_ITEMS
-  string: <no values>
+  string: <不可用>
 - label: SETTINGS_SAVED
-  string: Settings saved to %s
+  string: 设置已保存到%s
 - label: ERROR_SAVING_SETTINGS
-  string: Error writing settings!
+  string: 设置保存错误！
 - label: EXIT
-  string: Exit
+  string: 离开
 - label: SETTINGS
-  string: Settings
+  string: 设置
 - label: MENU
-  string: Menu
+  string: 菜单
 - label: BDM_GAMES
-  string: BDM Games
+  string: BDM游戏
 - label: HDD_GAMES
-  string: HDD Games
+  string: HDDAPA游戏
 - label: NET_GAMES
-  string: ETH Games
+  string: SMB游戏
 - label: APPS
-  string: Applications
+  string: 应用与ps1游戏
 - label: THEME
-  string: Theme
+  string: 主题
 - label: LANGUAGE
-  string: Language
+  string: 语言
 - label: CONFIRMATION_POFF
-  string: The system will be powered off.
+  string: 即将关闭主机电源。
 - label: CONFIRMATION_EXIT
-  string: Exit to Browser?
+  string: 要返回浏览器界面吗？
+- label: CONFIRMATION_CANCEL_UPDATE
+  string: 取消更新？
 - label: HDD_NOT_CONNECTED_ERROR
-  string: '%d: HardDisk Drive not detected.'
+  string: '%d：检测不到硬盘'
 - label: HDD_NOT_FORMATTED_ERROR
-  string: '%d: HardDisk Drive not formatted.'
+  string: '%d：硬盘没有格式化'
 - comment: Generic network error message.
   label: NETWORK_STARTUP_ERROR
-  string: '%d: Network startup error.'
+  string: '%d：启动网络错误'
 - label: NETWORK_STARTUP_ERROR_NETIF
-  string: '%d: No network adaptor detected.'
+  string: '%d：检测不到网卡'
 - label: NETWORK_STARTUP_ERROR_CONN
-  string: '%d: Cannot connect to SMB server.'
+  string: '%d：无法连接SMB服务器'
 - label: NETWORK_STARTUP_ERROR_LOGON
-  string: '%d: Cannot log into SMB server.'
+  string: '%d：无法登入SMB服务器'
 - label: NETWORK_STARTUP_ERROR_SHARE
-  string: '%d: Cannot open SMB share.'
+  string: '%d：无法开启SMB共享目录'
 - label: NETWORK_SHARE_LIST_ERROR
-  string: '%d: Cannot list SMB shares.'
+  string: '%d：无法列出SMB共享目录列表'
 - label: NETWORK_GAMES_LIST_ERROR
-  string: '%d: Cannot list games.'
+  string: '%d：无法列出游戏清单'
 - label: NETWORK_ERROR_DHCP_FAIL
-  string: '%d: DHCP server unavailable.'
+  string: '%d：DHCP服务器不存在'
 - label: NETWORK_ERROR_LINK_FAIL
-  string: '%d: No network connection.'
+  string: '%d：无网络连接'
 - label: 'ON'
-  string: 'On'
+  string: 开启
 - label: 'OFF'
-  string: 'Off'
+  string: 关闭
 - label: OK
-  string: OK
+  string: 确定
 - label: SELECT
-  string: Select
+  string: 选择
 - label: CANCEL
-  string: Cancel
+  string: 取消
 - label: CIRCLE
-  string: Circle
+  string: O
 - label: CROSS
-  string: Cross
+  string: X
 - label: GAMES_LIST
-  string: Games List
+  string: 游戏列表
 - label: COMPAT_SETTINGS
-  string: Game Settings
+  string: 模式设置
 - label: REMOVE_ALL_SETTINGS
-  string: Remove Settings
+  string: 删除设置
 - label: SCROLLING
-  string: Scrolling Speed
+  string: 滚动速度
 - label: SLOW
-  string: Slow
+  string: 较慢
 - label: MEDIUM
-  string: Medium
+  string: 中等
 - label: FAST
-  string: Fast
+  string: 较快
 - label: DEFDEVICE
-  string: Default Menu
+  string: 默认选单
 - label: LOAD_FROM_DISC
-  string: Load From Disc
+  string: 从光盘中读取
 - label: PLEASE_WAIT
-  string: Please wait.
+  string: 请稍后
 - label: ERROR_LOADING_ID
-  string: Error while loading the Game ID.
+  string: 读取游戏ID时出错
 - label: AUTOSORT
-  string: Automatic Sorting
+  string: 自动排序
 - label: ERR_LOADING_LANGFILE
-  string: Error loading the language file.
+  string: 读取语言文件时出错
 - label: DEBUG
-  string: Debug Colors
+  string: Debug颜色
 - label: NO_CONTROLLER
-  string: No controller detected, waiting...
+  string: 未检测到摇杆, 等待中…
 - label: COVERART
-  string: Cover Art
+  string: 游戏封面
 - label: ARCHIVEDART
-  string: Archived Art
+  string: 典藏插画
 - label: DISCART
-  string: Enable Disc Art
+  string: 启用光盘插画
 - label: HINT_DISCART
-  string: To apply this you will need to restart wOPL
+  string: 生效需重启 wOPL
 - label: WIDE_SCREEN
-  string: Widescreen
+  string: 宽屏模式
 - label: POWEROFF
-  string: Power Off
+  string: 关机
 - label: LOADING_SETTINGS
-  string: Loading config...
+  string: 正在加载配置...
 - label: SAVING_SETTINGS
-  string: Saving config...
+  string: 正在保存配置...
 - label: START_DEVICE
-  string: Start Device
+  string: 启动设备
 - label: REFRESH
-  string: Refresh
+  string: 刷新
 - label: BDMMODE
-  string: BDM Start Mode
+  string: BDM 启动模式
 - label: HDDMODE
-  string: HDD (APA) Start Mode
+  string: 硬盘(APA)启动模式
 - label: ETHMODE
-  string: ETH Start Mode
+  string: 网络启动模式
 - label: APPMODE
-  string: Applications Start Mode
+  string: 应用程序启动模式
 - label: AUTO
-  string: Auto
+  string: 自动
 - label: MANUAL
-  string: Manual
+  string: 手动
 - label: STARTNBD
-  string: Start NBD Server
+  string: 启动 NBD 服务器
 - label: STARTINGNBD
-  string: NBD Server starting...
+  string: NBD 服务器启动中...
 - label: RUNNINGNBD
-  string: NBD Server running...
+  string: NBD 服务器运行中...
 - label: STARTFAILNBD
-  string: Failed to start NBD Server.
+  string: NBD 服务器启动失败
 - label: UNLOADNBD
-  string: NBD Server unloading...
+  string: 正在卸载 NBD 服务器...
 - label: EXITTO
-  string: IGR Path
+  string: IGR 退出路径
 - label: BGCOLOR
-  string: Background Color
+  string: 背景颜色
 - label: TXTCOLOR
-  string: Text Color
+  string: 文字颜色
 - label: CAT_SMB_SERVER
-  string: '- SMB Server -'
+  string: '- SMB 网络共享 -'
 - label: IP_ADDRESS_TYPE
-  string: IP Address Type
+  string: IP地址类型
 - label: IP_ADDRESS_TYPE_STATIC
-  string: Static
+  string: 静态IP
 - label: IP_ADDRESS_TYPE_DHCP
-  string: DHCP
+  string: DHCP自动获取
 - label: IP_ADDRESS
-  string: IP Address
+  string: IP地址
 - label: ADDRESS
-  string: Address
+  string: 地址
 - label: MASK
-  string: Mask
+  string: 子网掩码
 - label: GATEWAY
-  string: Gateway
+  string: 网关
 - label: DNS_SERVER
-  string: DNS Server
+  string: DNS服务器
 - label: PORT
-  string: Port
+  string: 端口
 - label: SHARE
-  string: Share
+  string: 共享文件夹
 - label: USER
-  string: User
+  string: 用户名
 - label: PASSWORD
-  string: Password
+  string: 密码
 - label: NOT_SET
-  string: <not set>
+  string: <未设置>
 - label: ADDRESS_TYPE
-  string: Address Type
+  string: 地址类型
 - label: ADDR_TYPE_IP
-  string: IP
+  string: IP地址
 - label: ADDR_TYPE_NETBIOS
-  string: NetBIOS
+  string: 网络主机名
 - label: ACCEPT
-  string: Accept
+  string: 确认
 - label: DELETE_WARNING
-  string: Item will be permanently deleted, continue?
+  string: 项目将被永久删除，是否继续？
 - label: RENAME
-  string: Rename
+  string: 重命名
 - label: DELETE
-  string: Delete
+  string: 删除
 - label: RUN
-  string: Run
+  string: 运行
 - label: GFX_SETTINGS
-  string: Display Settings
+  string: 显示设置
 - label: ENABLE_WRITE
-  string: Write Operations
+  string: 写入操作权限
 - label: LASTPLAYED
-  string: Remember Last Played Game
+  string: 记住上次游玩游戏
 - label: SELECTBUTTON
-  string: Select Button
+  string: 选择按键
 - label: ERR_FRAGMENTED
-  string: Error, the game is fragmented.
+  string: 错误：游戏文件已碎片化
 - label: ERR_FILE_INVALID
-  string: Error, could not run the item.
+  string: 错误：无法运行该项目
 - label: TEST
-  string: Test Changes
+  string: 应用测试
 - label: HINT_GUEST
-  string: Leave empty for GUEST auth.
+  string: 留空为访客账号登录
 - label: HINT_MODE1
-  string: Accurate Reads
+  string: 精准读取
 - label: HINT_MODE2
-  string: Synchronous Mode
+  string: 同步模式
 - label: HINT_MODE3
-  string: Unhook Syscalls
+  string: 解除系统调用挂钩
 - label: HINT_MODE4
-  string: Skip Videos
+  string: 跳过开场动画
 - label: HINT_MODE5
-  string: Emulate DVD-DL
+  string: 模拟双层DVD
 - label: HINT_MODE6
-  string: Disable IGR
+  string: 禁用IGR热重启
 - label: HINT_VMC_SIZE
-  string: Changing the size will reformat the VMC.
+  string: 更改大小将重新格式化虚拟记忆卡
 - label: CREATE
-  string: Create
+  string: 创建
 - label: START
-  string: Start
+  string: 启动
 - label: MODIFY
-  string: Modify
+  string: 修改
 - label: ABORT
-  string: Abort
+  string: 取消
 - label: RESET
-  string: Reset
+  string: 重置
 - label: USE_GENERIC
-  string: Use Generic
+  string: 使用通用配置
 - label: VMC_SCREEN
-  string: Configure VMC
+  string: 虚拟记忆卡设置
 - label: VMC_NAME
-  string: Name
+  string: 名称
 - label: SIZE
-  string: Size
+  string: 容量大小
 - label: VMC_STATUS
-  string: Status
+  string: 状态
 - label: VMC_PROGRESS
-  string: Progress
+  string: 进度
 - label: VMC_FILE_EXISTS
-  string: VMC file exists.
+  string: 虚拟记忆卡文件已存在
 - label: VMC_FILE_ERROR
-  string: Invalid VMC file, size is incorrect.
+  string: 虚拟记忆卡文件无效，容量错误
 - label: VMC_FILE_NEW
-  string: VMC file needs to be created.
+  string: 需要创建虚拟记忆卡文件
 - label: ERR_VMC_CONTINUE
-  string: Error accessing VMC %s. Continue with the Memory Card in slot %d?
+  string: 访问虚拟记忆卡 %s 出错，是否继续使用第 %d 插槽记忆卡？
 - label: AUTOREFRESH
-  string: Automatic Refresh
+  string: 自动刷新
 - label: ABOUT
-  string: About
+  string: 关于
 - label: DEVS
-  string: Coders
+  string: 开发人员
 - label: QANDA
-  string: Quality Assurance
+  string: 测试人员
 - label: BDM_PREFIX
-  string: BDM Prefix Path
+  string: BDM 路径前缀
 - label: HINT_EXITPATH
-  string: Boots custom ELF after an IGR.
+  string: IGR重启后引导自定义ELF程序
 - label: HINT_SPINDOWN
-  string: Value in minute(s), 0 to disable spin down.
+  string: 单位分钟，设0为禁用硬盘休眠
 - label: HDD_SPINDOWN
-  string: Automatic HDD Spin Down
+  string: 硬盘自动休眠
 - label: VMODE
-  string: Video Mode
+  string: 视频模式
 - label: UICOLOR
-  string: Dialog Color
+  string: 弹窗边框颜色
 - label: SELCOLOR
-  string: Selected Color
+  string: 选中项颜色
 - label: RESETCOLOR
-  string: Reset Colors
+  string: 重置配色
 - label: INFO
-  string: Info
+  string: 信息
 - label: ALTSTARTUP
-  string: Custom ELF
+  string: 自定义ELF启动
 - label: COLOR_SELECTION
-  string: Color Selection
+  string: 颜色选择
 - label: RECONNECT
-  string: Reconnect
+  string: 重新连接
 - label: HINT_SHARENAME
-  string: Leave empty to list shares.
+  string: 留空列出所有共享文件夹
 - label: ETH_PREFIX
-  string: ETH Prefix Path
+  string: 网络路径前缀
 - label: BACKSPACE
-  string: Backspace
+  string: 退格
 - label: SPACE
-  string: Space
+  string: 空格
 - label: ENTER
-  string: Enter
+  string: 确认
 - label: MODE
-  string: Mode
+  string: 模式
 - label: VMC_SLOT1
-  string: VMC Slot 1
+  string: 虚拟记忆卡 插槽1
 - label: VMC_SLOT2
-  string: VMC Slot 2
+  string: 虚拟记忆卡 插槽2
 - label: GAME_ID
-  string: Game ID
+  string: 游戏编号
 - label: DMA_MODE
-  string: DMA Mode
+  string: DMA传输模式
 - label: VSYNC
-  string: V-Sync
+  string: 垂直同步
 - label: MODE1
-  string: Mode 1
+  string: 模式1
 - label: MODE2
-  string: Mode 2
+  string: 模式2
 - label: MODE3
-  string: Mode 3
+  string: 模式3
 - label: MODE4
-  string: Mode 4
+  string: 模式4
 - label: MODE5
-  string: Mode 5
+  string: 模式5
 - label: MODE6
-  string: Mode 6
+  string: 模式6
 - label: GSCONFIG
-  string: Configure GSM
+  string: GSM图像设置
 - label: ETH_OPMODE
-  string: Ethernet Link Mode
+  string: 以太网速率模式
 - label: ETH_100MFDX
-  string: 100Mbit Full-duplex
+  string: 100兆 全双工
 - label: ETH_100MHDX
-  string: 100Mbit Half-duplex
+  string: 100兆 半双工
 - label: ETH_10MFDX
-  string: 10Mbit Full-duplex
+  string: 10兆 全双工
 - label: ETH_10MHDX
-  string: 10Mbit Half-duplex
+  string: 10兆 半双工
 - label: GSM_SETTINGS
-  string: GSM Settings
+  string: GSM全局设置
 - label: ENABLEGSM
-  string: GSM Selector
+  string: 启用GSM图像插件
 - label: HINT_ENABLEGSM
-  string: Toggles GSM on/off.
+  string: 开关GSM图像功能
 - label: HINT_GSMVMODE
-  string: Forced custom display mode.
+  string: 强制自定义显示模式
 - label: XOFFSET
-  string: H-POS
+  string: 水平位置
 - label: HINT_XOFFSET
-  string: Horizontal adjustment.
+  string: 画面水平偏移调节
 - label: YOFFSET
-  string: V-POS
+  string: 垂直位置
 - label: HINT_YOFFSET
-  string: Vertical adjustment.
+  string: 画面垂直偏移调节
 - label: OVERSCAN
-  string: Overscan
+  string: 过扫描
 - label: HINT_OVERSCAN
-  string: Overscan adjustment.
+  string: 画面过扫描范围调节
 - label: GSMSKIPVIDEOS
-  string: FMV Skip
+  string: 跳过剧情动画
 - label: HINT_GSMSKIPVIDEOS
-  string: Skips full motion videos.
+  string: 跳过游戏开场过场动画
 - label: CHEAT_SETTINGS
-  string: Cheat Settings
+  string: 金手指设置
 - label: ENABLECHEAT
-  string: PS2RD Cheat Engine
+  string: PS2RD金手指引擎
 - label: HINT_ENABLECHEAT
-  string: Lets PS2RD Cheat Engine patch your game.
+  string: 启用PS2RD为游戏加载金手指补丁
 - label: CHEATMODE
-  string: PS2RD Cheat Engine Mode
+  string: 金手指加载模式
 - label: HINT_CHEATMODE
-  string: Auto select or select game cheats.
+  string: 自动选择或手动选取游戏金手指
 - label: CHEATMODEAUTO
-  string: Auto Select Cheats
+  string: 自动加载金手指
 - label: CHEATMODESELECT
-  string: Select Game Cheats
+  string: 手动选择金手指
 - label: ERR_CHEATS_LOAD_FAILED
-  string: 'Error: failed to load cheat file.'
+  string: 错误：加载金手指文件失败
 - label: NO_CHEATS_FOUND
-  string: No cheats found.
+  string: 未找到可用金手指
 - label: AUTO_START_IN_N_SECS
-  string: Auto start in %i s...
+  string: %i秒后自动启动...
 - label: AUTOSTARTLAST
-  string: Auto Start
+  string: 自动启动上次游戏
 - label: HINT_AUTOSTARTLAST
-  string: Value in second(s), 0 to disable auto start.
+  string: 单位秒，设0禁用自动启动
 - label: PS2LOGO
-  string: PS2 Logo
+  string: 显示PS2开机Logo
 - label: HINT_PS2LOGO
-  string: Displayed for a valid disc logo matching the console's region.
+  string: 匹配主机区域时显示正版光盘Logo
 - label: PADEMUCONFIG
-  string: Configure PADEMU
+  string: 手柄模拟器设置
 - label: PADEMU_SETTINGS
-  string: Pad Emulator Settings
+  string: 手柄模拟配置
 - label: PADEMU_ENABLE
-  string: Pad Emulator
+  string: 启用手柄模拟
 - label: HINT_PADEMU_ENABLE
-  string: Turns on/off Pad Emulator for selected game.
+  string: 为当前游戏开关手柄模拟功能
 - label: PADPORT
-  string: 'Settings For Port:'
+  string: 端口设置：
 - label: HINT_PAD_PORT
-  string: Select Pad Emulator port for settings.
+  string: 选择要配置的手柄模拟端口
 - label: PADEMU_PORT
-  string: Emulation
+  string: 端口模拟
 - label: HINT_PADEMU_PORT
-  string: Turns on/off Pad Emulator for selected port.
+  string: 单独开关对应端口的手柄模拟
 - label: PADEMU_VIB
-  string: Vibration
+  string: 震动功能
 - label: HINT_PADEMU_VIB
-  string: Turns on/off vibration for Pad Emulator selected port.
+  string: 开关对应模拟手柄的震动
 - label: USBDG_MAC
-  string: 'USB Bluetooth Adapter MAC Address:'
+  string: 蓝牙适配器MAC地址：
 - label: PAD_MAC
-  string: 'DS Controller Paired To MAC Address:'
+  string: 手柄已配对MAC地址：
 - label: PAIR
-  string: Pair
+  string: 配对
 - label: PAIR_PAD
-  string: Pair DS Controller
+  string: 配对DS手柄
 - label: HINT_PAIRPAD
-  string: Pair DS controller with Bluetooth adapter MAC address.
+  string: 将DS手柄与蓝牙适配器MAC地址配对
 - label: NOT_CONNECTED
-  string: Not Connected
+  string: 未连接
 - label: BTINFO
-  string: Bluetooth Adapter Information
+  string: 蓝牙适配器信息
 - label: HINT_BTINFO
-  string: Shows more information and supported features.
+  string: 查看详细信息及支持特性
 - label: HCIVER
-  string: 'HCI Version:'
+  string: HCI版本：
 - label: LMPVER
-  string: 'LMP Version:'
+  string: LMP版本：
 - label: MANUFACTURER
-  string: 'Manufacturer ID:'
+  string: 厂商ID：
 - label: SUPFEATURES
-  string: 'Supported Features:'
+  string: 支持特性：
 - label: 'YES'
-  string: 'Yes'
+  string: 是
 - label: 'NO'
-  string: 'No'
+  string: 否
 - label: BT_SUPPORTED
-  string: Bluetooth adapter should be fully compatible with DS3/DS4 controllers.
+  string: 蓝牙适配器完全兼容DS3/DS4手柄
 - label: BT_NOTSUPPORTED
-  string: Bluetooth adapter may not work correctly with DS3/DS4 controllers.
+  string: 蓝牙适配器可能无法正常兼容DS3/DS4手柄
 - label: MTAP_ENABLE
-  string: Multitap Emulation
+  string: 多接口转接器模拟
 - label: HINT_MTAP_ENABLE
-  string: Turns on/off Multitap emulation for selected game.
+  string: 为当前游戏开关多手柄转接器模拟
 - label: MTAP_PORT
-  string: 'Multitap Emulator On Port:'
+  string: 转接器模拟端口：
 - label: HINT_MTAP_PORT
-  string: Select port for Multitap emulation.
+  string: 选择启用多手柄模拟的端口
 - label: PADEMU_WORKAROUND
-  string: Fake DS3 Workaround
+  string: 高仿DS3手柄兼容模式
 - label: HINT_PADEMU_WORKAROUND
-  string: Some fake DS3s need a workaround, this option will enable it.
+  string: 部分高仿DS3手柄需开启此兼容方案
 - label: GSM_FIELD_FIX
-  string: Emulate FIELD Flipping
+  string: 模拟隔行翻转修复
 - label: HINT_GSM_FIELD_FIX
-  string: Fix for games that glitch under progressive video modes.
+  string: 修复逐行模式下画面花屏的游戏
 - label: PARENLOCKCONFIG
-  string: Parental Lock Settings
+  string: 家长锁设置
 - label: PARENLOCK_PASSWORD
-  string: Parental Lock Password
+  string: 家长锁密码
 - label: PARENLOCK_PASSWORD_HINT
-  string: Leave blank to disable the parental lock.
+  string: 留空关闭家长锁功能
 - label: PARENLOCK_ENTER_PASSWORD_TITLE
-  string: Enter Parental Lock Password
+  string: 请输入家长锁密码
 - label: PARENLOCK_PASSWORD_INCORRECT
-  string: Parental lock password incorrect.
+  string: 家长锁密码错误
 - label: PARENLOCK_DISABLE_WARNING
-  string: Parental lock disabled.
+  string: 家长锁已关闭
 - label: BUILD_DETAILS
-  string: 'Build Options:'
+  string: 编译编译选项：
 - label: PARENLOCK_INVALID_PASSWORD
-  string: Error - this password cannot be used.
+  string: 错误：该密码无法使用
 - label: ERR_VMC_FRAGMENTED_CONTINUE
-  string: VMC %s file is fragmented. Continue with Memory Card in slot %d?
+  string: 虚拟记忆卡 %s 文件已碎片化，是否继续使用第 %d 插槽记忆卡？
 - label: AUDIO_SETTINGS
-  string: Audio Settings
+  string: 音频设置
 - label: SFX
-  string: Sound Effects
+  string: 界面音效
 - label: BOOT_SND
-  string: Boot Sound
+  string: 开机音效
 - label: SFX_VOLUME
-  string: Sound Effects Volume
+  string: 界面音效音量
 - label: BOOT_SND_VOLUME
-  string: Boot Sound Volume
+  string: 开机音效音量
 - label: CFM_VMODE_CHG
-  string: Confirm video mode change?
+  string: 确认更改视频模式？
 - label: CACHE_HDD_GAME_LIST
-  string: Cache Game List (HDD)
+  string: 缓存硬盘游戏列表
 - label: ENABLE_NOTIFICATIONS
-  string: Notifications
+  string: 弹窗通知
 - label: CFG_NOTIFICATION
-  string: Config loaded from %s
+  string: 已加载配置文件 %s
 - label: THM_NOTIFICATION
-  string: Theme loaded from %s
+  string: 已加载主题文件 %s
 - label: LNG_NOTIFICATION
-  string: Language loaded from %s
+  string: 已加载语言文件 %s
 - label: PARTITION_NOTIFICATION
-  string: '%s partition mounted.'
+  string: 已挂载 %s 分区
 - label: OPTIONS
-  string: Options
+  string: 设置选项
 - label: GAME_SETTINGS_SAVED
-  string: Game settings saved.
+  string: 游戏设置已保存
 - label: GAME_SETTINGS_REMOVED
-  string: '%s settings removed.'
+  string: 已移除 %s 设置
 - label: NET_UPDATE_HINT
-  string: Overwrites existing game compatibility settings when enabled.
+  string: 开启后将覆盖现有游戏兼容设置
 - label: SETTINGS_SOURCE
-  string: Settings Mode
+  string: 设置应用范围
 - label: GLOBAL_SETTINGS
-  string: Global
+  string: 全局通用
 - label: PERGAME_SETTINGS
-  string: Per Game
+  string: 单独游戏
 - label: ALL_SETTINGS
-  string: All
+  string: 全部设置
 - label: GAME_SETTINGS_PROMPT
-  string: Select settings to remove.
+  string: 选择要移除的设置项
 - label: FORUM_DETAILS
-  string: 'Support Forums:'
+  string: 支持论坛：
 - label: INFO_TITLE
-  string: Title
+  string: 游戏名称
 - label: INFO_GENRE
-  string: Genre
+  string: 游戏类型
 - label: INFO_RELEASE
-  string: Release
+  string: 发行时间
 - label: INFO_DEVELOPER
-  string: Developer
+  string: 制作厂商
 - label: INFO_DESCRIPTION
-  string: Description
+  string: 游戏简介
 - label: BLOCKDEVICE_SETTINGS
-  string: BDM Devices
+  string: 块设备管理
 - label: CONTROLLER_SETTINGS
-  string: Controller Settings
+  string: 手柄控制器设置
 - label: HINT_BDM_START
-  string: Turn on/off Block Device Manager.
+  string: 开关块设备管理器总开关
 - label: HINT_BLOCK_DEVICES
-  string: Turn on/off BDM Devices (USB/MX4SIO/ILINK/HDD).
+  string: 启用/禁用 BDM设备(USB/MX4SIO/火线/硬盘)
 - label: USB_GAMES
-  string: USB Games
+  string: USB设备游戏
 - label: ILINK_GAMES
-  string: iLink Games
+  string: 火线(iLink)游戏
 - label: MX4SIO_GAMES
-  string: MX4SIO Games
+  string: MX4SIO存储卡游戏
 - label: PADMACROCONFIG
-  string: Configure PADMACRO
+  string: 手柄宏设置
 - label: PADMACRO_SETTINGS
-  string: Pad Macro Settings
+  string: 手柄宏功能配置
 - label: PADMACRO_ENABLE
-  string: Pad macros
+  string: 启用手柄宏
 - label: PADMACRO_SLOWDOWN
-  string: 'Analog Slow-Down:'
+  string: 摇杆慢动作幅度：
 - label: HINT_PADMACRO_SLOWDOWN_AXIS
-  string: Reduce the range of analog stick when button is pressed.
+  string: 按住按键时缩小摇杆有效输入范围
 - label: LEFT_ANALOG
-  string: Left Stick
+  string: 左摇杆
 - label: RIGHT_ANALOG
-  string: Right Stick
+  string: 右摇杆
 - label: PADMACRO_INVERT_AXIS
-  string: 'Analog Axis Invert:'
+  string: 摇杆轴向反转：
 - label: HINT_PADMACRO_INVERT_AXIS
-  string: Inverts the axis of selected analog stick.
+  string: 反转所选摇杆的上下左右方向
 - label: TURBO_SPEED
-  string: Turbo Button Speed
+  string: 连点按键速率
 - label: HINT_TURBO_SPEED
-  string: How fast the button is pressed when turbo is active.
+  string: 开启连点后按键自动按下的速度
 - label: ACT_WHILE_PRESSED
-  string: While Button Pressed
+  string: 长按生效
 - label: ACT_TOGGLED
-  string: Toggled By Button
+  string: 单击切换开关
 - label: LANGUAGE_JAPANESE
-  string: JAPANESE
+  string: 日语
 - label: LANGUAGE_ENGLISH
-  string: ENGLISH
+  string: 英语
 - label: LANGUAGE_FRENCH
-  string: FRENCH
+  string: 法语
 - label: LANGUAGE_SPANISH
-  string: SPANISH
+  string: 西班牙语
 - label: LANGUAGE_GERMAN
-  string: GERMAN
+  string: 德语
 - label: LANGUAGE_ITALIAN
-  string: ITALIAN
+  string: 意大利语
 - label: LANGUAGE_DUTCH
-  string: DUTCH
+  string: 荷兰语
 - label: LANGUAGE_PORTUGUESE
-  string: PORTUGUESE
+  string: 葡萄牙语
 - label: LANGUAGE_RUSSIAN
-  string: RUSSIAN
+  string: 俄语
 - label: LANGUAGE_KOREAN
-  string: KOREAN
+  string: 韩语
 - label: LANGUAGE_TRAD_CHINESE
-  string: TRADITIONAL CHINESE
+  string: 繁体中文
 - label: LANGUAGE_SIMPL_CHINESE
-  string: SIMPLIFIED CHINESE
+  string: 简体中文
 - label: OSD_SETTINGS
-  string: OSD Settings
+  string: 屏幕菜单设置
 - label: OSD_SETTINGS_LNG
-  string: OSD Language
+  string: 菜单语言
 - label: HINT_OSD_SETTINGS_LNG
-  string: Force a custom language configuration
+  string: 强制自定义界面语言
 - label: ENABLE_LNG
-  string: Enable
+  string: 启用语言
 - label: OSD_SETTINGS_TVASPECT
-  string: Screen Size
+  string: 画面比例
 - label: FULL_SCREEN
-  string: Full Screen
+  string: 全屏
 - label: OSD_SETTINGS_VMODE
-  string: Video Mode
+  string: 视频制式
 - label: SYSTEM_DEFAULT
-  string: System Default
+  string: 系统默认
 - label: BGM
-  string: Background Music
+  string: 背景音乐
 - label: BGM_VOLUME
-  string: Background Music Volume
+  string: 背景音乐音量
 - label: DEF_BGM_PATH
-  string: Default Theme Music
+  string: 主题默认音乐路径
 - label: DEF_BGM_PATH_HINT
-  string: Set path to stream music for internal theme.
+  string: 设置内置主题的背景音乐播放路径
 - label: HIGH
-  string: High
+  string: 高
 - label: LOW
-  string: Low
+  string: 低
 - label: XSENSITIVITY
-  string: Analog X-Axis Sensitivity
+  string: 摇杆X轴灵敏度
 - label: YSENSITIVITY
-  string: Analog Y-Axis Sensitivity
+  string: 摇杆Y轴灵敏度
 - label: HDD_HINT
-  string: Only one HDD allowed, enabling locks APA or GPT.
+  string: 仅支持单块硬盘，开启后锁定APA/GPT分区
 - label: CHEAT_SELECTION
-  string: Cheat Selection
+  string: 金手指选择
 - label: FAV
-  string: Favourites
+  string: 收藏夹
 - label: FAVMODE
-  string: Favourites Start Mode
+  string: 收藏夹启动模式
 - label: FAV_HINT
-  string: Favourite
+  string: 收藏
 - label: FAV_MSG
-  string: "%s not allowed through Favourites Menu."
+  string: 无法从收藏菜单启动 %s
 - label: BDM_DEBUG
-  string: BD Debug Log
+  string: BDM调试日志
 - label: CORE_LOADER
-  string: Loader Core
+  string: 核心加载器
 - label: MODE7
-  string: Mode 7
+  string: 模式7
 - label: HINT_MODE7
-  string: Patch IOP Buffer Overrun
+  string: 修复IOP缓冲区溢出问题
 - label: DISABLE_ALL
-  string: Disable All
+  string: 全部禁用
 - label: MMCE
-  string: MMCE
+  string: MMCE多媒体扩展
 - label: MMCE_GAMES
-  string: MMCE Games
+  string: MMCE模式游戏
 - label: MMCEMODE
-  string: MMCE Start Mode
+  string: MMCE启动模式
 - label: MMCE_PREFIX
-  string: MMCE Prefix Path
+  string: MMCE路径前缀
 - label: MMCE_SLOT
-  string: MMCE Slot
+  string: MMCE插槽
 - label: MMCEIGR_SLOT
-  string: IGR Bootcard Slot(s)
+  string: IGR重启引导卡槽
 - label: HINT_MMCEIGR_SLOT
-  string: Switch to bootcard cmd will be sent to the selected slot(s) on IGR
+  string: IGR热重启时向选定卡槽发送引导指令
 - label: MMCE_ADVANCED
-  string: Advanced
+  string: 高级设置
 - label: MMCE_SETTINGS
-  string: MMCE Settings
+  string: MMCE功能设置
 - label: HINT_MMCE_DEVICES
-  string: Enable MMCE manually
+  string: 手动启用MMCE设备
 - label: MMCEDEVICE_SETTINGS
-  string: MMCE Device Settings
+  string: MMCE设备配置
 - label: MMCE_SEMA
-  string: Lock Sema Enqueuing Method
+  string: 信号量入队方式
 - label: HINT_MMCE_SEMA
-  string: THFIFO may help with compatibility but worsen performance
+  string: THFIFO可提升兼容性但降低性能
 - label: MMCE_WAIT_CYCLES
-  string: Wait cycles after /ACK low
+  string: 应答低电平等待周期
 - label: HINT_MMCE_WAIT_CYCLES
-  string: Lower values may improve performance but result in instabilities
+  string: 数值越低性能越好，但可能出现不稳定
 - label: MMCE_USE_ALARMS
-  string: Use timeout alarms
+  string: 使用超时警报
 - label: HINT_MMCE_USE_ALARMS
-  string: OFF may help performance but can cause MMCE timeouts to result in freezes
+  string: 关闭可提升性能，但超时可能导致卡死
