@@ -1,10 +1,11 @@
 #ifndef __TAR_H
 #define __TAR_H
 
-#define TAR_BLOCK_SIZE 512
-#define MAX_FILE_SIZE  (4 * 1024 * 1024) // 4 MiB
-#define ARC_MAGIC      "ARC\0"
-#define ARC_VERSION    1
+#define TAR_BLOCK_SIZE      512
+#define TAR_NAME_FIELD_SIZE 100
+#define MAX_FILE_SIZE       (4 * 1024 * 1024) // 4 MiB
+#define ARC_MAGIC           "ARC\0"
+#define ARC_VERSION         2
 
 typedef struct ArtCacheHeader
 {
@@ -16,10 +17,10 @@ typedef struct ArtCacheHeader
 
 typedef struct
 {
-    u64 offset;        // offset of file data in archive
-    u32 rawSize;       // actual file size from header (octal), capped by MAX_FILE_SIZE
-    u32 paddedSize;    // file size rounded up to 512-byte TAR blocks
-    char filename[21]; // filename up to 21 chars + null
+    u64 offset;                         // offset of file data in archive
+    u32 rawSize;                        // actual file size from header (octal), capped by MAX_FILE_SIZE
+    u32 paddedSize;                     // file size rounded up to 512-byte TAR blocks
+    char filename[TAR_NAME_FIELD_SIZE]; // TAR filename field
 } ArtTarEntry;
 
 int loadTarFile(const char *path);

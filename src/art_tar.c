@@ -197,8 +197,8 @@ int loadTarFile(const char *path)
     if (s_tarFd < 0)
         return -1;
 
-    s_tarIndex = NULL;
-    s_tarCount = 0;
+    u32 count = 0;
+    lseek64(s_tarFd, 0, SEEK_SET);
 
     while (1) {
         unsigned char header[TAR_BLOCK_SIZE];
@@ -211,33 +211,106 @@ int loadTarFile(const char *path)
         if (isZeroBlock(header))
             break;
 
-        char name[21];
-        memcpy(name, header, 20);
-        name[20] = '\0';
-
         u64 rawSize64 = parseOctal((const char *)header + 124, 12);
         u64 paddedSize64 = ((rawSize64 + (TAR_BLOCK_SIZE - 1)) / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;
 
         if (rawSize64 > MAX_FILE_SIZE || paddedSize64 > MAX_FILE_SIZE)
             goto fail;
 
+        count++;
+
+        if (lseek64(s_tarFd, paddedSize64, SEEK_CUR) == (u64)-1)
+            goto fail;
+    }
+
+    s_tarIndex = malloc(count * sizeof(ArtTarEntry));
+    if (!s_tarIndex)
+        goto fail;
+
+    s_tarCount = count;
+
+    lseek64(s_tarFd, 0, SEEK_SET);
+
+    u32 idx = 0;
+
+    static const u64 SPACE_MASK =
+        ((u64)0x20 << 56) |
+        ((u64)0x20 << 48) |
+        ((u64)0x20 << 40) |
+        ((u64)0x20 << 32) |
+        ((u64)0x20 << 24) |
+        ((u64)0x20 << 16) |
+        ((u64)0x20 << 8) |
+        ((u64)0x20 << 0);
+
+    while (idx < count) {
+        unsigned char header[TAR_BLOCK_SIZE];
+        int bytesRead = read(s_tarFd, header, TAR_BLOCK_SIZE);
+        if (bytesRead != TAR_BLOCK_SIZE)
+            goto fail;
+
+        if (isZeroBlock(header))
+            break;
+
+        u64 rawSize64 = parseOctal((const char *)header + 124, 12);
+        u64 paddedSize64 = ((rawSize64 + (TAR_BLOCK_SIZE - 1)) / TAR_BLOCK_SIZE) * TAR_BLOCK_SIZE;
+
         u64 dataOffset = lseek64(s_tarFd, 0, SEEK_CUR);
         if (dataOffset == (u64)-1)
             goto fail;
 
-        ArtTarEntry *newIndex = realloc(s_tarIndex, sizeof(ArtTarEntry) * (s_tarCount + 1));
-        if (!newIndex)
-            goto fail;
+        ArtTarEntry *entry = &s_tarIndex[idx];
 
-        s_tarIndex = newIndex;
+        {
+            const u8 *src = header;
+            u8 *dst = entry->filename;
 
-        ArtTarEntry *entry = &s_tarIndex[s_tarCount];
-        strncpy(entry->filename, name, 20);
-        entry->filename[20] = '\0';
+            memset(dst, 0, TAR_NAME_FIELD_SIZE);
+            memcpy(dst, src, TAR_NAME_FIELD_SIZE);
+
+            int n = TAR_NAME_FIELD_SIZE;
+
+            while (n >= 8) {
+                u64 chunk;
+                memcpy(&chunk, dst + n - 8, 8);
+
+                u64 tmp = chunk | SPACE_MASK;
+                u64 cmp = tmp ^ SPACE_MASK;
+
+                if (cmp != 0) {
+                    int i = 7;
+                    while (i >= 0) {
+                        u8 c = (chunk >> (i * 8)) & 0xFF;
+                        if (c != 0 && c != ' ') {
+                            n = (n - 8) + i + 1;
+                            goto done;
+                        }
+                        i--;
+                    }
+                }
+
+                n -= 8;
+            }
+
+            while (n > 0) {
+                u8 c = dst[n - 1];
+                if (c != 0 && c != ' ')
+                    break;
+                n--;
+            }
+
+        done:
+            if (n < TAR_NAME_FIELD_SIZE)
+                dst[n] = '\0';
+            else
+                dst[TAR_NAME_FIELD_SIZE - 1] = '\0';
+        }
+
         entry->offset = dataOffset;
         entry->rawSize = (u32)rawSize64;
         entry->paddedSize = (u32)paddedSize64;
-        s_tarCount++;
+
+        idx++;
 
         if (lseek64(s_tarFd, paddedSize64, SEEK_CUR) == (u64)-1)
             goto fail;
@@ -260,21 +333,18 @@ u32 readFileFromTar(const ArtTarEntry *entry, void *dst, u32 dstSize)
 {
     if (!entry || s_tarFd < 0 || !dst)
         return 0;
+
     if (dstSize < entry->rawSize)
         return 0;
 
     if (lseek64(s_tarFd, entry->offset, SEEK_SET) != entry->offset)
         return 0;
 
-    u32 total = 0;
-    while (total < entry->rawSize) {
-        int bytesRead = read(s_tarFd, (unsigned char *)dst + total, entry->rawSize - total);
-        if (bytesRead <= 0)
-            return 0;
+    int bytesRead = read(s_tarFd, dst, entry->rawSize);
+    if (bytesRead != (int)entry->rawSize)
+        return 0;
 
-        total += (u32)bytesRead;
-    }
-    return total;
+    return (u32)bytesRead;
 }
 
 void *getFileFromTar(const char *filename)
