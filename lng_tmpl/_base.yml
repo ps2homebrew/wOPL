@@ -146,10 +146,6 @@ gui_strings:
   string: Debug Colors
 - label: NO_CONTROLLER
   string: No controller detected, waiting...
-- label: COVERART
-  string: Cover Art
-- label: ARCHIVEDART
-  string: Archived Art
 - label: DISCART
   string: Enable Disc Art
 - label: HINT_DISCART

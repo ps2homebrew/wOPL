@@ -280,9 +280,10 @@ static int bdmNeedsUpdate(item_list_t *itemList)
             pDeviceData->ThemesLoaded = 1;
     }
 
-    if (gEnableArchivedArt) {
+    if (!pDeviceData->ArtArchivedLoaded) {
         sprintf(path, "%sART/art.tar", pDeviceData->bdmPrefix);
         loadTarFile(path);
+        pDeviceData->ArtArchivedLoaded = 1;
     }
 
     // update Languages
@@ -654,14 +655,21 @@ static int bdmGetImage(item_list_t *itemList, char *folder, int isRelative, char
 
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
 
-    if (gEnableArchivedArt)
-        snprintf(path, sizeof(path), "%s_%s", value, suffix);
-    else if (isRelative)
+    if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", pDeviceData->bdmPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
+    return texDiscoverLoad(resultTex, path, -1, 0);
+}
+
+static int bdmGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    char path[256];
+
+    snprintf(path, sizeof(path), "%s_%s", value, suffix);
+
+    return texDiscoverLoad(resultTex, path, -1, 1);
 }
 
 static int bdmGetTextId(item_list_t *itemList)
@@ -756,7 +764,7 @@ static char *bdmGetPrefix(item_list_t *itemList)
 static item_list_t bdmGameList = {
     BDM_MODE, 2, 0, 0, MENU_MIN_INACTIVE_FRAMES, BDM_MODE_UPDATE_DELAY, NULL, NULL, &bdmGetTextId, &bdmGetPrefix, &bdmInit, &bdmNeedsUpdate,
     &bdmUpdateGameList, &bdmGetGameCount, &bdmGetGame, &bdmGetGameName, &bdmGetGameNameLength, &bdmGetGameStartup, &bdmDeleteGame, &bdmRenameGame,
-    &bdmLaunchGame, &bdmGetConfig, &bdmGetImage, &bdmCleanUp, &bdmShutdown, &bdmCheckVMC, &bdmGetIconId};
+    &bdmLaunchGame, &bdmGetConfig, &bdmGetImage, &bdmGetArchivedImage, &bdmCleanUp, &bdmShutdown, &bdmCheckVMC, &bdmGetIconId};
 
 void bdmInitSemaphore()
 {

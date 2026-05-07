@@ -42,7 +42,8 @@ v1.1
 * Fixes on game background thanks to berion
 * Implementation of readiness checks during init on atad thanks to mystyq
 * Re-added back the game id on list theme(Coverflow it´s not supported).
-* Fix main background on models eg. 90000s 
+* Fix main background on models eg. 90000s
+* Modularized the art loading unifying art .tar
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
@@ -52,6 +53,9 @@ This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
 
 ### Theme renamed files
 This variant is incompatible with OPL themes as the structure follows up diffrently than traditional OPL
+
+# Modularized art 
+You can see game list with both normal art and art.tar
 
 </p>
 </details>

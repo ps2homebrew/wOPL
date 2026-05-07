@@ -533,13 +533,9 @@ static void initStaticImage(const char *themePath, config_set_t *themeConfig, th
 
 static GSTEXTURE *getGameImageTexture(image_cache_t *cache, void *support, struct submenu_item *item)
 {
-    if (gEnableArt) {
-        item_list_t *list = (item_list_t *)support;
-        char *startup = list->itemGetStartup(list, item->id);
-        return cacheGetTexture(cache, list, &item->cache_id[cache->userId], &item->cache_uid[cache->userId], startup);
-    }
-
-    return NULL;
+    item_list_t *list = (item_list_t *)support;
+    char *startup = list->itemGetStartup(list, item->id);
+    return cacheGetTexture(cache, list, &item->cache_id[cache->userId], &item->cache_uid[cache->userId], startup);
 }
 
 static void drawGameImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)

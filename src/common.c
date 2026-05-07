@@ -22,8 +22,6 @@ unsigned int frameCounter;
 
 // Global data
 
-int gEnableArt;
-int gEnableArchivedArt;
 int gPS2Logo;
 int gDefaultDevice;
 int gEnableWrite;

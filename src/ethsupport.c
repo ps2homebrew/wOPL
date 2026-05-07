@@ -48,6 +48,7 @@ static int ethULSizePrev = -2;
 static time_t ethModifiedCDPrev;
 static time_t ethModifiedDVDPrev;
 static int ethGameCount = 0;
+static int ethEnableArchivedArt = 0;
 static unsigned char ethModulesLoaded = 0;
 static base_game_info_t *ethGames = NULL;
 
@@ -513,9 +514,10 @@ static int ethNeedsUpdate(item_list_t *itemList)
             result = 1;
         }
 
-        if (gEnableArchivedArt) {
+        if (!ethEnableArchivedArt) {
             sprintf(path, "%sART/art.tar", ethPrefix);
             loadTarFile(path);
+            result = 1;
         }
 
         if (!sbIsSameSize(ethPrefix, ethULSizePrev))
@@ -765,13 +767,20 @@ static config_set_t *ethGetConfig(item_list_t *itemList, int id)
 static int ethGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
-    if (gEnableArchivedArt)
-        snprintf(path, sizeof(path), "%s_%s", value, suffix);
-    else if (isRelative)
+    if (isRelative)
         snprintf(path, sizeof(path), "%s%s\\%s_%s", ethPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
+    return texDiscoverLoad(resultTex, path, -1, 0);
+}
+
+static int ethGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    char path[256];
+
+    snprintf(path, sizeof(path), "%s_%s", value, suffix);
+
+    return texDiscoverLoad(resultTex, path, -1, 1);
 }
 
 static int ethGetTextId(item_list_t *itemList)
@@ -834,7 +843,7 @@ static char *ethGetPrefix(item_list_t *itemList)
 static item_list_t ethGameList = {
     ETH_MODE, 1, 0, 0, MENU_MIN_INACTIVE_FRAMES, ETH_MODE_UPDATE_DELAY, NULL, NULL, &ethGetTextId, &ethGetPrefix, &ethInit, &ethNeedsUpdate,
     &ethUpdateGameList, &ethGetGameCount, &ethGetGame, &ethGetGameName, &ethGetGameNameLength, &ethGetGameStartup, &ethDeleteGame, &ethRenameGame,
-    &ethLaunchGame, &ethGetConfig, &ethGetImage, &ethCleanUp, &ethShutdown, &ethCheckVMC, &ethGetIconId};
+    &ethLaunchGame, &ethGetConfig, &ethGetImage, &ethGetArchivedImage, &ethCleanUp, &ethShutdown, &ethCheckVMC, &ethGetIconId};
 
 static int ethReadNetConfig(void)
 {
