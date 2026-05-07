@@ -33,7 +33,6 @@ enum ETH_OP_MODES {
 extern unsigned int frameCounter;
 
 extern int gEnableArt;
-extern int gEnableArchivedArt;
 
 // ------------------------------------------------------------------------------------------------------------------------
 

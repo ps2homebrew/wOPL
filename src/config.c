@@ -316,7 +316,6 @@ void loadConfig()
             configGetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, &gEnableNotifications);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, &gEnableArt);
-            configGetInt(configOPL, CONFIG_OPL_ENABLE_ARCHIVEDART, &gEnableArchivedArt);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_DISCART, &gDiscEnableArt);
             configGetInt(configOPL, CONFIG_OPL_WIDESCREEN, &gWideScreen);
 
@@ -522,7 +521,6 @@ static void saveConfig()
         configSetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, gEnableNotifications);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, gEnableArt);
-        configSetInt(configOPL, CONFIG_OPL_ENABLE_ARCHIVEDART, gEnableArchivedArt);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_DISCART, gDiscEnableArt);
         configSetInt(configOPL, CONFIG_OPL_WIDESCREEN, gWideScreen);
         configSetInt(configOPL, CONFIG_OPL_VMODE, gVMode);

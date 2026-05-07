@@ -20,6 +20,7 @@ typedef struct
     int ataHighestUDMAMode; // Highest UDMA mode supported by the HDD
     unsigned char ThemesLoaded;
     unsigned char LanguagesLoaded;
+    unsigned char ArtArchivedLoaded;
     unsigned char ForceRefresh;
 } bdm_device_data_t;
 

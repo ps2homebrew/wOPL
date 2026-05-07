@@ -148,6 +148,14 @@ static int favGetImage(item_list_t *itemList, char *folder, int isRelative, char
     return favOwner->itemGetImage(favOwner, folder, isRelative, value, suffix, resultTex, psm);
 }
 
+static int favGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
+    item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+
+    return favOwner->itemGetArchivedImage(favOwner, folder, value, suffix, resultTex, psm);
+}
+
 static void favCleanUp(item_list_t *itemList, int exception)
 {
     if (favItemList.enabled) {
@@ -178,7 +186,7 @@ static void favShutdown(item_list_t *itemList)
 static item_list_t favItemList = {
     FAV_MODE, -1, 0, 0, MENU_MIN_INACTIVE_FRAMES, FAV_MODE_UPDATE_DELAY, NULL, NULL, &favGetTextId, NULL, &favInit, &favNeedsUpdate, &favUpdateItemList,
     &favGetItemCount, NULL, &favGetItemName, &favGetItemNameLength, &favGetItemStartup, &favDeleteItem, &favRenameItem, &favLaunchItem,
-    &favGetConfig, &favGetImage, &favCleanUp, &favShutdown, NULL, &favGetIconId};
+    &favGetConfig, &favGetImage, &favGetArchivedImage, &favCleanUp, &favShutdown, NULL, &favGetIconId};
 
 unsigned char favGetFlags(item_list_t *itemList)
 {

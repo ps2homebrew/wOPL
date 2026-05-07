@@ -162,6 +162,7 @@ static unsigned char hddModulesLoaded = 0;
 static unsigned char hddHDProKitDetected = 0;
 static unsigned char hddModulesLoadCount = 0;
 static unsigned char hddSupportModulesLoaded = 0;
+static unsigned char hddLoadedArchivedArt = 0;
 
 static char *hddPrefix = "pfs0:";
 static hdl_games_list_t hddGames;
@@ -508,7 +509,7 @@ static void hddInitModules(void)
     sprintf(path, "%sLNG", gHDDPrefix);
     lngAddLanguages(path, "/", hddGameList.mode);
 
-    if (gEnableArchivedArt) {
+    if (!hddLoadedArchivedArt) {
         sprintf(path, "%sART/art.tar", gHDDPrefix);
         loadTarFile(path);
     }
@@ -1155,14 +1156,21 @@ static config_set_t *hddGetConfig(item_list_t *itemList, int id)
 static int hddGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
-    if (gEnableArchivedArt)
-        snprintf(path, sizeof(path), "%s_%s", value, suffix);
-    else if (isRelative)
+    if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", gHDDPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
+    return texDiscoverLoad(resultTex, path, -1, 0);
+}
+
+static int hddGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    char path[256];
+
+    snprintf(path, sizeof(path), "%s_%s", value, suffix);
+
+    return texDiscoverLoad(resultTex, path, -1, 1);
 }
 
 static int hddGetTextId(item_list_t *itemList)
@@ -1342,7 +1350,7 @@ static char *hddGetPrefix(item_list_t *itemList)
 static item_list_t hddGameList = {
     HDD_MODE, 0, 0, MODE_FLAG_COMPAT_DMA, MENU_MIN_INACTIVE_FRAMES, HDD_MODE_UPDATE_DELAY, NULL, NULL, &hddGetTextId, &hddGetPrefix, &hddInit, &hddNeedsUpdate, &hddUpdateGameList,
     &hddGetGameCount, &hddGetGame, &hddGetGameName, &hddGetGameNameLength, &hddGetGameStartup, &hddDeleteGame, &hddRenameGame,
-    &hddLaunchGame, &hddGetConfig, &hddGetImage, &hddCleanUp, &hddShutdown, &hddCheckVMC, &hddGetIconId};
+    &hddLaunchGame, &hddGetConfig, &hddGetImage, &hddGetArchivedImage, &hddCleanUp, &hddShutdown, &hddCheckVMC, &hddGetIconId};
 
 int hddIsPresent()
 {

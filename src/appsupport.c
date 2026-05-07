@@ -514,6 +514,18 @@ static int appGetImage(item_list_t *itemList, char *folder, int isRelative, char
         return oplGetAppImage(device, folder, isRelative, value, suffix, resultTex, psm);
 }
 
+static int appGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    char device[8], *startup;
+
+    startup = appGetBoot(device, sizeof(device), value);
+
+    if (!strcmp(folder, "ART"))
+        return oplGetAppImage(device, folder, 0, startup, suffix, resultTex, psm);
+    else
+        return oplGetAppImage(device, folder, 0, value, suffix, resultTex, psm);
+}
+
 static int appGetTextId(item_list_t *itemList)
 {
     return _STR_APPS;
@@ -547,7 +559,7 @@ static void appShutdown(item_list_t *itemList)
 static item_list_t appItemList = {
     APP_MODE, -1, 0, MODE_FLAG_NO_COMPAT | MODE_FLAG_NO_UPDATE, MENU_MIN_INACTIVE_FRAMES, APP_MODE_UPDATE_DELAY, NULL, NULL, &appGetTextId, NULL, &appInit, &appNeedsUpdate, &appUpdateItemList,
     &appGetItemCount, NULL, &appGetItemName, &appGetItemNameLength, &appGetItemStartup, &appDeleteItem, &appRenameItem, &appLaunchItem,
-    &appGetConfig, &appGetImage, &appCleanUp, &appShutdown, NULL, &appGetIconId};
+    &appGetConfig, &appGetImage, &appGetArchivedImage, &appCleanUp, &appShutdown, NULL, &appGetIconId};
 
 static int scanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg, char *appsPath, int exception)
 {
