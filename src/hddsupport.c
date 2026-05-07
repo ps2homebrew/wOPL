@@ -512,6 +512,7 @@ static void hddInitModules(void)
     if (!hddLoadedArchivedArt) {
         sprintf(path, "%sART/art.tar", gHDDPrefix);
         loadTarFile(path);
+        hddLoadedArchivedArt = 1;
     }
 
     sbCreateFolders(gHDDPrefix, 0);

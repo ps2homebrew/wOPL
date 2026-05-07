@@ -108,7 +108,7 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 {
     static unsigned char ThemesLoaded = 0;
     static unsigned char LanguagesLoaded = 0;
-    static unsigned char ArtArchivedLoaded;
+    static unsigned char ArtArchivedLoaded = 0;
 
     char path[256];
     int result = 0;
@@ -158,6 +158,7 @@ static int mmceNeedsUpdate(item_list_t *itemList)
     if (!ArtArchivedLoaded) {
         sprintf(path, "%sART/art.tar", mmcePrefix);
         loadTarFile(path);
+        ArtArchivedLoaded = 1;
     }
 
     sbCreateFolders(mmcePrefix, 1);
