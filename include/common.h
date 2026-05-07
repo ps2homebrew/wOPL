@@ -32,8 +32,6 @@ enum ETH_OP_MODES {
 // frame counter
 extern unsigned int frameCounter;
 
-extern int gEnableArt;
-
 // ------------------------------------------------------------------------------------------------------------------------
 
 extern int gPS2Logo;

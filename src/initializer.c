@@ -174,7 +174,6 @@ static void setDefaults(void)
     gBDMPrefix[0] = '\0';
     gETHPrefix[0] = '\0';
     gEnableNotifications = 1;
-    gEnableArt = 1;
     gDiscEnableArt = 1;
     gWideScreen = 0;
     gEnableSFX = 1;
