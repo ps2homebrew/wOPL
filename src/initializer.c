@@ -190,7 +190,7 @@ static void setDefaults(void)
     gHDDStartMode = START_MODE_DISABLED;
     gETHStartMode = START_MODE_DISABLED;
     gAPPStartMode = START_MODE_DISABLED;
-    gFAVStartMode = START_MODE_DISABLED;
+    gFAVStartMode = START_MODE_AUTO;
     gMMCEStartMode = START_MODE_DISABLED;
 
     gMMCESlot = 2; // Default to first Auto slot
