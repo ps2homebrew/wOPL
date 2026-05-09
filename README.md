@@ -45,6 +45,7 @@ v1.1
 * Fix main background on models eg. 90000s
 * Modularized the art loading unifying art .tar
 * Enable by standard the favourites mode
+* Added a persistence while the game it´s being selected
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
