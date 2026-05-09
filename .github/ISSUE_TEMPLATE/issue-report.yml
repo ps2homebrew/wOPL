@@ -18,8 +18,8 @@ body:
       label: Checks
       description: "Check before posting"
       options:
-        - label: I have checked existing [__wOPL issues__](https://github.com/NathanNeurotic/wOPL/issues) for duplicates and found none
-        - label: I am using either wOPL [latest stable version](https://github.com/NathanNeurotic/wOPL/releases) or [__wOPL beta version__](https://github.com/NathanNeurotic/wOPL/releases)
+        - label: I have checked existing [__wOPL issues__](https://github.com/ps2homebrew/wOPL/issues) for duplicates and found none
+        - label: I am using either wOPL [latest stable version](https://github.com/ps2homebrew/wOPL/releases) or [__wOPL beta version__](https://github.com/ps2homebrew/wOPL/releases)
 
   - type: textarea
     id: explanation
