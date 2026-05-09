@@ -103,12 +103,23 @@ static void menuRenameGame(submenu_list_t **submenu)
 
     item_list_t *support = selected_item->item->userdata;
 
-    if (support != NULL && support->mode == FAV_MODE) {
-        char text[128];
+    if (support != NULL) {
+        // Make the persistence while the item is selected or while on on Favourites page
+        if (selected_item->item->current->item.favourited) {
+            char text[128];
 
-        snprintf(text, sizeof(text), _l(_STR_FAV_MSG), _l(_STR_RENAME));
-        guiMsgBox(text, 0, NULL);
-        return;
+            snprintf(text, sizeof(text), _l(_STR_FAV_PERSISTENCE_MSG), _l(_STR_RENAME));
+            guiMsgBox(text, 0, NULL);
+            return;
+        }
+
+        if (support->mode == FAV_MODE) {
+            char text[128];
+
+            snprintf(text, sizeof(text), _l(_STR_FAV_MSG), _l(_STR_RENAME));
+            guiMsgBox(text, 0, NULL);
+            return;
+        }
     }
 
     if (support) {
