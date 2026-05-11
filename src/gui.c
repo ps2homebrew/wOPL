@@ -1296,7 +1296,7 @@ int guiDrawBGMain(void)
 {
     GSTEXTURE *bg = thmGetTexture(BG_MAIN);
     if (bg) {
-        rmDrawPixmap(bg, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol);
+        rmSetBackground(bg);
         return 1;
     }
 
