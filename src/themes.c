@@ -566,14 +566,14 @@ static void drawGameImage(struct menu_list *menu, struct submenu_list *item, con
                                     gameImage->overlayTexture->lowerLeft_x, gameImage->overlayTexture->lowerLeft_y, gameImage->overlayTexture->lowerRight_x, gameImage->overlayTexture->lowerRight_y);
         } else {
             if (elem->reflection)
-                rmDrawPixmapWithReflection(texture, x, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
+                rmDrawPixmapWithReflection(texture, x, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
             else
-                rmDrawPixmap(texture, x, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
+                rmDrawPixmap(texture, x, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
         }
 
     } else if (elem->type == ELEM_TYPE_BACKGROUND) {
         if (gameImage->defaultTexture)
-            rmDrawPixmap(&gameImage->defaultTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
+            rmDrawPixmap(&gameImage->defaultTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
         else
             guiDrawBGPlasma();
     }
@@ -617,7 +617,7 @@ static void drawAttributeImage(struct menu_list *menu, struct submenu_list *item
                 }
                 GSTEXTURE *texture = thmGetTexture(texId);
                 if (texture && texture->Mem)
-                    rmDrawPixmap(texture, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
+                    rmDrawPixmap(texture, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
 
                 return;
             } else {
@@ -625,11 +625,11 @@ static void drawAttributeImage(struct menu_list *menu, struct submenu_list *item
                 GSTEXTURE *texture = cacheGetTexture(attributeImage->cache, menu->item->userdata, &posZ, &attributeImage->currentUid, attributeImage->currentValue);
                 if (texture && texture->Mem) {
                     if (attributeImage->overlayTexture) {
-                        rmDrawOverlayPixmap(&attributeImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol,
+                        rmDrawOverlayPixmap(&attributeImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol,
                                             texture, attributeImage->overlayTexture->upperLeft_x, attributeImage->overlayTexture->upperLeft_y, attributeImage->overlayTexture->upperRight_x, attributeImage->overlayTexture->upperRight_y,
                                             attributeImage->overlayTexture->lowerLeft_x, attributeImage->overlayTexture->lowerLeft_y, attributeImage->overlayTexture->lowerRight_x, attributeImage->overlayTexture->lowerRight_y);
                     } else
-                        rmDrawPixmap(texture, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
+                        rmDrawPixmap(texture, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
 
                     return;
                 }
@@ -1201,7 +1201,7 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
                 initStaticImage(themePath, themeConfig, theme, elem, name, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_BACKGROUND], type)) {
                 if (!elems->first) { // Background elem can only be the first one
-                    elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_BACKGROUND, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultBGCol, theme->fonts[0]);
+                    elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_BACKGROUND, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol, theme->fonts[0]);
                     initBackground(themePath, themeConfig, theme, elem, name, NULL, 1, NULL);
                 }
             } else if (!strcmp(elementsType[ELEM_TYPE_MENU_ICON], type)) {

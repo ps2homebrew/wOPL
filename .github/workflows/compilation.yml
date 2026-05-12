@@ -285,7 +285,7 @@ jobs:
           wOPL_VERSION="$(make woplversion)"
           SHORT_SHA="${GITHUB_SHA::7}"
           TS="$(date -u +'%Y%m%d-%H%M%S')"
-          TAG="pre-v${wOPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          TAG="${wOPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
           echo "wOPL_VERSION=${wOPL_VERSION}" >> "$GITHUB_ENV"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "name=Double Unofficial OPL ${wOPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
