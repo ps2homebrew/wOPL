@@ -203,7 +203,7 @@ static void setDefaults(void)
 
     gEnableUSB = 1;
     gEnableILK = 0;
-    gEnableMX4SIO = 1;
+    gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
 
     frameCounter = 0;
