@@ -552,6 +552,14 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+
+    if ((result = sbLoadImage(pDeviceData->bdmPrefix, game->startup)) < 0) {
+        if (gAutoLaunchBDMGame == NULL) {
+            guiWarning(_l(_STR_ERR_IMAGE_LOAD_FAILED), 10);
+        } else {
+            LOG("Image error\n");
+        }
+    }
 #endif
 
     if (gRememberLastPlayed) {

@@ -27,6 +27,46 @@
 #include "include/cheat_api.h"
 #include "coreconfig.h"
 
+#define MAX_IMAGEWORDS 1024
+static unsigned gImage[MAX_IMAGEWORDS];
+
+void LinkImage()
+{
+    unsigned CountEntries, CountWords, Offset;
+    unsigned *p = gImage;
+
+    Offset = *p++;
+    if (!Offset)
+        return;
+    CountWords = *p++;
+    if (*(u32 *)(Offset) != CountWords)
+        return;
+    CountEntries = *p++;
+    while (CountEntries--) {
+        Offset = *p++;
+        CountWords = *p++;
+        for (; CountWords--; Offset += 4) {
+            *(u32 *)(Offset) = *p++;
+        }
+    }
+}
+
+static void CopyImage()
+{
+    USE_LOCAL_EECORE_CONFIG;
+    for (unsigned i = 0; i < MAX_IMAGEWORDS; ++i) {
+        gImage[i] = config->gImage[i];
+    }
+}
+
+void EnableImage(int e)
+{
+    if (e) {
+        CopyImage();
+    } else
+        gImage[0] = 0;
+}
+
 /*---------------------------------*/
 /* Setup PS2RD Cheat Engine params */
 /*---------------------------------*/

@@ -1061,6 +1061,14 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+
+    if ((result = sbLoadImage(gHDDPrefix, game->startup)) < 0) {
+        if (gAutoLaunchGame == NULL) {
+            guiWarning(_l(_STR_ERR_IMAGE_LOAD_FAILED), 10);
+        } else {
+            LOG("Image error\n");
+        }
+    }
 #endif
 
     settings = (struct cdvdman_settings_hdd *)((u8 *)irx + i);

@@ -47,6 +47,9 @@ v1.1
 * Enable by standard the favourites mode
 * Added a persistence while the game it´s being selected on favourites
 
+v1.2
+* Added Code Inject for games support
+
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
 
@@ -56,8 +59,13 @@ This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
 ### Theme renamed files
 This variant is incompatible with OPL themes as the structure follows up diffrently than traditional OPL
 
-# Modularized art 
+### Modularized art 
 You can see game list with both normal art and art.tar
+
+### Code Inject
+Image Linker module allows patch files up to 4KiB in size to be linked as the game launches. IMG directory contains the GAMEID.img file the same as PS2RD CHT. This feature can be activated with "Enable Linker" under the game's "Cheat Settings."
+
+The binary format of img file can be discovered in ee_core/src/cheat_api.c LinkImage subroutine.
 
 </p>
 </details>

@@ -103,6 +103,7 @@ static int eecoreInit(int argc, char **argv)
     if (config->gCheatList) {
         EnableCheats();
     }
+    EnableImage((int)config->gImage);
 #endif
 #ifdef GSM
     if (config->EnableGSMOp) {

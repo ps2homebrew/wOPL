@@ -47,6 +47,7 @@ struct EECoreConfig_t
 
 #ifdef CHEAT
     u32 *gCheatList; // Store hooks/codes addr+val pairs
+    u32 *gImage;
 #endif
 
     void *eeloadCopy;

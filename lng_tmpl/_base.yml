@@ -414,6 +414,12 @@ gui_strings:
   string: 'Error: failed to load cheat file.'
 - label: NO_CHEATS_FOUND
   string: No cheats found.
+- label: ENABLEIMAGE
+  string: Image Linker
+- label: HINT_ENABLEIMAGE
+  string: Patch game from IMG directory.
+- label: ERR_IMAGE_LOAD_FAILED
+  string: 'Error: failed to load image file.'
 - label: AUTO_START_IN_N_SECS
   string: Auto start in %i s...
 - label: AUTOSTARTLAST

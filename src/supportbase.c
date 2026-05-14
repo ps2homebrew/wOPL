@@ -1264,7 +1264,7 @@ static void sbCreateFoldersFromList(const char *path, const char **folders)
 
 void sbCreateFolders(const char *path, int createDiscImgFolders)
 {
-    const char *basicFolders[] = {"CFG", "THM", "LNG", "ART", "VMC", "CHT", "APPS", NULL};
+    const char *basicFolders[] = {"CFG", "THM", "LNG", "ART", "VMC", "CHT", "APPS", "IMG", NULL};
     const char *discImgFolders[] = {"CD", "DVD", NULL};
 
     sbCreateFoldersFromList(path, basicFolders);
@@ -1293,5 +1293,23 @@ int sbLoadCheats(const char *path, const char *file)
     }
 
     return cheatMode;
+}
+
+int sbLoadImage(const char *path, const char *file)
+{
+    char imgfile[64];
+    const u32 *image;
+    int result = 0;
+
+    if (GetImageEnabled()) {
+        snprintf(imgfile, sizeof(imgfile), "%sIMG/%s.img", path, file);
+        LOG("Load image file %s\n", imgfile);
+        if (!LoadImage(imgfile)) {
+            LOG("Image load success\n");
+        } else {
+            result = -1;
+        }
+    }
+    return result;
 }
 #endif

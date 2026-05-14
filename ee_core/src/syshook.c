@@ -62,6 +62,10 @@ u32 New_SifSetDma(SifDmaTransfer_t *sdd, s32 len)
     return 1;
 }
 
+#ifdef CHEAT
+void LinkImage(void);
+#endif
+
 // ------------------------------------------------------------------------
 void sysLoadElf(char *filename, int argc, char **argv)
 {
@@ -102,6 +106,10 @@ void sysLoadElf(char *filename, int argc, char **argv)
 
     DPRINTF("t_loadElf: loading elf...");
     r = LoadElf(filename, &elf);
+
+#ifdef CHEAT
+    LinkImage();
+#endif
 
     if (!r) {
         DPRINTF(" done\n");

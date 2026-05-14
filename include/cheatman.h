@@ -35,6 +35,7 @@
 #define MAX_CODES      250
 #define MAX_CHEATLIST  (MAX_HOOKS * 2 + MAX_CODES * 2)
 #define CHEAT_NAME_MAX 128
+#define MAX_IMAGEWORDS 1024
 
 /* Some character defines */
 #define NUL         0x00
@@ -70,5 +71,8 @@ int GetCheatsEnabled(void);
 u32 *GetCheatsList(void);
 int load_cheats(const char *cheatfile);
 void set_cheats_list(void);
+int GetImageEnabled(void);
+const u32 *GetImage(void);
+int LoadImage(const char *filename);
 
 #endif /* _CHEATMAN_H_ */
