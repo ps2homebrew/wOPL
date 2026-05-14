@@ -1,6 +1,6 @@
 VERSION = 1
-SUBVERSION = 1
-EXTRAVERSION =
+SUBVERSION = 2
+EXTRAVERSION = beta
 
 # How to DEBUG?
 # Simply type "make <debug mode>" to build wOPL with the necessary debugging functionality.
