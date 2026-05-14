@@ -201,9 +201,9 @@ static void setDefaults(void)
     gMMCEAckWaitCycles = 5;
     gMMCEUseAlarms = 1;
 
-    gEnableUSB = 0;
+    gEnableUSB = 1;
     gEnableILK = 0;
-    gEnableMX4SIO = 0;
+    gEnableMX4SIO = 1;
     gEnableBdmHDD = 0;
 
     frameCounter = 0;
