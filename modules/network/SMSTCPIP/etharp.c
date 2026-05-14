@@ -165,7 +165,7 @@ void etharp_tmr(void)
 {
 
     s8_t i;
-
+    // clang-format off
     for (i = 0; i < ARP_TABLE_SIZE; ++i) {
         ++arp_table[i].ctime;
         if (arp_table[i].state == ETHARP_STATE_STABLE && arp_table[i].ctime >= ARP_MAXAGE) {
@@ -180,7 +180,9 @@ void etharp_tmr(void)
             } /* end if */
 #endif
         } /* end if */
-    }     /* end for */
+
+    } /* end for */
+    // clang-format on
 } /* end etharp_tmr */
 /**
  * Return an empty ARP entry (possibly recycling the oldest stable entry).
@@ -328,6 +330,7 @@ update_arp_entry(struct netif *netif, struct ip_addr *ipaddr, struct eth_addr *e
         LWIP_DEBUGF(ETHARP_DEBUG | DBG_TRACE, ("update_arp_entry: will not add 0.0.0.0 to ARP cache\n"));
         return NULL;
     }
+    // clang-format off
     /* Walk through the ARP mapping table and try to find an entry to
   update. If none is found, the IP -> MAC address mapping is
   inserted in the ARP table. */
@@ -395,7 +398,9 @@ update_arp_entry(struct netif *netif, struct ip_addr *ipaddr, struct eth_addr *e
                 return NULL;
             }
         } /* if */
-    }     /* for */
+
+    } /* for */
+// clang=format on
 
     /* no matching ARP entry was found */
     LWIP_ASSERT("update_arp_entry: i == ARP_TABLE_SIZE", i == ARP_TABLE_SIZE);

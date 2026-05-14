@@ -1,5 +1,5 @@
 VERSION = 1
-SUBVERSION = 0
+SUBVERSION = 1
 EXTRAVERSION =
 
 # How to DEBUG?
@@ -121,7 +121,7 @@ GFX_OBJS = $(PNG_ASSETS:%=%_png.o) poeveticanew.o icon_sys.o icon_icn.o icon_cpy
 
 AUDIO_OBJS =	boot.o cancel.o confirm.o cursor.o message.o transition.o bd_connect.o bd_disconnect.o
 
-MISC_OBJS =	icon_sys_A.o icon_sys_J.o icon_sys_C.o conf_theme_wOPL.o conf_theme_wOPL_CF.o
+MISC_OBJS =	icon_sys_A.o icon_sys_J.o icon_sys_C.o theme_list.o theme_coverflow.o
 
 TRANSLATIONS = Albanian Arabic Bulgarian Cebuano Croatian Czech Danish Dutch Filipino French \
 	German Greek Hungarian Indonesian Italian Japanese Korean Laotian Persian Polish Portuguese \
@@ -777,10 +777,10 @@ $(EE_ASM_DIR)icon_sys_J.c: misc/icon_J.sys | $(EE_ASM_DIR)
 $(EE_ASM_DIR)icon_sys_C.c: misc/icon_C.sys | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)
 
-$(EE_ASM_DIR)conf_theme_wOPL.c: misc/conf_theme_wOPL.cfg | $(EE_ASM_DIR)
+$(EE_ASM_DIR)theme_list.c: misc/theme_list.cfg | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_cfg
 
-$(EE_ASM_DIR)conf_theme_wOPL_CF.c: misc/conf_theme_wOPL_CF.cfg | $(EE_ASM_DIR)
+$(EE_ASM_DIR)theme_coverflow.c: misc/theme_coverflow.cfg | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_cfg
 
 $(EE_ASM_DIR)boot.c: audio/boot.adp | $(EE_ASM_DIR)

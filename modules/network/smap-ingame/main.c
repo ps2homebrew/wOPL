@@ -118,11 +118,13 @@ static err_t SMapIFInit(NetIF *pNetIF)
 
     pNetIF->name[0] = IFNAME0;
     pNetIF->name[1] = IFNAME1;
+    // clang-format off
 #ifdef PRE_LWIP_130_COMPAT
     pNetIF->output = &SMapOutput; // For LWIP versions before v1.3.0.
 #else
-    pNetIF->output = &etharp_output;                                                  // For LWIP 1.3.0 and later.
+    pNetIF->output = &etharp_output; // For LWIP 1.3.0 and later.
 #endif
+    // clang-format on
     pNetIF->linkoutput = &SMapLowLevelOutput;
     pNetIF->hwaddr_len = NETIF_MAX_HWADDR_LEN;
 #ifdef PRE_LWIP_130_COMPAT

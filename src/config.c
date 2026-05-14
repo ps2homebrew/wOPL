@@ -16,6 +16,7 @@
 #include "include/pad.h"
 #include "include/renderman.h"
 #include "include/themes.h"
+#include "include/lwnbd.h"
 
 #ifdef __DEBUG
 #include "include/debug.h"
@@ -314,8 +315,6 @@ void loadConfig()
             configGetColor(configOPL, CONFIG_OPL_SEL_TEXTCOLOR, gDefaultSelTextColor);
             configGetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, &gEnableNotifications);
-            configGetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, &gEnableArt);
-            configGetInt(configOPL, CONFIG_OPL_ENABLE_ARCHIVEDART, &gEnableArchivedArt);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_DISCART, &gDiscEnableArt);
             configGetInt(configOPL, CONFIG_OPL_WIDESCREEN, &gWideScreen);
 
@@ -374,6 +373,7 @@ void loadConfig()
 #endif
             configGetInt(configOPL, CONFIG_OPL_MMCE_WAIT_CYCLES, &gMMCEAckWaitCycles);
             configGetInt(configOPL, CONFIG_OPL_MMCE_USE_ALARMS, &gMMCEUseAlarms);
+            configGetInt(configOPL, CONFIG_OPL_ENABLE_USB, &gEnableUSB);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, &gEnableILK);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, &gEnableMX4SIO);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, &gEnableBdmHDD);
@@ -519,8 +519,6 @@ static void saveConfig()
         configSetColor(configOPL, CONFIG_OPL_SEL_TEXTCOLOR, gDefaultSelTextColor);
         configSetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, gEnableNotifications);
-        configSetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, gEnableArt);
-        configSetInt(configOPL, CONFIG_OPL_ENABLE_ARCHIVEDART, gEnableArchivedArt);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_DISCART, gDiscEnableArt);
         configSetInt(configOPL, CONFIG_OPL_WIDESCREEN, gWideScreen);
         configSetInt(configOPL, CONFIG_OPL_VMODE, gVMode);
@@ -558,6 +556,7 @@ static void saveConfig()
         configSetInt(configOPL, CONFIG_OPL_BDM_CACHE, bdmCacheSize);
         configSetInt(configOPL, CONFIG_OPL_HDD_CACHE, hddCacheSize);
         configSetInt(configOPL, CONFIG_OPL_SMB_CACHE, smbCacheSize);
+        configSetInt(configOPL, CONFIG_OPL_ENABLE_USB, gEnableUSB);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_ILINK, gEnableILK);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_MX4SIO, gEnableMX4SIO);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_BDMHDD, gEnableBdmHDD);

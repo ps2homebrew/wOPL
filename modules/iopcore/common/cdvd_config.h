@@ -93,7 +93,7 @@ struct cdvdman_settings_mmce
     struct cdvdman_settings_common common;
     int port;
     int iso_fd;
-    //vmc_id is in mcemu struct
+    // vmc_id is in mcemu struct
     int ack_wait_cycles;
     int use_alarms;
 } __attribute__((packed));

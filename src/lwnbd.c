@@ -17,6 +17,8 @@
 
 static struct lwnbd_config config;
 
+char gExportName[32];
+
 void reset(void);
 
 static int loadLwnbdSvr(void)

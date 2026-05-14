@@ -173,13 +173,11 @@ static void setDefaults(void)
     gMMCEPrefix[0] = '\0';
     gBDMPrefix[0] = '\0';
     gETHPrefix[0] = '\0';
-    gEnableNotifications = 0;
-    gEnableArt = 1;
-    gEnableArchivedArt = 1;
+    gEnableNotifications = 1;
     gDiscEnableArt = 1;
     gWideScreen = 0;
-    gEnableSFX = 0;
-    gEnableBootSND = 0;
+    gEnableSFX = 1;
+    gEnableBootSND = 1;
     gEnableBGM = 0;
     gSFXVolume = 80;
     gBootSndVolume = 80;
@@ -192,7 +190,7 @@ static void setDefaults(void)
     gHDDStartMode = START_MODE_DISABLED;
     gETHStartMode = START_MODE_DISABLED;
     gAPPStartMode = START_MODE_DISABLED;
-    gFAVStartMode = START_MODE_DISABLED;
+    gFAVStartMode = START_MODE_MANUAL;
     gMMCEStartMode = START_MODE_DISABLED;
 
     gMMCESlot = 2; // Default to first Auto slot
@@ -203,6 +201,7 @@ static void setDefaults(void)
     gMMCEAckWaitCycles = 5;
     gMMCEUseAlarms = 1;
 
+    gEnableUSB = 0;
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
@@ -333,11 +332,11 @@ void miniInit(int mode)
         bdmInitSemaphore();
 
         // Force load iLink & mx4sio modules.. we aren't using the gui so this is fine.
+        gEnableUSB = 1;
         gEnableILK = 1; // iLink will break pcsx2 however.
         gEnableMX4SIO = 1;
         gEnableBdmHDD = 1;
         bdmLoadModules();
-        delay(6); // Wait for the device to be detected.
     } else if (mode == HDD_MODE) {
         hddLoadModules();
         hddLoadSupportModules();

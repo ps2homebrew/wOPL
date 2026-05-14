@@ -59,10 +59,10 @@ jobs:
           cp -f DETAILED_CHANGELOG "$TMP"
 
           cat > DETAILED_CHANGELOG << 'EOF'
-          [![CI](https://img.shields.io/github/actions/workflow/status/NathanNeurotic/wOPL/compilation.yml?branch=wOPL-base&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
-          [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard)
+          [![CI](https://img.shields.io/github/actions/workflow/status/ps2homebrew/wOPL/compilation.yml?branch=wOPL-base&style=plastic&label=CI&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
+          [![Codacy](https://img.shields.io/codacy/grade/17d64924771d4052a7c457d6dbf99698?style=plastic&label=Codacy&labelColor=%23faf9f6&color=blue)](https://app.codacy.com/gh/ps2homebrew/wOPL/dashboard)
           [![Discord](https://img.shields.io/discord/1275875800318476381?style=plastic&logo=discord&logoColor=blue&label=Discord&labelColor=%23faf9f6&color=blue)](https://tinyurl.com/PS2SPACE)
-          [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
+          [![Downloads](https://img.shields.io/github/downloads/ps2homebrew/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/releases)
 
           ---
 
@@ -285,10 +285,10 @@ jobs:
           wOPL_VERSION="$(make woplversion)"
           SHORT_SHA="${GITHUB_SHA::7}"
           TS="$(date -u +'%Y%m%d-%H%M%S')"
-          TAG="pre-v${wOPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          TAG="${wOPL_VERSION}-${TS}-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
           echo "wOPL_VERSION=${wOPL_VERSION}" >> "$GITHUB_ENV"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
-          echo "name=Pre-release v${wOPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
+          echo "name=Double Unofficial OPL ${wOPL_VERSION} (${TS} ${SHORT_SHA})" >> "$GITHUB_OUTPUT"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -339,10 +339,10 @@ jobs:
           generate_release_notes: true
           target_commitish: ${{ github.sha }}
           body: |
-            [![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
-            [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+            [![CI](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
+            [![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/ps2homebrew/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
             [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
-            [![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
+            [![Downloads](https://img.shields.io/github/downloads/ps2homebrew/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/releases)
 
           files: |
             WOPNPS2LD.ELF

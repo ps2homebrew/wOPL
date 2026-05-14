@@ -1,6 +1,6 @@
 # Double Unofficial-Open-PS2-Loader
 
-![logo](https://github.com/NathanNeurotic/wOPL/blob/wOPL-base/gfx/logo_15.png)
+![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo_15.png)
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
@@ -9,10 +9,10 @@ Copyright 2025-Present, Wolf3s and Ripto<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/NathanNeurotic/wOPL/actions/workflows/compilation.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/NathanNeurotic/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![CI](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/ps2homebree/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
-[![Downloads](https://img.shields.io/github/downloads/NathanNeurotic/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/NathanNeurotic/wOPL/releases)
+[![Downloads](https://img.shields.io/github/downloads/ps2homebrew/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/releases)
 
 ## Introduction
 
@@ -23,6 +23,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
   <summary> <b> Changes in wOPL </b> </summary>
 <p>
 
+v1.0
 * Removal of UDPBD since there are not much users using this.
 * Add a easter egg when booting on wOPL.
 * Code cleanups/fixes and compiler warning fixes.
@@ -34,11 +35,29 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 * Modular pademu, Play your games without selecting modules.
 * Disc cover enable.
 
+v1.1
+* Added USB option in BDM
+* Reworked the mmce option(Suggestion by Hardlevel)
+* Enabled sfx/boot sounds by standard
+* Fixes on game background thanks to berion
+* Implementation of readiness checks during init on atad thanks to mystyq
+* Re-added back the game id on list theme(Coverflow it´s not supported).
+* Fix main background on models eg. 90000s
+* Modularized the art loading unifying art .tar
+* Enable by standard the favourites mode
+* Added a persistence while the game it´s being selected
+
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
 
 ### wOPL Easter egg
 This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
+
+### Theme renamed files
+This variant is incompatible with OPL themes as the structure follows up diffrently than traditional OPL
+
+# Modularized art 
+You can see game list with both normal art and art.tar
 
 </p>
 </details>
@@ -218,7 +237,7 @@ For example, to use `hdl_dump` to install a game to the HDD:
 
 To use the NBD server in wOPL:
 
-* Grab the latest beta version - go to the [Releases](https://github.com/NathanNeurotic/wOPL/releases) section and grab the one at the top.
+* Grab the latest beta version - go to the [Releases](https://github.com/ps2homebrew/wOPL/releases) section and grab the one at the top.
 * Ensure OPL is configured with an IP address (either static or DHCP).
 * Open the menu and select "Start NBD server". Once it's ready, it should update the screen to say "NBD Server running..."
 * Now you can connect with any of the following NBD clients.

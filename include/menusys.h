@@ -92,6 +92,9 @@ extern int RemainSecs, DisableCron;
 extern clock_t CronStart;
 extern int gSelectButton;
 
+extern int gAutosort;
+extern int gAutoRefresh;
+
 void menuInit();
 void menuEnd();
 void menuReinitMainMenu(void);

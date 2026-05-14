@@ -45,6 +45,7 @@ typedef struct
     vmc_spec_t specs; /* Card specifications */
 } bdm_vmc_infos_t;
 
+static int iUSBModLoaded = 0;
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
@@ -57,6 +58,7 @@ int bdmDeviceModeStarted;
 int gBDMStartMode;
 int bdmCacheSize;
 char gBDMPrefix[32];
+int gEnableUSB;
 int gEnableILK;
 int gEnableMX4SIO;
 int gEnableBdmHDD;
@@ -112,6 +114,14 @@ static void bdmLoadBlockDeviceModules(void)
 {
     WaitSema(bdmLoadModuleLock);
 
+    if (gEnableUSB && !iUSBModLoaded) {
+        // Load USB Block Device drivers
+        LOG("[USBMASS_BD]:\n");
+        sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
+
+        iUSBModLoaded = 1;
+    }
+
     if (gEnableILK && !iLinkModLoaded) {
         // Load iLink Block Device drivers
         LOG("[ILINKMAN]:\n");
@@ -153,12 +163,6 @@ void bdmLoadModules(void)
     LOG("[BDMFS_FATFS]:\n");
     sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
 
-    // Load USB Block Device drivers
-    LOG("[USBD]:\n");
-    sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
-    LOG("[USBMASS_BD]:\n");
-    sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
-
     // Load Optional Block Device drivers
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &bdmLoadBlockDeviceModules);
 
@@ -179,6 +183,7 @@ static void bdmInit(item_list_t *itemList)
     pDeviceData->bdmModifiedDVDPrev = 0;
     pDeviceData->bdmGameCount = 0;
     pDeviceData->bdmGames = NULL;
+    bdmLoadModules();
     configGetInt(configGetByType(CONFIG_OPL), "usb_frames_delay", &itemList->delay);
     itemList->enabled = 1;
 }
@@ -213,7 +218,7 @@ static int bdmNeedsUpdate(item_list_t *itemList)
         int deviceEnabled = 0;
         switch (pDeviceData->bdmDeviceType) {
             case BDM_TYPE_USB:
-                deviceEnabled = (gBDMStartMode != START_MODE_DISABLED);
+                deviceEnabled = gEnableUSB;
                 break;
             case BDM_TYPE_ILINK:
                 deviceEnabled = gEnableILK;
@@ -275,9 +280,10 @@ static int bdmNeedsUpdate(item_list_t *itemList)
             pDeviceData->ThemesLoaded = 1;
     }
 
-    if (gEnableArchivedArt) {
+    if (!pDeviceData->ArtArchivedLoaded) {
         sprintf(path, "%sART/art.tar", pDeviceData->bdmPrefix);
         loadTarFile(path);
+        pDeviceData->ArtArchivedLoaded = 1;
     }
 
     // update Languages
@@ -649,14 +655,21 @@ static int bdmGetImage(item_list_t *itemList, char *folder, int isRelative, char
 
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
 
-    if (gEnableArchivedArt)
-        snprintf(path, sizeof(path), "%s_%s", value, suffix);
-    else if (isRelative)
+    if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", pDeviceData->bdmPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
+    return texDiscoverLoad(resultTex, path, -1, 0);
+}
+
+static int bdmGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    char path[256];
+
+    snprintf(path, sizeof(path), "%s_%s", value, suffix);
+
+    return texDiscoverLoad(resultTex, path, -1, 1);
 }
 
 static int bdmGetTextId(item_list_t *itemList)
@@ -751,7 +764,7 @@ static char *bdmGetPrefix(item_list_t *itemList)
 static item_list_t bdmGameList = {
     BDM_MODE, 2, 0, 0, MENU_MIN_INACTIVE_FRAMES, BDM_MODE_UPDATE_DELAY, NULL, NULL, &bdmGetTextId, &bdmGetPrefix, &bdmInit, &bdmNeedsUpdate,
     &bdmUpdateGameList, &bdmGetGameCount, &bdmGetGame, &bdmGetGameName, &bdmGetGameNameLength, &bdmGetGameStartup, &bdmDeleteGame, &bdmRenameGame,
-    &bdmLaunchGame, &bdmGetConfig, &bdmGetImage, &bdmCleanUp, &bdmShutdown, &bdmCheckVMC, &bdmGetIconId};
+    &bdmLaunchGame, &bdmGetConfig, &bdmGetImage, &bdmGetArchivedImage, &bdmCleanUp, &bdmShutdown, &bdmCheckVMC, &bdmGetIconId};
 
 void bdmInitSemaphore()
 {
@@ -964,24 +977,44 @@ void autoLaunchBDMGame(char *argv[])
     gAutoLaunchDeviceData = malloc(sizeof(bdm_device_data_t));
     memset(gAutoLaunchDeviceData, 0, sizeof(bdm_device_data_t));
 
-    snprintf(path, sizeof(path), "mass0:");
-    int dir = fileXioDopen(path);
-    if (dir >= 0) {
-        fileXioIoctl2(dir, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0, &gAutoLaunchDeviceData->bdmDriver, sizeof(gAutoLaunchDeviceData->bdmDriver) - 1);
-        fileXioIoctl2(dir, USBMASS_IOCTL_GET_DEVICE_NUMBER, NULL, 0, &gAutoLaunchDeviceData->massDeviceIndex, sizeof(gAutoLaunchDeviceData->massDeviceIndex));
+    char apaDevicePrefix[8] = {0};
+    delay(8);
+    snprintf(apaDevicePrefix, sizeof(apaDevicePrefix), "mass0:");
+    // Loop through mass0: to mass4:
+    for (int i = 0; i <= 4; i++) {
+        snprintf(path, sizeof(path), "mass%d:", i);
+        int dir = fileXioDopen(path);
 
-        if (!strcmp(gAutoLaunchDeviceData->bdmDriver, "ata") && strlen(gAutoLaunchDeviceData->bdmDriver) == 3)
-            bdmResolveLBA_UDMA(gAutoLaunchDeviceData);
+        if (dir >= 0) {
+            fileXioIoctl2(dir, USBMASS_IOCTL_GET_DRIVERNAME, NULL, 0, &gAutoLaunchDeviceData->bdmDriver, sizeof(gAutoLaunchDeviceData->bdmDriver) - 1);
+            fileXioIoctl2(dir, USBMASS_IOCTL_GET_DEVICE_NUMBER, NULL, 0, &gAutoLaunchDeviceData->massDeviceIndex, sizeof(gAutoLaunchDeviceData->massDeviceIndex));
 
-        fileXioDclose(dir);
+            if (!strcmp(gAutoLaunchDeviceData->bdmDriver, "ata") && strlen(gAutoLaunchDeviceData->bdmDriver) == 3) {
+                bdmResolveLBA_UDMA(gAutoLaunchDeviceData);
+                snprintf(apaDevicePrefix, sizeof(apaDevicePrefix), "mass%d:", i);
+                fileXioDclose(dir);
+                break; // Exit the loop if "ata" device is found
+            }
+
+            fileXioDclose(dir);
+        } else {
+            // Retry for mass0: only
+            if (i == 0) {
+                delay(6);
+                i--;
+            } else {
+                break;
+            }
+        }
+        delay(6);
     }
 
     if (gBDMPrefix[0] != '\0') {
-        snprintf(path, sizeof(path), "mass0:%s/CFG/%s.cfg", gBDMPrefix, gAutoLaunchBDMGame->startup);
-        snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "mass0:%s/", gBDMPrefix);
+        snprintf(path, sizeof(path), "%s%s/CFG/%s.cfg", apaDevicePrefix, gBDMPrefix, gAutoLaunchBDMGame->startup);
+        snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "%s%s/", apaDevicePrefix, gBDMPrefix);
     } else {
-        snprintf(path, sizeof(path), "mass0:CFG/%s.cfg", gAutoLaunchBDMGame->startup);
-        snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "mass0:");
+        snprintf(path, sizeof(path), "%sCFG/%s.cfg", apaDevicePrefix, gAutoLaunchBDMGame->startup);
+        snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "%s", apaDevicePrefix);
     }
 
     configSet = configAlloc(0, NULL, path);

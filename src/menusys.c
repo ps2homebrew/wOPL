@@ -32,7 +32,6 @@ enum MENU_IDs {
     MENU_PARENTAL_LOCK,
     MENU_NET_CONFIG,
     MENU_START_NBD,
-    MENU_MMCE_SETTINGS,
     MENU_ABOUT,
     MENU_SAVE_CHANGES,
     MENU_EXIT,
@@ -85,9 +84,10 @@ static ee_sema_t menuSema;
 
 int RemainSecs, DisableCron;
 int gSelectButton;
+int gAutosort;
+int gAutoRefresh;
 
 extern unsigned char shouldAppsUpdate;
-extern unsigned int frameCounter;
 
 
 #define MENU_GENERAL_UPDATE_DELAY 60
@@ -103,12 +103,23 @@ static void menuRenameGame(submenu_list_t **submenu)
 
     item_list_t *support = selected_item->item->userdata;
 
-    if (support != NULL && support->mode == FAV_MODE) {
-        char text[128];
+    if (support != NULL) {
+        // Make the persistence while the item is selected or while on on Favourites page
+        if (selected_item->item->current->item.favourited) {
+            char text[128];
 
-        snprintf(text, sizeof(text), _l(_STR_FAV_MSG), _l(_STR_RENAME));
-        guiMsgBox(text, 0, NULL);
-        return;
+            snprintf(text, sizeof(text), _l(_STR_FAV_PERSISTENCE_MSG), _l(_STR_RENAME));
+            guiMsgBox(text, 0, NULL);
+            return;
+        }
+
+        if (support->mode == FAV_MODE) {
+            char text[128];
+
+            snprintf(text, sizeof(text), _l(_STR_FAV_MSG), _l(_STR_RENAME));
+            guiMsgBox(text, 0, NULL);
+            return;
+        }
     }
 
     if (support) {
@@ -145,13 +156,25 @@ static void menuDeleteGame(submenu_list_t **submenu)
 
     item_list_t *support = selected_item->item->userdata;
 
-    if (support != NULL && support->mode == FAV_MODE) {
-        char text[128];
+    if (support != NULL) {
+        // Make the persistence while the item is selected or while on on Favourites page
+        if (selected_item->item->current->item.favourited) {
+            char text[128];
 
-        snprintf(text, sizeof(text), _l(_STR_FAV_MSG), _l(_STR_DELETE));
-        guiMsgBox(text, 0, NULL);
-        return;
+            snprintf(text, sizeof(text), _l(_STR_FAV_PERSISTENCE_MSG), _l(_STR_DELETE));
+            guiMsgBox(text, 0, NULL);
+            return;
+        }
+
+        if (support->mode == FAV_MODE) {
+            char text[128];
+
+            snprintf(text, sizeof(text), _l(_STR_FAV_MSG), _l(_STR_DELETE));
+            guiMsgBox(text, 0, NULL);
+            return;
+        }
     }
+
 
     if (support) {
         if (support->itemDelete) {
@@ -248,7 +271,6 @@ static void menuInitMainMenu(void)
     submenuAppendItem(&mainMenu, -1, NULL, MENU_OSD_LANGUAGE_SETTINGS, _STR_OSD_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG, NULL);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_MMCE_SETTINGS, _STR_MMCE_SETTINGS, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES, NULL);
@@ -977,9 +999,6 @@ void menuHandleInputMenu()
         } else if (id == MENU_START_NBD) {
             if (menuCheckParentalLock() == 0)
                 handleLwnbdSrv();
-        } else if (id == MENU_MMCE_SETTINGS) {
-            if (menuCheckParentalLock() == 0)
-                guiShowMMCEConfig();
         } else if (id == MENU_ABOUT) {
             guiShowAbout();
         } else if (id == MENU_SAVE_CHANGES) {

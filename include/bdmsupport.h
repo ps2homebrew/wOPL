@@ -20,6 +20,7 @@ typedef struct
     int ataHighestUDMAMode; // Highest UDMA mode supported by the HDD
     unsigned char ThemesLoaded;
     unsigned char LanguagesLoaded;
+    unsigned char ArtArchivedLoaded;
     unsigned char ForceRefresh;
 } bdm_device_data_t;
 
@@ -35,6 +36,7 @@ extern int gBDMStartMode;
 extern int bdmCacheSize;
 extern char gBDMPrefix[32];
 
+extern int gEnableUSB;
 extern int gEnableILK;
 extern int gEnableMX4SIO;
 extern int gEnableBdmHDD;

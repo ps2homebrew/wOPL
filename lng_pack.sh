@@ -8,12 +8,12 @@ DATE=$(date +'%d %B %Y')
 CURRENT_DIR=$(pwd)
 BUILD_DIR="$(pwd)/tmp/wOPL_LANG"
 LANG_LIST="$(pwd)/tmp/wOPL_LANG_LIST"
-make oplversion 2>/dev/null
+make woplversion 2>/dev/null
 if [ $? == "0" ]
 then
-	export wOPL_VERSION=$(make oplversion)
+	export wOPL_VERSION=$(make woplversion)
 else
-	echo "Falling back to old OPL Lang Pack"
+	echo "Falling back to old wOPL Lang Pack"
 	VERSION=$(grep "VERSION =" < "${CURRENT_DIR}/Makefile" | head -1 | cut -d " " -f 3)
 	SUBVERSION=$(grep "SUBVERSION =" < "${CURRENT_DIR}/Makefile" | head -1 | cut -d " " -f 3)
 	PATCHLEVEL=$(grep "PATCHLEVEL =" < "${CURRENT_DIR}/Makefile" | head -1 | cut -d " " -f 3)
@@ -60,16 +60,16 @@ done < ${LANG_LIST}
 Double Unofficial Open PS2 Loader Official Translations (${DATE})
 
 HOW TO INSTALL:
-1. make sure you are running latest OPL
-2. transfer both the the LANGUAGE FILE (.lng) and the FONT FILE (.ttf/.otf) into your OPL directory of your memory card
+1. make sure you are running latest wOPL
+2. transfer both the the LANGUAGE FILE (.lng) and the FONT FILE (.ttf/.otf) into your wOPL directory of your memory card
  a. IMPORTANT: Do not rename the files
  b. NOTE: Some languages don't require a FONT file, so it won't be included
-3. run OPL
-4. go to OPL Settings
+3. run wOPL
+4. go to wOPL Settings
 5. open the Display settings page
 6. select your new language file
 7. press Ok at the bottom of the page
-8. then save your settings so next time you run OPL, it will load it with your preferred language file
+8. then save your settings so next time you run wOPL, it will load it with your preferred language file
 9. done!
 EOF
 
@@ -77,8 +77,8 @@ EOF
 cd ${BUILD_DIR}/
 zip -r "${CURRENT_DIR}/WOPNPS2LD-LANGS-${WOPL_VERSION}.zip" ./*
 if [ -f "${CURRENT_DIR}/WOPNPS2LD-LANGS-${WOPL_VERSION}.zip" ]
-	then echo "OPL Lang Package Complete: WOPNPS2LD-LANGS-${WOPL_VERSION}.zip"
-	else echo "OPL Lang Package not found!"
+	then echo "wOPL Lang Package Complete: WOPNPS2LD-LANGS-${WOPL_VERSION}.zip"
+	else echo "wOPL Lang Package not found!"
 fi
 
 # Cleanup

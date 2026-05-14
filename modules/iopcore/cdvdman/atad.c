@@ -88,7 +88,9 @@ typedef struct _ata_cmd_info
 } ata_cmd_info_t;
 
 #define ata_cmd_command_mask      0x1f
-#define ata_cmd_command_bits(x)   ((x)&ata_cmd_command_mask)
+// clang-format off
+#define ata_cmd_command_bits(x)   ((x) & ata_cmd_command_mask)
+// clang-format on
 #define ata_cmd_flag_write_twice  0x80
 #define ata_cmd_flag_use_timeout  0x40
 #define ata_cmd_flag_dir          0x20 // DMA direction: read from RAM if set, write to to RAM if unset.
@@ -131,6 +133,47 @@ static void ata_set_dir(int dir);
 static void ata_shutdown_cb(void);
 
 int ata_device_sector_io_internal(int device, void *buf, u64 lba, u32 nsectors, int dir);
+
+/* Wait until the ATA device becomes basically ready for commands.
+   BUSY must be clear (spin-up / firmware init done).
+   DRDY is validated later by ata_wait_for_ready() according to ATA spec.
+*/
+static int ata_wait_for_busy_clear(int timeout)
+{
+    USE_ATA_REGS;
+
+    for (int waited = 0; waited < timeout; waited++) {
+        if (!(ata_hwport->r_status & ATA_STAT_BUSY))
+            return 0;
+
+        DelayThread(1000);
+    }
+
+    M_PRINTF("ata_wait_for_busy_clear TIMEOUT after %d ms\n", timeout);
+    return ATA_RES_ERR_TIMEOUT;
+}
+
+static int ata_wait_for_ready(int timeout)
+{
+    USE_ATA_REGS;
+
+    for (int waited = 0; waited < timeout; waited++) {
+        u8 status = ata_hwport->r_status;
+
+        if (!(status & ATA_STAT_BUSY) && (status & ATA_STAT_READY))
+            return 0;
+
+        if (status & ATA_STAT_ERR) {
+            M_PRINTF("ata_wait_for_ready ERR: status=0x%02x err=0x%02x\n", status, sceAtaGetError());
+            return ATA_RES_ERR_IO;
+        }
+
+        DelayThread(1000);
+    }
+
+    M_PRINTF("ata_wait_for_ready TIMEOUT after %d ms\n", timeout);
+    return ATA_RES_ERR_TIMEOUT;
+}
 
 #ifndef ATA_GAMESTAR_WORKAROUND
 /* In v1.04, DMA was enabled in ata_set_dir() instead. */
@@ -209,6 +252,13 @@ int atad_start(void)
     // Let bdm device support handle registering the block device.
     bdm_connect_bd(&g_ata_bd);
 #endif
+
+    if (ata_wait_for_busy_clear(30000) < 0)
+        return 1;
+
+    if (ata_wait_for_ready(5000) < 0)
+        return 1;
+
     M_PRINTF("Driver loaded.\n");
     return 0;
 }

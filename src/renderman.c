@@ -90,7 +90,8 @@ const u64 gColBlack = GS_SETREG_RGBA(0x00, 0x00, 0x00, 0x80);  // Alpha 0x80 -> 
 const u64 gColDarker = GS_SETREG_RGBA(0x00, 0x00, 0x00, 0x60); // Alpha 0x60 -> transparent overlay color
 const u64 gColFocus = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, 0x50);  // Alpha 0x50 -> transparent overlay color
 
-const u64 gDefaultCol = GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x80); // Special color for texture multiplication
+const u64 gDefaultCol = GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x80);   // Special color for texture multiplication
+const u64 gDefaultBGCol = GS_SETREG_RGBA(0xBF, 0xBF, 0xBF, 0xBF); // Special color for texture multiplication
 const u64 gDefaultAlpha = GS_SETREG_ALPHA(0, 1, 0, 1, 0);
 
 void rmInvalidateTexture(GSTEXTURE *txt)
@@ -356,7 +357,7 @@ void rmSetBackground(GSTEXTURE *txt)
                               0, 0,
                               0, 0,
                               gsGlobal->Width, gsGlobal->Height,
-                              txt->Width, txt->Height, order, gDefaultCol);
+                              txt->Width, txt->Height, order, gDefaultBGCol);
     order++;
 }
 

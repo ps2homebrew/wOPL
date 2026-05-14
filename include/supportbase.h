@@ -67,7 +67,7 @@ int sbIsSameSize(const char *prefix, int prevSize);
 int sbFileExists(const char *path);
 int sbCreateSemaphore(void);
 int sbListDir(char *path, const char *separator, int maxElem,
-              int (*readEntry)(int index, const char *path, const char *separator, const char *name, unsigned int mode));
+              int (*readEntry)(int index, const char *path, const char *separator, const char *name, unsigned char d_type));
 int sbReadList(base_game_info_t **list, const char *prefix, int *fsize, int *gamecount);
 int sbPrepare(base_game_info_t *game, config_set_t *configSet, int size_cdvdman, void **cdvdman_irx, int *patchindex);
 void sbUnprepare(void *pCommon);

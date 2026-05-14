@@ -284,29 +284,34 @@ struct sockaddr
 
 #ifndef FD_SET
 #undef FD_SETSIZE
+// clang-format off
 #define FD_SETSIZE     16
-#define FD_SET(n, p)   ((p)->fd_bits[(n) / 8] |= (1 << ((n)&7)))
-#define FD_CLR(n, p)   ((p)->fd_bits[(n) / 8] &= ~(1 << ((n)&7)))
-#define FD_ISSET(n, p) ((p)->fd_bits[(n) / 8] & (1 << ((n)&7)))
+
+#define FD_SET(n, p)   ((p)->fd_bits[(n) / 8] |= (1 << ((n) & 7)))
+#define FD_CLR(n, p)   ((p)->fd_bits[(n) / 8] &= ~(1 << ((n) & 7)))
+#define FD_ISSET(n, p) ((p)->fd_bits[(n) / 8] & (1 << ((n) & 7)))
 #define FD_ZERO(p)     memset((void *)(p), 0, sizeof(*(p)))
 
 typedef struct fd_set
 {
     unsigned char fd_bits[(FD_SETSIZE + 7) / 8];
 } fd_set;
+// clang-format on
 #endif
 
 #if !defined(INVALID_SOCKET)
 #define INVALID_SOCKET -1
 #endif
 
+// clang-format off
 #if !defined(htonl)
-#define htonl(x) ((((x)&0xff) << 24) | (((x)&0xff00) << 8) | (((x)&0xff0000) >> 8) | (((x)&0xff000000) >> 24))
+#define htonl(x) ((((x) & 0xff) << 24) | (((x) & 0xff00) << 8) | (((x) & 0xff0000) >> 8) | (((x) & 0xff000000) >> 24))
 #endif
 
 #if !defined(htons)
-#define htons(x) ((((x)&0xff) << 8) | (((x)&0xff00) >> 8))
+#define htons(x) ((((x) & 0xff) << 8) | (((x) & 0xff00) >> 8))
 #endif
+// clang-format on
 
 #if !defined(ntohl)
 #define ntohl(x) htonl(x)

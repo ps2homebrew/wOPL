@@ -80,8 +80,6 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_SEL_TEXTCOLOR        "sel_text_color"
 #define CONFIG_OPL_PLAS_BLEND_COLOR     "plasma_blend_color"
 #define CONFIG_OPL_ENABLE_NOTIFICATIONS "enable_notifications"
-#define CONFIG_OPL_ENABLE_COVERART      "enable_coverart"
-#define CONFIG_OPL_ENABLE_ARCHIVEDART   "enable_archivedart"
 #define CONFIG_OPL_ENABLE_DISCART       "enable_discart"
 #define CONFIG_OPL_WIDESCREEN           "wide_screen"
 #define CONFIG_OPL_VMODE                "vmode"
@@ -121,6 +119,7 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ENABLE_ILINK         "enable_ilink"
 #define CONFIG_OPL_ENABLE_MX4SIO        "enable_mx4sio"
 #define CONFIG_OPL_ENABLE_BDMHDD        "enable_bdm_hdd"
+#define CONFIG_OPL_ENABLE_MMCE          "enable_mmce"
 
 #define CONFIG_OPL_SWAP_SEL_BUTTON   "swap_select_btn"
 #define CONFIG_OPL_PARENTAL_LOCK_PWD "parental_lock_password"

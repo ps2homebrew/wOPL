@@ -149,6 +149,8 @@ typedef struct _item_list_t
 
     int (*itemGetImage)(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
 
+    int (*itemGetArchivedImage)(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
+
     void (*itemCleanUp)(item_list_t *itemList, int exception);
 
     void (*itemShutdown)(item_list_t *itemList);

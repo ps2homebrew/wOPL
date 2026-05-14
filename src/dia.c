@@ -89,7 +89,7 @@ int diaShowKeyb(char *text, int maxLen, int hide_text, const char *title)
     while (1) {
         readPads();
 
-        rmStartFrame();
+        guiStartFrame();
         if (guiDrawBGMain() == 0)
             guiDrawBGPlasma();
         rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
@@ -284,7 +284,7 @@ static int diaShowColSel(unsigned char *r, unsigned char *g, unsigned char *b)
     while (1) {
         readPads();
 
-        rmStartFrame();
+        guiStartFrame();
         if (guiDrawBGMain() == 0)
             guiDrawBGPlasma();
         rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);

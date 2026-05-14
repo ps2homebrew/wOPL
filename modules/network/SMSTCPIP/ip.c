@@ -250,14 +250,16 @@ err_t ip_input(struct pbuf *p, struct netif *inp)
 
         } /* end if */
 #if LWIP_DHCP
+    // clang-format off
     if (!netif) {
         if (IPH_PROTO(iphdr) == IP_PROTO_UDP) {
             if (ntohs(
                     ((struct udp_hdr *)((u8_t *)iphdr + iphdrlen))->dest) == DHCP_CLIENT_PORT)
                 netif = inp;
         } /* end if */
-    }     /* end if */
-#endif    /* LWIP_DHCP */
+    } /* end if */
+// clang-format on
+#endif /* LWIP_DHCP */
     if (!netif) {
 #if IP_FORWARD
         if (!ip_addr_isbroadcast(&iphdr->dest, &inp->netmask))
@@ -267,12 +269,14 @@ err_t ip_input(struct pbuf *p, struct netif *inp)
         return ERR_OK;
     } /* end if */
 #if IP_REASSEMBLY
+    // clang-format off
     if ((IPH_OFFSET(iphdr) & 0xFF3F) != 0) {
         p = ip_reass(p);
         if (p == NULL)
             return ERR_OK;
         iphdr = p->payload;
-    }  /* end if */
+    } /* end if */
+// clang-format on
 #else  /* IP_REASSEMBLY */
     if ((IPH_OFFSET(iphdr) & 0xFF3F) != 0) {
         pbuf_free(p);

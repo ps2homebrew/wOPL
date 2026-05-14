@@ -15,19 +15,6 @@
 #include <libmc.h>
 #include <kernel.h>
 
-extern unsigned int frameCounter;
-
-
-// ----------------------------------------------------------
-// --------------------- Init/Deinit ------------------------
-// ----------------------------------------------------------
-void reset(void)
-{
-    sysReset(SYS_LOAD_MC_MODULES | SYS_LOAD_USB_MODULES | SYS_LOAD_ISOFS_MODULE);
-
-    mcInit(MC_TYPE_XMC);
-}
-
 // --------------------- Main --------------------
 int main(int argc, char *argv[])
 {

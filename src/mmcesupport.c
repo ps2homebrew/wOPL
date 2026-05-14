@@ -108,6 +108,7 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 {
     static unsigned char ThemesLoaded = 0;
     static unsigned char LanguagesLoaded = 0;
+    static unsigned char ArtArchivedLoaded = 0;
 
     char path[256];
     int result = 0;
@@ -154,9 +155,10 @@ static int mmceNeedsUpdate(item_list_t *itemList)
             LanguagesLoaded = 1;
     }
 
-    if (gEnableArchivedArt) {
+    if (!ArtArchivedLoaded) {
         sprintf(path, "%sART/art.tar", mmcePrefix);
         loadTarFile(path);
+        ArtArchivedLoaded = 1;
     }
 
     sbCreateFolders(mmcePrefix, 1);
@@ -402,14 +404,21 @@ static config_set_t *mmceGetConfig(item_list_t *itemList, int id)
 static int mmceGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
 {
     char path[256];
-    if (gEnableArchivedArt)
-        snprintf(path, sizeof(path), "%s_%s", value, suffix);
-    else if (isRelative)
+    if (isRelative)
         snprintf(path, sizeof(path), "%s%s/%s_%s", mmcePrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, gEnableArchivedArt);
+    return texDiscoverLoad(resultTex, path, -1, 0);
+}
+
+static int mmceGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
+{
+    char path[256];
+
+    snprintf(path, sizeof(path), "%s_%s", value, suffix);
+
+    return texDiscoverLoad(resultTex, path, -1, 1);
 }
 
 static int mmceGetTextId(item_list_t *itemList)
@@ -465,7 +474,7 @@ static char *mmceGetPrefix(item_list_t *itemList)
 static item_list_t mmceGameList = {
     MMCE_MODE, 2, 0, 0, MENU_MIN_INACTIVE_FRAMES, MMCE_MODE_UPDATE_DELAY, NULL, NULL, &mmceGetTextId, &mmceGetPrefix, &mmceInit, &mmceNeedsUpdate,
     &mmceUpdateGameList, &mmceGetGameCount, &mmceGetGame, &mmceGetGameName, &mmceGetGameNameLength, &mmceGetGameStartup, &mmceDeleteGame, &mmceRenameGame,
-    &mmceLaunchGame, &mmceGetConfig, &mmceGetImage, &mmceCleanUp, &mmceShutdown, &mmceCheckVMC, &mmceGetIconId};
+    &mmceLaunchGame, &mmceGetConfig, &mmceGetImage, &mmceGetArchivedImage, &mmceCleanUp, &mmceShutdown, &mmceCheckVMC, &mmceGetIconId};
 
 void mmceInitSemaphore()
 {

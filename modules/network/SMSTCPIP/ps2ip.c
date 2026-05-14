@@ -136,13 +136,15 @@ int ps2ip_setconfig(t_ip_info *pInfo)
     netif_set_netmask(pNetIF, (IPAddr *)&pInfo->netmask);
     netif_set_gw(pNetIF, (IPAddr *)&pInfo->gw);
 #if LWIP_DHCP
+    // clang-format off
     if (pInfo->dhcp_enabled) {
         if (!pNetIF->dhcp)
             dhcp_start(pNetIF);
     } else {
         if (pNetIF->dhcp)
             dhcp_stop(pNetIF);
-    }  /* end else */
+    } /* end else */
+// clang-format on
 #endif /* LWIP_DHCP */
     return 1;
 
@@ -217,7 +219,7 @@ err_t ps2ip_input(struct pbuf *pInput, struct netif *pNetIF)
         pbuf_free(pInput);
         return ERR_OK;
     } /* end if */
-      // Allocate messagequeue entry.
+    // Allocate messagequeue entry.
     pIMSG = &aMSGs[u8LastMSG];
     u8LastMSG = GetNextMSGQueueIndex(u8LastMSG);
     // Initialize the InputMSG.
@@ -489,7 +491,7 @@ static u32_t ComputeTimeDiff(const iop_sys_clock_t *pStart, const iop_sys_clock_
 u32_t sys_arch_sem_wait(sys_sem_t aSema, u32_t aTimeout)
 {
     u32 WaitTime;
-
+    // clang-format off
     if (aTimeout == 0)
         return (WaitSema(aSema) == 0 ? 0 : SYS_ARCH_TIMEOUT);
     else if (aTimeout == 1)
@@ -516,6 +518,7 @@ u32_t sys_arch_sem_wait(sys_sem_t aSema, u32_t aTimeout)
             WaitTime = SYS_ARCH_TIMEOUT;
 
     } /* end else */
+   // clang-format on 
 
     return WaitTime;
 

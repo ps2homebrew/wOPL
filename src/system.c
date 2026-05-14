@@ -204,7 +204,7 @@ void sysShutdownDev9(void)
     }
 }
 
-void sysReset(int modload_mask)
+void sysReset()
 {
 #ifdef PADEMU
     ds34usb_reset();
@@ -262,12 +262,10 @@ void sysReset(int modload_mask)
     LOG("[SIO2MAN]:\n");
     sysLoadModuleBuffer(&sio2man_irx, size_sio2man_irx, 0, NULL);
 
-    if (modload_mask & SYS_LOAD_MC_MODULES) {
-        LOG("[MCMAN]:\n");
-        sysLoadModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL);
-        LOG("[MCSERV]:\n");
-        sysLoadModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL);
-    }
+    LOG("[MCMAN]:\n");
+    sysLoadModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL);
+    LOG("[MCSERV]:\n");
+    sysLoadModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL);
 
     LOG("[PADMAN]:\n");
     sysLoadModuleBuffer(&padman_irx, size_padman_irx, 0, NULL);
@@ -275,13 +273,11 @@ void sysReset(int modload_mask)
     LOG("[POWEROFF]:\n");
     sysLoadModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL);
 
-    if (modload_mask & SYS_LOAD_USB_MODULES) {
-        bdmLoadModules();
-    }
-    if (modload_mask & SYS_LOAD_ISOFS_MODULE) {
-        LOG("[ISOFS]:\n");
-        sysLoadModuleBuffer(&isofs_irx, size_isofs_irx, 0, NULL);
-    }
+    LOG("[USBD]:\n");
+    sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
+
+    LOG("[ISOFS]:\n");
+    sysLoadModuleBuffer(&isofs_irx, size_isofs_irx, 0, NULL);
 
     LOG("[GENVMC]:\n");
     sysLoadModuleBuffer(&genvmc_irx, size_genvmc_irx, 0, NULL);
@@ -297,15 +293,13 @@ void sysReset(int modload_mask)
     ds34usb_deinit();
     ds34bt_deinit();
 
-    if (modload_mask & SYS_LOAD_USB_MODULES) {
-        LOG("[DS34_USB]:\n");
-        sysLoadModuleBuffer(&ds34usb_irx, size_ds34usb_irx, 4, (char *)&ds3pads);
-        LOG("[DS34_BT]:\n");
-        sysLoadModuleBuffer(&ds34bt_irx, size_ds34bt_irx, 4, (char *)&ds3pads);
+    LOG("[DS34_USB]:\n");
+    sysLoadModuleBuffer(&ds34usb_irx, size_ds34usb_irx, 4, (char *)&ds3pads);
+    LOG("[DS34_BT]:\n");
+    sysLoadModuleBuffer(&ds34bt_irx, size_ds34bt_irx, 4, (char *)&ds3pads);
 
-        ds34usb_init();
-        ds34bt_init();
-    }
+    ds34usb_init();
+    ds34bt_init();
 #endif
 
     fileXioInit();

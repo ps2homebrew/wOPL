@@ -63,7 +63,6 @@
 #define HPERM_OP(a, t, n, m) ((t) = ((((a) << (16 - (n))) ^ (a)) & (m)), \
                               (a) = (a) ^ (t) ^ (t >> (16 - (n))))
 
-
 static const unsigned int des_SPtrans[8][64] = {
     /* nibble 0 */
     {
@@ -362,19 +361,20 @@ static const unsigned int des_skb[8][64] = {
  * DO NOT use the alternative version on machines with 8 byte longs. */
 
 /* original version */
+// clang-format off
 #define D_ENCRYPT(L, R, S)                  \
     u = (R ^ s[S]);                         \
     t = R ^ s[S + 1];                       \
     t = ((t >> 4) + (t << 28));             \
-    L ^= des_SPtrans[1][(t)&0x3f] |         \
+    L ^= des_SPtrans[1][(t) & 0x3f] |       \
          des_SPtrans[3][(t >> 8) & 0x3f] |  \
          des_SPtrans[5][(t >> 16) & 0x3f] | \
          des_SPtrans[7][(t >> 24) & 0x3f] | \
-         des_SPtrans[0][(u)&0x3f] |         \
+         des_SPtrans[0][(u) & 0x3f] |       \
          des_SPtrans[2][(u >> 8) & 0x3f] |  \
          des_SPtrans[4][(u >> 16) & 0x3f] | \
          des_SPtrans[6][(u >> 24) & 0x3f];
-
+// clang-format on 
 /* IP and FP
      * The problem is more of a geometric problem that random bit fiddling.
      0  1  2  3  4  5  6  7      62 54 46 38 30 22 14  6
@@ -471,7 +471,7 @@ static unsigned char *DES_createkeys(unsigned char *key)
     d = (((d & 0x000000ff) << 16) | (d & 0x0000ff00) |
          ((d & 0x00ff0000) >> 16) | ((c & 0xf0000000) >> 4));
     c &= 0x0fffffff;
-
+// clang-forat off
     for (i = 0; i < ITERATIONS; i++) {
         if (shifts[i]) {
             c = ((c >> 2) | (c << 26));
@@ -484,12 +484,12 @@ static unsigned char *DES_createkeys(unsigned char *key)
         d &= 0x0fffffff;
         /* could be a few less shifts but I am to lazy at this
          * point in time to investigate */
-        s = des_skb[0][(c)&0x3f] |
+        s = des_skb[0][(c) & 0x3f] |
             des_skb[1][((c >> 6) & 0x03) | ((c >> 7) & 0x3c)] |
             des_skb[2][((c >> 13) & 0x0f) | ((c >> 14) & 0x30)] |
             des_skb[3][((c >> 20) & 0x01) | ((c >> 21) & 0x06) | ((c >> 22) & 0x38)];
 
-        t = des_skb[4][(d)&0x3f] |
+        t = des_skb[4][(d) & 0x3f] |
             des_skb[5][((d >> 7) & 0x03) | ((d >> 8) & 0x3c)] |
             des_skb[6][(d >> 15) & 0x3f] |
             des_skb[7][((d >> 21) & 0x0f) | ((d >> 22) & 0x30)];
@@ -501,6 +501,7 @@ static unsigned char *DES_createkeys(unsigned char *key)
         s = (s << 4) | (s >> 28);
         *(k++) = s & 0xffffffff;
     }
+    // clang-format on
 
     return (unsigned char *)DES_Keys;
 }

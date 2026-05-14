@@ -9,7 +9,9 @@
 #define MODNAME "apemodpatch"
 IRX_ID(MODNAME, 1, 1);
 
-#define JAL(addr) (0x0c000000 | (((addr)&0x03ffffff) >> 2))
+// clang-format off
+#define JAL(addr) (0x0c000000 | (((addr) & 0x03ffffff) >> 2))
+// clang-format ob
 
 /* This game has a function that can be called by multiple threads.
    Its inter-task protection mechanism does not work properly.

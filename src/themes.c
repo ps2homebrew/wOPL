@@ -15,17 +15,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <dirent.h>
 
 #define MENU_POS_V      50
 #define HINT_HEIGHT     32
 #define DECORATOR_SIZE  20
 #define COVERFLOW_COUNT 3
 
-extern const char conf_theme_wOPL_cfg;
-extern u16 size_conf_theme_wOPL_cfg;
+extern const char theme_list_cfg;
+extern u16 size_theme_list_cfg;
 
-extern const char conf_theme_wOPL_CF_cfg;
-extern u16 size_conf_theme_wOPL_CF_cfg;
+extern const char theme_coverflow_cfg;
+extern u16 size_theme_coverflow_cfg;
 
 static int screenWidth;
 static int screenHeight;
@@ -509,11 +510,11 @@ static void drawStaticImage(struct menu_list *menu, struct submenu_list *item, c
 
     mutable_image_t *staticImage = (mutable_image_t *)elem->extended;
     if (staticImage->overlayTexture) {
-        rmDrawOverlayPixmap(&staticImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol,
+        rmDrawOverlayPixmap(&staticImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol,
                             &staticImage->defaultTexture->source, staticImage->overlayTexture->upperLeft_x, staticImage->overlayTexture->upperLeft_y, staticImage->overlayTexture->upperRight_x, staticImage->overlayTexture->upperRight_y,
                             staticImage->overlayTexture->lowerLeft_x, staticImage->overlayTexture->lowerLeft_y, staticImage->overlayTexture->lowerRight_x, staticImage->overlayTexture->lowerRight_y);
     } else
-        rmDrawPixmap(&staticImage->defaultTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
+        rmDrawPixmap(&staticImage->defaultTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
 }
 
 static void initStaticImage(const char *themePath, config_set_t *themeConfig, theme_t *theme, theme_element_t *elem, const char *name, const char *imageName)
@@ -532,13 +533,9 @@ static void initStaticImage(const char *themePath, config_set_t *themeConfig, th
 
 static GSTEXTURE *getGameImageTexture(image_cache_t *cache, void *support, struct submenu_item *item)
 {
-    if (gEnableArt) {
-        item_list_t *list = (item_list_t *)support;
-        char *startup = list->itemGetStartup(list, item->id);
-        return cacheGetTexture(cache, list, &item->cache_id[cache->userId], &item->cache_uid[cache->userId], startup);
-    }
-
-    return NULL;
+    item_list_t *list = (item_list_t *)support;
+    char *startup = list->itemGetStartup(list, item->id);
+    return cacheGetTexture(cache, list, &item->cache_id[cache->userId], &item->cache_uid[cache->userId], startup);
 }
 
 static void drawGameImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
@@ -1333,9 +1330,9 @@ static void thmFree(theme_t *theme)
     }
 }
 
-static int thmReadEntry(int index, const char *path, const char *separator, const char *name, unsigned int mode)
+static int thmReadEntry(int index, const char *path, const char *separator, const char *name, unsigned char d_type)
 {
-    if (S_ISDIR(mode) && strstr(name, "thm_")) {
+    if (d_type == DT_DIR && strstr(name, "thm_")) {
         theme_file_t *currTheme = &themes[nThemes + index];
 
         int length = strlen(name) - 4 + 1;
@@ -1458,17 +1455,17 @@ static void thmLoad(const char *themePath, int themeID)
     newT->logoIcon = NULL;
     newT->logoIconCount = LOGO_21_ICON - LOGO_1_ICON + 1;
     newT->loadingIcon = NULL;
-    newT->loadingIconCount = LOADING_7_ICON - LOADING_1_ICON + 1;
+    newT->loadingIconCount = LOADING_8_ICON - LOADING_1_ICON + 1;
     newT->coverflow = NULL;
 
     config_set_t *themeConfig = NULL;
     if (!themePath && themeID == 0) {
         // No theme specified. Prepare and load the default theme.
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_wOPL_cfg, size_conf_theme_wOPL_cfg);
+        configReadBuffer(themeConfig, &theme_list_cfg, size_theme_list_cfg);
     } else if (!themePath && themeID == 1) {
         themeConfig = configAlloc(0, NULL, NULL);
-        configReadBuffer(themeConfig, &conf_theme_wOPL_CF_cfg, size_conf_theme_wOPL_CF_cfg);
+        configReadBuffer(themeConfig, &theme_coverflow_cfg, size_theme_coverflow_cfg);
     } else {
         snprintf(path, sizeof(path), "%sconf_theme.cfg", themePath);
         themeConfig = configAlloc(0, NULL, path);
@@ -1737,8 +1734,8 @@ int thmFindGuiID(const char *theme)
                 return i + 2;
         }
     }
-    return (strcasecmp(theme, "<OPL>") == 0) ? 0 : (strcasecmp(theme, "<OPL-CF>") == 0) ? 1 :
-                                                                                          0;
+    return (strcasecmp(theme, "<wOPL>") == 0) ? 0 : (strcasecmp(theme, "<wOPL-CF>") == 0) ? 1 :
+                                                                                            0;
 }
 
 const char **thmGetGuiList(void)

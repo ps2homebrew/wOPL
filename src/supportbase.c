@@ -321,10 +321,9 @@ void *sbReadFile(char *path, int align, int *size)
 }
 
 int sbListDir(char *path, const char *separator, int maxElem,
-              int (*readEntry)(int index, const char *path, const char *separator, const char *name, unsigned int mode))
+              int (*readEntry)(int index, const char *path, const char *separator, const char *name, unsigned char d_type))
 {
     int index = 0;
-    struct stat st;
     char filename[128];
 
     if (checkFile(path, O_RDONLY)) {
@@ -333,8 +332,7 @@ int sbListDir(char *path, const char *separator, int maxElem,
         if (dir != NULL) {
             while (index < maxElem && (dirent = readdir(dir)) != NULL) {
                 snprintf(filename, 128, "%s/%s", path, dirent->d_name);
-                stat(filename, &st);
-                index = readEntry(index, path, separator, dirent->d_name, st.st_mode);
+                index = readEntry(index, path, separator, dirent->d_name, dirent->d_type);
             }
 
             closedir(dir);

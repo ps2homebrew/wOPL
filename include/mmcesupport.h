@@ -22,7 +22,6 @@ extern int gMMCEEnableGameID;
 extern int gMMCEStartMode;
 extern char gMMCEPrefix[32];
 
-
 void mmceInit(item_list_t *itemList);
 item_list_t *mmceGetObject(int initOnly);
 void mmceLoadModules(void);
