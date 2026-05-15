@@ -50,6 +50,7 @@ v1.1
 v1.2
 * Added Code Inject for games support
 * Enable by standard USB on BDM
+* Add game background cover enable
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 

@@ -316,6 +316,7 @@ void loadConfig()
             configGetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, &gEnableNotifications);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_DISCART, &gDiscEnableArt);
+            configGetInt(configOPL, CONFIG_OPL_ENABLE_BG_THEMEART, &gBGThemeEnableArt);
             configGetInt(configOPL, CONFIG_OPL_WIDESCREEN, &gWideScreen);
 
             if (!(getKeyPressed(KEY_TRIANGLE) && getKeyPressed(KEY_CROSS))) {
@@ -520,6 +521,7 @@ static void saveConfig()
         configSetColor(configOPL, CONFIG_OPL_PLAS_BLEND_COLOR, gDefaultPlasmaBlendColor);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, gEnableNotifications);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_DISCART, gDiscEnableArt);
+        configSetInt(configOPL, CONFIG_OPL_ENABLE_BG_THEMEART, gBGThemeEnableArt);
         configSetInt(configOPL, CONFIG_OPL_WIDESCREEN, gWideScreen);
         configSetInt(configOPL, CONFIG_OPL_VMODE, gVMode);
         configSetInt(configOPL, CONFIG_OPL_XOFF, gXOff);

@@ -148,8 +148,10 @@ gui_strings:
   string: No controller detected, waiting...
 - label: DISCART
   string: Enable Disc Art
-- label: HINT_DISCART
+- label: HINT_RESTART
   string: To apply this you will need to restart wOPL
+- label: BG_THMART
+  string: Enable Background Game Theme Art
 - label: WIDE_SCREEN
   string: Widescreen
 - label: POWEROFF

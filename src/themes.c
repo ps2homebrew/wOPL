@@ -40,6 +40,7 @@ static const char **guiThemesNames = NULL;
 theme_t *gTheme;
 
 int gDiscEnableArt;
+int gBGThemeEnableArt;
 
 enum ELEM_ATTRIBUTE_TYPE {
     ELEM_TYPE_ATTRIBUTE_TEXT = 0,
@@ -863,7 +864,7 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
         return;
 
     char imgName[32];
-    snprintf(imgName, sizeof(imgName), "Index_%d", itemList->mode);
+    snprintf(imgName, sizeof(imgName), "bdm_index_%d", itemList->mode);
 
     int x = gWideScreen ? elem->wsX : elem->posX;
 
@@ -1196,7 +1197,7 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
             } else if (!strcmp(elementsType[ELEM_TYPE_GAME_IMAGE], type)) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initGameImage(themePath, themeConfig, theme, elem, name, NULL, 1, NULL, NULL);
-            } else if (!strcmp(elementsType[ELEM_TYPE_STATIC_IMAGE], type)) {
+            } else if (!strcmp(elementsType[ELEM_TYPE_STATIC_IMAGE], type) && gBGThemeEnableArt) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_STATIC_IMAGE, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initStaticImage(themePath, themeConfig, theme, elem, name, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_BACKGROUND], type)) {
