@@ -81,4 +81,6 @@ BLURT output char blurttext[128];
 #endif
 
 
+#define WOPL_CONFIG_NAME WOPL_CONFIG_STRING // String to indicate what version of opl is used to avoid conflicts
+
 #endif

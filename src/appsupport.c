@@ -60,7 +60,6 @@ int gAPPStartMode;
 // App support stuff.
 unsigned char shouldAppsUpdate;
 
-
 static void appFreeList(void);
 
 static int oplScanApps(int (*callback)(const char *path, config_set_t *appConfig, void *arg), void *arg);
@@ -685,7 +684,7 @@ static config_set_t *oplGetLegacyAppsConfig(void)
     config_set_t *appConfig;
     char appsPath[128];
 
-    snprintf(appsPath, sizeof(appsPath), "mc?:wOPL/conf_apps.cfg");
+    snprintf(appsPath, sizeof(appsPath), "mc?:%s/conf_apps.cfg", WOPL_CONFIG_NAME);
     fd = sbOpenFile(appsPath, O_RDONLY);
     if (fd >= 0) {
         appConfig = configAlloc(CONFIG_APPS, NULL, appsPath);

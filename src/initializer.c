@@ -21,6 +21,8 @@
 
 extern unsigned int frameCounter;
 
+#define MC_DIR_CONFIG "mc?:" WOPL_CONFIG_NAME
+
 static void initMenuForListSupport(opl_io_module_t *mod)
 {
     mod->menuItem.icon_id = mod->support->itemIconId(mod->support);
@@ -121,7 +123,7 @@ static void setDefaults(void)
     gAutoLaunchDeviceData = NULL;
     gOPLPart[0] = '\0';
     gHDDPrefix = "pfs0:";
-    gBaseMCDir = "mc?:wOPL";
+    gBaseMCDir = MC_DIR_CONFIG;
 
     bdmCacheSize = 16;
     hddCacheSize = 8;
@@ -190,7 +192,7 @@ static void setDefaults(void)
     gHDDStartMode = START_MODE_DISABLED;
     gETHStartMode = START_MODE_DISABLED;
     gAPPStartMode = START_MODE_DISABLED;
-    gFAVStartMode = START_MODE_MANUAL;
+    gFAVStartMode = START_MODE_DISABLED;
     gMMCEStartMode = START_MODE_DISABLED;
 
     gMMCESlot = 2; // Default to first Auto slot

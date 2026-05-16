@@ -236,7 +236,7 @@ else
   SMSTCPIP_INGAME_CFLAGS = INGAME_DRIVER=1
 endif
 
-EE_CFLAGS += -fsingle-precision-constant -DWOPL_VERSION=\"$(wOPL_VERSION)\"
+EE_CFLAGS += -fsingle-precision-constant -DWOPL_VERSION=\"$(wOPL_VERSION)\" -DWOPL_CONFIG_STRING=\"wOPL_$(VERSION)_$(SUBVERSION)\"
 
 # There are a few places where the config key/value are truncated, so disable these warnings
 EE_CFLAGS += -Wno-format-truncation -Wno-stringop-truncation

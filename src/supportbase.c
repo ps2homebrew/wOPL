@@ -95,15 +95,19 @@ static int checkMC()
             mc1_is_ps2card = 1;
         }
 
+        char mc0_dir[64];
+        snprintf(mc0_dir, sizeof(mc0_dir), "mc0:%s/", WOPL_CONFIG_NAME);
         mc0_has_folder = 0;
-        DIR *mc0_opl_dir = opendir("mc0:wOPL/");
+        DIR *mc0_opl_dir = opendir(mc0_dir);
         if (mc0_opl_dir != NULL) {
             closedir(mc0_opl_dir);
             mc0_has_folder = 1;
         }
 
+        char mc1_dir[64];
+        snprintf(mc1_dir, sizeof(mc1_dir), "mc1:%s/", WOPL_CONFIG_NAME);
         mc1_has_folder = 0;
-        DIR *mc1_opl_dir = opendir("mc1:wOPL/");
+        DIR *mc1_opl_dir = opendir(mc1_dir);
         if (mc1_opl_dir != NULL) {
             closedir(mc1_opl_dir);
             mc1_has_folder = 1;
@@ -141,10 +145,10 @@ void sbCheckMCFolder(void)
         return;
     }
 
-    snprintf(path, sizeof(path), "mc%d:wOPL/", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:%s/", mcID & 1, WOPL_CONFIG_NAME);
     mkdir(path, 0777);
 
-    snprintf(path, sizeof(path), "mc%d:wOPL/list.icn", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:%s/list.icn", mcID & 1, WOPL_CONFIG_NAME);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -155,7 +159,7 @@ void sbCheckMCFolder(void)
     } else
         close(fd);
 
-    snprintf(path, sizeof(path), "mc%d:wOPL/copy.icn", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:%s/copy.icn", mcID & 1, WOPL_CONFIG_NAME);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -166,7 +170,7 @@ void sbCheckMCFolder(void)
     } else
         close(fd);
 
-    snprintf(path, sizeof(path), "mc%d:wOPL/del.icn", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:%s/del.icn", mcID & 1, WOPL_CONFIG_NAME);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
@@ -177,7 +181,7 @@ void sbCheckMCFolder(void)
     } else
         close(fd);
 
-    snprintf(path, sizeof(path), "mc%d:wOPL/icon.sys", mcID & 1);
+    snprintf(path, sizeof(path), "mc%d:%s/icon.sys", mcID & 1, WOPL_CONFIG_NAME);
     fd = open(path, O_RDONLY);
     if (fd < 0) {
         fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);

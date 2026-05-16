@@ -153,6 +153,8 @@ typedef struct
 #define HDL_GAME_DATA_OFFSET 0x100000 // Sector 0x800 in the extended attribute area.
 #define HDL_FS_MAGIC         0x1337
 
+#define WOPL_PARTITION "+" WOPL_CONFIG_NAME
+
 extern int probed_fd;
 extern u32 probed_lba;
 u8 IOBuffer[2048] ALIGNED(64); // one sector
@@ -591,7 +593,7 @@ static void hddCheckOPLFolder(const char *mountPoint)
     DIR *dir;
     char path[32];
 
-    sprintf(path, "%swOPL", mountPoint);
+    sprintf(path, "%s%s", mountPoint, WOPL_CONFIG_NAME);
 
     dir = opendir(path);
     if (dir == NULL)
@@ -610,7 +612,9 @@ static void hddFindOPLPartition(void)
 
     ret = fileXioMount("pfs0:", "hdd0:__common", FIO_MT_RDWR);
     if (ret == 0) {
-        fd = open("pfs0:wOPL/conf_hdd.cfg", O_RDONLY);
+        char path[256];
+        snprintf(path, sizeof(path), "pfs0:%s/conf_hdd.cfg", WOPL_CONFIG_NAME);
+        fd = open(path, O_RDONLY);
         if (fd >= 0) {
             config = configAlloc(0, NULL, "pfs0:wOPL/conf_hdd.cfg");
             configRead(config);
@@ -626,12 +630,13 @@ static void hddFindOPLPartition(void)
 
         hddCheckOPLFolder(hddPrefix);
 
-        fd = open("pfs0:wOPL/conf_hdd.cfg", O_CREAT | O_TRUNC | O_WRONLY);
+
+        fd = open(path, O_CREAT | O_TRUNC | O_WRONLY);
         if (fd >= 0) {
-            config = configAlloc(0, NULL, "pfs0:wOPL/conf_hdd.cfg");
+            config = configAlloc(0, NULL, path);
             configRead(config);
 
-            configSetStr(config, "hdd_partition", "+wOPL");
+            configSetStr(config, "hdd_partition", WOPL_PARTITION);
             configWrite(config);
 
             configFree(config);
@@ -639,7 +644,7 @@ static void hddFindOPLPartition(void)
         }
     }
 
-    snprintf(gOPLPart, sizeof(gOPLPart), "hdd0:+wOPL");
+    snprintf(gOPLPart, sizeof(gOPLPart), "hdd0:%s", WOPL_PARTITION);
 
     return;
 }

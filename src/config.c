@@ -615,7 +615,7 @@ char *configGetDir(void)
     static char path[256];
 
     if (!strncmp(cfgDevice, "mc", 2))
-        snprintf(path, sizeof(path), "mc%d:wOPL/", sbGetmcID() & 1);
+        snprintf(path, sizeof(path), "mc%d:%s/", sbGetmcID() & 1, WOPL_CONFIG_NAME);
     else
         snprintf(path, sizeof(path), "%s", cfgDevice);
 
