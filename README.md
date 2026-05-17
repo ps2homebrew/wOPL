@@ -51,6 +51,7 @@ v1.2
 * Added Code Inject for games support
 * Enable by standard USB on BDM
 * Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
+* Add neutrino for MMCE
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 

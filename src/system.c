@@ -1163,10 +1163,8 @@ static const char *getDeviceName(const char *driver)
         return "ata";
     else if (!strncmp(driver, "apa", 3))
         return "apa";
-#ifdef UDPBD
-    else if (!strncmp(driver, "udp", 3))
-        return "udpbd";
-#endif
+    else if (!strncmp(driver, "mmce", 3))
+        return "mmce";
     else
         return "unsupported";
 }
