@@ -532,31 +532,6 @@ static void initStaticImage(const char *themePath, config_set_t *themeConfig, th
         LOG("THEMES StaticImage %s: NO image name, elem disabled !!\n", name);
 }
 
-// StaticImage //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-static void drawGameBackgroundImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
-{
-    if (!item && elem->skip)
-        return;
-
-    mutable_image_t *staticImage = (mutable_image_t *)elem->extended;
-    if (staticImage->overlayTexture) {
-        rmDrawOverlayPixmap(&staticImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol,
-                            &staticImage->defaultTexture->source, staticImage->overlayTexture->upperLeft_x, staticImage->overlayTexture->upperLeft_y, staticImage->overlayTexture->upperRight_x, staticImage->overlayTexture->upperRight_y,
-                            staticImage->overlayTexture->lowerLeft_x, staticImage->overlayTexture->lowerLeft_y, staticImage->overlayTexture->lowerRight_x, staticImage->overlayTexture->lowerRight_y);
-    } else
-        rmDrawPixmap(&staticImage->defaultTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
-}
-
-static void initGameBackgroundImage(const char *themePath, config_set_t *themeConfig, theme_t *theme, theme_element_t *elem, const char *name, const char *imageName)
-{
-    mutable_image_t *mutableImage = initMutableImage(themePath, themeConfig, theme, name, elem->type, NULL, 0, imageName, NULL);
-    elem->extended = mutableImage;
-    elem->endElem = &endMutableImage;
-    elem->drawElem = &drawGameBackgroundImage;
-}
-
-
 // GameImage ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static GSTEXTURE *getGameImageTexture(image_cache_t *cache, void *support, struct submenu_item *item)
