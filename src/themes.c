@@ -790,7 +790,7 @@ static void initBackground(const char *themePath, config_set_t *themeConfig, the
 
     if (mutableImage->cache)
         elem->drawElem = &drawGameImage;
-    else if (mutableImage->defaultTexture)
+    else if (gGameBackgroundEnableArt && mutableImage->defaultTexture)
         elem->drawElem = &drawStaticImage;
     else
         elem->drawElem = &drawBackground;
