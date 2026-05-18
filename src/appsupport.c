@@ -475,8 +475,8 @@ static config_set_t *appGetConfig(item_list_t *itemList, int id)
         configSetStr(config, CONFIG_ITEM_NAME, appGetELFName(cur->val));
         configSetStr(config, CONFIG_ITEM_LONGNAME, cur->key);
         configSetStr(config, CONFIG_ITEM_STARTUP, cur->val);
-        configSetStr(config, CONFIG_ITEM_MEDIA, "APP");
-        configSetStr(config, CONFIG_ITEM_FORMAT, "ELF");
+        configSetStr(config, CONFIG_ITEM_MEDIA, "badge_exec_app");
+        configSetStr(config, CONFIG_ITEM_FORMAT, "badge_exec_elf");
 
         snprintf(tmp, sizeof(tmp), "%.2f", appGetELFSize(cur->val));
         configSetStr(config, CONFIG_ITEM_SIZE, tmp);
@@ -492,8 +492,8 @@ static config_set_t *appGetConfig(item_list_t *itemList, int id)
         configSetStr(config, CONFIG_ITEM_ALTSTARTUP, appsList[id].argv1); // reuse AltStartup for argument 1
         snprintf(path, sizeof(path), "%s/%s", appsList[id].path, appsList[id].boot);
         configSetStr(config, CONFIG_ITEM_STARTUP, path);
-        configSetStr(config, CONFIG_ITEM_MEDIA, "APP");
-        configSetStr(config, CONFIG_ITEM_FORMAT, "ELF");
+        configSetStr(config, CONFIG_ITEM_MEDIA, "badge_exec_app");
+        configSetStr(config, CONFIG_ITEM_FORMAT, "badge_exec_elf");
 
         snprintf(tmp, sizeof(tmp), "%.2f", appGetELFSize(path));
         configSetStr(config, CONFIG_ITEM_SIZE, tmp);

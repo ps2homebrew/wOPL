@@ -863,7 +863,7 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
         return;
 
     char imgName[32];
-    snprintf(imgName, sizeof(imgName), "Index_%d", itemList->mode);
+    snprintf(imgName, sizeof(imgName), "bdm_index_%d", itemList->mode);
 
     int x = gWideScreen ? elem->wsX : elem->posX;
 
