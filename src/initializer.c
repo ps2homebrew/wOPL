@@ -161,7 +161,7 @@ static void setDefaults(void)
     gHDDSpindown = 20;
     gScrollSpeed = 1;
     gExitPath[0] = '\0';
-    gDefaultDevice = APP_MODE;
+    gDefaultDevice = BDM_MODE;
     gAutosort = 1;
     gAutoRefresh = 0;
     gEnableDebug = 0;
