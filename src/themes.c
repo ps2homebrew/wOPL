@@ -40,6 +40,7 @@ static const char **guiThemesNames = NULL;
 theme_t *gTheme;
 
 int gDiscEnableArt;
+int gGameBackgroundEnableArt;
 
 enum ELEM_ATTRIBUTE_TYPE {
     ELEM_TYPE_ATTRIBUTE_TEXT = 0,
@@ -48,6 +49,7 @@ enum ELEM_ATTRIBUTE_TYPE {
     ELEM_TYPE_GAME_IMAGE,
     ELEM_TYPE_STATIC_IMAGE,
     ELEM_TYPE_BACKGROUND, // A static image can be specified as the background. Otherwise, the plasma background will be drawn.
+    ELEM_TYPE_GAME_BACKGROUND,
     ELEM_TYPE_MENU_ICON,
     ELEM_TYPE_MENU_TEXT,
     ELEM_TYPE_ITEMS_LIST,
@@ -79,6 +81,7 @@ static const char *elementsType[ELEM_TYPE_COUNT] = {
     "GameImage",
     "StaticImage",
     "Background",
+    "GameBackground",
     "MenuIcon",
     "MenuText",
     "ItemsList",
@@ -285,7 +288,7 @@ static void findDuplicate(theme_element_t *first, const char *cachePattern, cons
 {
     theme_element_t *elem = first;
     while (elem) {
-        if ((elem->type == ELEM_TYPE_STATIC_IMAGE) || (elem->type == ELEM_TYPE_ATTRIBUTE_IMAGE) || (elem->type == ELEM_TYPE_GAME_IMAGE) || (elem->type == ELEM_TYPE_COVERFLOW) || (elem->type == ELEM_TYPE_BACKGROUND)) {
+        if ((elem->type == ELEM_TYPE_STATIC_IMAGE) || (elem->type == ELEM_TYPE_ATTRIBUTE_IMAGE) || (elem->type == ELEM_TYPE_GAME_IMAGE) || (elem->type == ELEM_TYPE_COVERFLOW) || (elem->type == ELEM_TYPE_BACKGROUND) || (elem->type == ELEM_TYPE_GAME_BACKGROUND)) {
             mutable_image_t *source = (mutable_image_t *)elem->extended;
 
             if (cachePattern && source->cache && !strcmp(cachePattern, source->cache->suffix)) {
@@ -528,6 +531,31 @@ static void initStaticImage(const char *themePath, config_set_t *themeConfig, th
     else
         LOG("THEMES StaticImage %s: NO image name, elem disabled !!\n", name);
 }
+
+// StaticImage //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+static void drawGameBackgroundImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
+{
+    if (!item && elem->skip)
+        return;
+
+    mutable_image_t *staticImage = (mutable_image_t *)elem->extended;
+    if (staticImage->overlayTexture) {
+        rmDrawOverlayPixmap(&staticImage->overlayTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol,
+                            &staticImage->defaultTexture->source, staticImage->overlayTexture->upperLeft_x, staticImage->overlayTexture->upperLeft_y, staticImage->overlayTexture->upperRight_x, staticImage->overlayTexture->upperRight_y,
+                            staticImage->overlayTexture->lowerLeft_x, staticImage->overlayTexture->lowerLeft_y, staticImage->overlayTexture->lowerRight_x, staticImage->overlayTexture->lowerRight_y);
+    } else
+        rmDrawPixmap(&staticImage->defaultTexture->source, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultBGCol);
+}
+
+static void initGameBackgroundImage(const char *themePath, config_set_t *themeConfig, theme_t *theme, theme_element_t *elem, const char *name, const char *imageName)
+{
+    mutable_image_t *mutableImage = initMutableImage(themePath, themeConfig, theme, name, elem->type, NULL, 0, imageName, NULL);
+    elem->extended = mutableImage;
+    elem->endElem = &endMutableImage;
+    elem->drawElem = &drawGameBackgroundImage;
+}
+
 
 // GameImage ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1204,6 +1232,9 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
                     elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_BACKGROUND, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol, theme->fonts[0]);
                     initBackground(themePath, themeConfig, theme, elem, name, NULL, 1, NULL);
                 }
+            } else if (!strcmp(elementsType[ELEM_TYPE_GAME_BACKGROUND], type) && gGameBackgroundEnableArt) {
+                elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_BACKGROUND, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
+                initStaticImage(themePath, themeConfig, theme, elem, name, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_MENU_ICON], type)) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_MENU_ICON, screenWidth >> 1, 400, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 elem->drawElem = &drawMenuIcon;
@@ -1228,7 +1259,7 @@ static int addGUIElem(const char *themePath, config_set_t *themeConfig, theme_t 
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_ITEM_ICON, 0, 0, ALIGN_CENTER, 64, 64, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initGameImage(themePath, themeConfig, theme, elem, name, "ICO", 20, NULL, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER_GAMES], type)) {
-                elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
+                elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_ITEM_COVER_GAMES, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initGameImage(themePath, themeConfig, theme, elem, name, "COV", 10, NULL, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER_APPS], type)) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_ITEM_COVER_APPS, 0, 0, ALIGN_CENTER, DIM_UNDEF, DIM_UNDEF, SCALING_RATIO, gDefaultCol, theme->fonts[0]);

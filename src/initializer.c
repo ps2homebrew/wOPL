@@ -177,6 +177,7 @@ static void setDefaults(void)
     gETHPrefix[0] = '\0';
     gEnableNotifications = 1;
     gDiscEnableArt = 1;
+    gGameBackgroundEnableArt = 1;
     gWideScreen = 0;
     gEnableSFX = 1;
     gEnableBootSND = 1;

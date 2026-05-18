@@ -53,6 +53,7 @@ v1.2
 * Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
 * Add neutrino for MMCE
 * Readded info about the format of the game or app
+* Game theme wallpaper enable
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
