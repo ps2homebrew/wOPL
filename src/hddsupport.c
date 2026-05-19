@@ -1194,7 +1194,7 @@ static int hddGetTextId(item_list_t *itemList)
 
 static int hddGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_HDD_APA_ICON;
+    return HDD_ICON;
 }
 
 // This may be called, even if hddInit() was not.

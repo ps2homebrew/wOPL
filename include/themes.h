@@ -130,10 +130,6 @@ typedef struct theme
 
     theme_element_t *itemsList;
 
-    // Icon Logo
-    theme_element_t *logoIcon;
-    int logoIconCount;
-
     // Icon Loading
     theme_element_t *loadingIcon;
     int loadingIconCount;

@@ -532,7 +532,7 @@ static int appGetTextId(item_list_t *itemList)
 
 static int appGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_APPS_ICON;
+    return APP_ICON;
 }
 
 // This may be called, even if appInit() was not.

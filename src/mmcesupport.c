@@ -460,7 +460,7 @@ static int mmceGetTextId(item_list_t *itemList)
 
 static int mmceGetIconId(item_list_t *itemList)
 {
-    int mode = CATEGORY_MMCE_ICON;
+    int mode = MMCE_ICON;
 
     return mode;
 }
