@@ -52,9 +52,7 @@ v1.2
 * Enable by standard USB on BDM
 * Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
 * Add neutrino for MMCE
-* Readded info about the format of the game or app
-* Game theme wallpaper enable
-* Enable BDM by standard on default device instead of Applications
+* Added back the old background configuration
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
