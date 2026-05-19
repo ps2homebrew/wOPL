@@ -287,6 +287,7 @@ static int diaShowColSel(unsigned char *r, unsigned char *g, unsigned char *b)
         guiStartFrame();
         if (guiDrawBGSettings() == 0)
             guiDrawBGPlasma();
+
         rmDrawRect(0, 0, screenWidth, screenHeight, gColDarker);
 
         // "Color selection"

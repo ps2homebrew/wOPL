@@ -115,6 +115,28 @@ extern void *lm_apps_case_png;
 extern void *lm_case_shadow_png;
 
 
+extern void *logo_01_png;
+extern void *logo_02_png;
+extern void *logo_03_png;
+extern void *logo_04_png;
+extern void *logo_05_png;
+extern void *logo_06_png;
+extern void *logo_07_png;
+extern void *logo_08_png;
+extern void *logo_09_png;
+extern void *logo_10_png;
+extern void *logo_11_png;
+extern void *logo_12_png;
+extern void *logo_13_png;
+extern void *logo_14_png;
+extern void *logo_15_png;
+extern void *logo_16_png;
+extern void *logo_17_png;
+extern void *logo_18_png;
+extern void *logo_19_png;
+extern void *logo_20_png;
+extern void *logo_21_png;
+
 // Not related to screen size, just to limit at some point
 static int maxSize = 720 * 512 * 4;
 
