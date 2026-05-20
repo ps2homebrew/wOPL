@@ -21,7 +21,7 @@
 
 extern unsigned int frameCounter;
 
-#define MC_DIR_CONFIG "mc?:" WOPL_CONFIG_NAME
+#define MC_DIR_CONFIG "mc?:"WOPL_CONFIG_NAME
 
 static void initMenuForListSupport(opl_io_module_t *mod)
 {
