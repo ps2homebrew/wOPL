@@ -1242,13 +1242,13 @@ config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const
 
     if (game->format != GAME_FORMAT_USBLD) {
         if (!strcmp(game->extension, ".iso"))
-            configSetStr(config, CONFIG_ITEM_FORMAT, "badge_disc_iso");
+            configSetStr(config, CONFIG_ITEM_FORMAT, "ISO");
         else if (!strcmp(game->extension, ".zso"))
-            configSetStr(config, CONFIG_ITEM_FORMAT, "badge_disc_zso");
+            configSetStr(config, CONFIG_ITEM_FORMAT, "ZSO");
     } else if (game->format == GAME_FORMAT_USBLD)
-        configSetStr(config, CONFIG_ITEM_FORMAT, "badge_disc_ul");
+        configSetStr(config, CONFIG_ITEM_FORMAT, "UL");
 
-    configSetStr(config, CONFIG_ITEM_MEDIA, game->media == SCECdPS2CD ? "badge_disc_cd" : "badge_disc_dvd");
+    configSetStr(config, CONFIG_ITEM_MEDIA, game->media == SCECdPS2CD ? "CD" : "DVD");
 
     configSetStr(config, CONFIG_ITEM_STARTUP, game->startup);
 

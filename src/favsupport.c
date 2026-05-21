@@ -121,7 +121,7 @@ static int favGetTextId(item_list_t *itemList)
 
 static int favGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_FAV_ICON;
+    return FAV_ICON;
 }
 
 static void favLaunchItem(item_list_t *itemList, int id, config_set_t *configSet)

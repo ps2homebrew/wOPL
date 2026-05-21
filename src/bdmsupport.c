@@ -700,18 +700,18 @@ static int bdmGetTextId(item_list_t *itemList)
 
 static int bdmGetIconId(item_list_t *itemList)
 {
-    int mode = CATEGORY_EMPTY_BDM_ICON;
+    int mode = BDM_ICON;
 
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
 
     if (!strcmp(pDeviceData->bdmDriver, "usb"))
-        mode = CATEGORY_USB_ICON;
+        mode = USB_ICON;
     else if (!strcmp(pDeviceData->bdmDriver, "sd") && strlen(pDeviceData->bdmDriver) == 2)
-        mode = CATEGORY_ILINK_ICON;
+        mode = ILINK_ICON;
     else if (!strcmp(pDeviceData->bdmDriver, "sdc") && strlen(pDeviceData->bdmDriver) == 3)
-        mode = CATEGORY_MX4SIO_ICON;
+        mode = MX4SIO_ICON;
     else if (!strcmp(pDeviceData->bdmDriver, "ata") && strlen(pDeviceData->bdmDriver) == 3)
-        mode = CATEGORY_HDD_BDM_ICON;
+        mode = HDD_BD_ICON;
 
     return mode;
 }
