@@ -60,9 +60,6 @@ Your all cover arts should be stored using .tar format, stored on ART/art.tar
 ### wOPL Easter egg
 This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
 
-### Theme renamed files
-This variant is incompatible with OPL themes as the structure follows up diffrently than traditional OPL
-
 ### Modularized art 
 You can see game list with both normal art and art.tar
 
