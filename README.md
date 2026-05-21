@@ -55,6 +55,7 @@ v1.2
 * Readded info about the format of the game or app
 * Game theme wallpaper enable
 * Enable BDM by standard on default device instead of Applications
+* Added info about the section is being selected(Suggestion by Canal do Bis)
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
