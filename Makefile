@@ -103,18 +103,15 @@ EECORE_OBJS = ee_core.o ioprp.o util.o \
 		hdd_cdvdman.o hdd_gamestar_cdvdman.o mmce_cdvdman.o hdd_hdpro_cdvdman.o cdvdfsv.o \
 		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o
 
-PNG_ASSETS = logo_01 logo_02 logo_03 logo_04 logo_05 logo_06 logo_07 logo_08 logo_09 logo_10 logo_11 logo_12 logo_13 logo_14 logo_15 \
-	logo_16 logo_17 logo_18 logo_19 logo_20 logo_21 loading_1 loading_2 loading_3 loading_4 loading_5 loading_6 loading_7 loading_8 \
-	category_empty_bdm category_usb category_ilink category_mx4sio category_hdd_bdm \
-	category_hdd_apa category_net_smb category_apps category_fav category_mmce mark_star button_symbol_cross button_symbol_triangle button_symbol_circle button_symbol_square button_select button_start button_dpad_left button_dpad_right \
-	bg_main bg_info cover_app cover_game disc screenshot badge_exec_elf badge_disc_hdl badge_disc_iso badge_disc_zso badge_disc_ul badge_exec_app badge_disc_cd badge_disc_dvd badge_vmode_43 badge_vmode_169 badge_vmode_169_ps2rd badge_vmode_169_hexiso \
-	dev_1 dev_2 dev_3 dev_4 dev_5 dev_6 dev_7 dev_8 rating_0 \
-	rating_1 rating_2 rating_3 rating_4 rating_5 badge_res_240p badge_res_240p_hexiso badge_res_480i badge_res_480p \
-	badge_res_480p_xt badge_res_480p_xc badge_res_480p_gsm badge_res_480p_ps2rd badge_res_480p_hexiso \
-	badge_res_576i badge_res_576p_gsm badge_res_720p_gsm \
-	badge_res_1080i badge_res_1080i_gsm badge_res_1080p_gsm badge_region_multi badge_region_ntsc badge_region_pal case apps_case \
-	plank discbox_list_games discbox_list_apps discbox_list_shadow \
-	bdm_index_1 bdm_index_2 bdm_index_3 bdm_index_4 bdm_index_5 button_stick_r3 button_dpad_up button_dpad_down
+PNG_ASSETS = load0 load1 load2 load3 load4 load5 load6 load7 usb usb_bd ilk_bd \
+	m4s_bd hdd_bd hdd eth app fav mmce fav_mark cross triangle circle square select start left right \
+	settings_bg info cover cover_app disc screen ELF HDL ISO ZSO UL APPS CD DVD Aspect_s Aspect_w Aspect_w1 \
+	Aspect_w2 Device_1 Device_2 Device_3 Device_4 Device_5 Device_6 Device_all Rating_0 \
+	Rating_1 Rating_2 Rating_3 Rating_4 Rating_5 Scan_240p Scan_240p1 Scan_480i Scan_480p \
+	Scan_480p1 Scan_480p2 Scan_480p3 Scan_480p4 Scan_480p5 Scan_576i Scan_576p Scan_720p \
+	Scan_1080i Scan_1080i2 Scan_1080p Vmode_multi Vmode_ntsc Vmode_pal logo case apps_case \
+	plank lm_case lm_apps_case lm_case_shadow \
+	Index_0 Index_1 Index_2 Index_3 Index_4 R3 up down
 	# unused icons - l1 l2 l3 r1 r2
 
 GFX_OBJS = $(PNG_ASSETS:%=%_png.o) poeveticanew.o icon_sys.o icon_icn.o icon_cpy_icn.o icon_del_icn.o

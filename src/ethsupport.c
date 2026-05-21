@@ -794,7 +794,7 @@ static int ethGetTextId(item_list_t *itemList)
 
 static int ethGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_NET_SMB_ICON;
+    return ETH_ICON;
 }
 
 // This may be called, even if ethInit() was not.

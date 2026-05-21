@@ -135,7 +135,7 @@ void guiUpdateScrollSpeed(void);
 void guiUpdateScreenScale(void);
 
 void guiDrawBGPlasma();
-int guiDrawBGMain(void);
+int guiDrawBGSettings(void);
 int guiDrawIconAndText(int iconId, int textId, int font, int x, int y, u64 color);
 void guiDrawSubMenuHints(void);
 

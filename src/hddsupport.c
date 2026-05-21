@@ -1160,8 +1160,8 @@ static config_set_t *hddGetConfig(item_list_t *itemList, int id)
 
     configSetStr(config, CONFIG_ITEM_NAME, game->name);
     configSetInt(config, CONFIG_ITEM_SIZE, game->total_size_in_kb >> 10);
-    configSetStr(config, CONFIG_ITEM_FORMAT, "badge_disc_hdl");
-    configSetStr(config, CONFIG_ITEM_MEDIA, game->disctype == SCECdPS2CD ? "badge_disc_cd" : "badge_disc_dvd");
+    configSetStr(config, CONFIG_ITEM_FORMAT, "HDL");
+    configSetStr(config, CONFIG_ITEM_MEDIA, game->disctype == SCECdPS2CD ? "CD" : "DVD");
     configSetStr(config, CONFIG_ITEM_STARTUP, game->startup);
 
     return config;
@@ -1194,7 +1194,7 @@ static int hddGetTextId(item_list_t *itemList)
 
 static int hddGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_HDD_APA_ICON;
+    return HDD_ICON;
 }
 
 // This may be called, even if hddInit() was not.

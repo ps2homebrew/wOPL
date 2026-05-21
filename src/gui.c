@@ -664,7 +664,6 @@ reselect_video_mode:
     diaSetInt(diaUIConfig, UICFG_AUTOREFRESH, gAutoRefresh);
     diaSetInt(diaUIConfig, UICFG_NOTIFICATIONS, gEnableNotifications);
     diaSetInt(diaUIConfig, UICFG_DISCART, gDiscEnableArt);
-    diaSetInt(diaUIConfig, UICFG_GAME_BKG, gGameBackgroundEnableArt);
     diaSetInt(diaUIConfig, UICFG_WIDESCREEN, gWideScreen);
     diaSetInt(diaUIConfig, UICFG_VMODE, gVMode);
     diaSetInt(diaUIConfig, UICFG_XOFF, gXOff);
@@ -686,7 +685,6 @@ reselect_video_mode:
         diaGetInt(diaUIConfig, UICFG_AUTOREFRESH, &gAutoRefresh);
         diaGetInt(diaUIConfig, UICFG_NOTIFICATIONS, &gEnableNotifications);
         diaGetInt(diaUIConfig, UICFG_DISCART, &gDiscEnableArt);
-        diaGetInt(diaUIConfig, UICFG_GAME_BKG, &gGameBackgroundEnableArt);
         diaGetInt(diaUIConfig, UICFG_WIDESCREEN, &gWideScreen);
         diaGetInt(diaUIConfig, UICFG_VMODE, &gVMode);
         diaGetInt(diaUIConfig, UICFG_XOFF, &gXOff);
@@ -1073,7 +1071,7 @@ void guiExecDeferredOps(void)
 static void guiDrawBusy(int alpha)
 {
     if (gTheme->loadingIcon) {
-        GSTEXTURE *texture = thmGetTexture(LOADING_1_ICON + (guiFrameId >> 1) % gTheme->loadingIconCount);
+        GSTEXTURE *texture = thmGetTexture(LOAD1_ICON + (guiFrameId >> 1) % gTheme->loadingIconCount);
         if (texture && texture->Mem) {
             u64 mycolor = GS_SETREG_RGBA(0x80, 0x80, 0x80, alpha);
             rmDrawPixmap(texture, gTheme->loadingIcon->posX, gTheme->loadingIcon->posY, gTheme->loadingIcon->aligned, gTheme->loadingIcon->width, gTheme->loadingIcon->height, gTheme->loadingIcon->scaled, mycolor);
@@ -1086,7 +1084,7 @@ static void guiRenderGreeting(int alpha)
     u64 mycolor = GS_SETREG_RGBA(0x00, 0x00, 0x00, alpha);
     rmDrawRect(0, 0, screenWidth, screenHeight, mycolor);
 
-    GSTEXTURE *logo = thmGetTexture(LOGO_1_ICON + (guiFrameId / 6) % gTheme->logoIconCount);
+    GSTEXTURE *logo = thmGetTexture(LOGO_PICTURE);
     if (logo) {
         mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
         rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, logo->Width, logo->Height, SCALING_RATIO, mycolor);
@@ -1294,9 +1292,9 @@ void guiDrawBGPlasma()
     rmSetBackground(&gBackgroundTex);
 }
 
-int guiDrawBGMain(void)
+int guiDrawBGSettings(void)
 {
-    GSTEXTURE *bg = thmGetTexture(BG_MAIN);
+    GSTEXTURE *bg = thmGetTexture(SETTINGS_BG);
     if (bg) {
         rmSetBackground(bg);
         return 1;
@@ -1379,7 +1377,7 @@ int guiAlignSubMenuHints(int hintCount, int *textID, int *iconID, int font, int 
 void guiDrawSubMenuHints(void)
 {
     int subMenuHints[2] = {_STR_SELECT, _STR_GAMES_LIST};
-    int subMenuIcons[2] = {BUTTON_SYMBOL_CIRCLE_ICON, BUTTON_SYMBOL_CROSS_ICON};
+    int subMenuIcons[2] = {CIRCLE_ICON, CROSS_ICON};
 
     int x = guiAlignSubMenuHints(2, subMenuHints, subMenuIcons, gTheme->fonts[0], 12, 2);
     int y = gTheme->usedHeight - 32;
@@ -1665,9 +1663,9 @@ int guiMsgBox(const char *text, int addAccept, struct UIItem *ui)
         rmDrawLine(50, 410, screenWidth - 50, 410, gTheme->textColor);
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, text, gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
         if (addAccept)
-            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+            guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1767,8 +1765,8 @@ int guiConfirmVideoMode(void)
         rmDrawLine(50, 410, screenWidth - 50, 410, gTheme->textColor);
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_CFM_VMODE_CHG), gTheme->textColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_ACCEPT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1813,10 +1811,10 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
 
         fntRenderString(gTheme->fonts[0], screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, 0, 0, _l(_STR_GAME_SETTINGS_PROMPT), gTheme->textColor);
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CROSS_ICON : BUTTON_SYMBOL_CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(BUTTON_SYMBOL_SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
-        guiDrawIconAndText(BUTTON_SYMBOL_TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CROSS_ICON : CIRCLE_ICON, _STR_BACK, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(SQUARE_ICON, _STR_GLOBAL_SETTINGS, gTheme->fonts[0], 213, 417, gTheme->selTextColor);
+        guiDrawIconAndText(TRIANGLE_ICON, _STR_ALL_SETTINGS, gTheme->fonts[0], 356, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_PERGAME_SETTINGS, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
@@ -1920,9 +1918,9 @@ void guiManageCheats(void)
             renderedCheats++;
         }
 
-        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? BUTTON_SYMBOL_CIRCLE_ICON : BUTTON_SYMBOL_CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
-        guiDrawIconAndText(BUTTON_START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
-        guiDrawIconAndText(BUTTON_SYMBOL_SQUARE_ICON, _STR_DISABLE_ALL, gTheme->fonts[0], 290, 417, gTheme->selTextColor);
+        guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON, _STR_SELECT, gTheme->fonts[0], 70, 417, gTheme->selTextColor);
+        guiDrawIconAndText(START_ICON, _STR_RUN, gTheme->fonts[0], 500, 417, gTheme->selTextColor);
+        guiDrawIconAndText(SQUARE_ICON, _STR_DISABLE_ALL, gTheme->fonts[0], 290, 417, gTheme->selTextColor);
 
         guiEndFrame();
     }
