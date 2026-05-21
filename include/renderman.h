@@ -60,7 +60,6 @@ extern const u64 gColBlack;
 extern const u64 gColDarker;
 extern const u64 gColFocus;
 extern const u64 gDefaultCol;
-extern const u64 gDefaultBGCol;
 extern const u64 gDefaultAlpha;
 
 enum rm_aratio {
