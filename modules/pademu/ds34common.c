@@ -99,8 +99,8 @@ void translate_pad_ds4(const struct ds4report *in, struct ds2report *out, u8 hav
     };
 
     u8 dpad = in->Dpad > DS4DpadDirectionReleased ? DS4DpadDirectionReleased : in->Dpad, // Just in case an unexpected value appears
-    select = in->Share,
-    start = in->Option;
+        select = in->Share,
+       start = in->Option;
 
     /*
     if (have_touchpad && in->TPad) {
@@ -119,7 +119,7 @@ void translate_pad_ds4(const struct ds4report *in, struct ds2report *out, u8 hav
         }
     }
     */
-    
+
     out->nButtonStateL = ~(select | start << 3 | dpad_mapping[dpad]);
     out->nButtonStateH = ~(in->L3 | in->R3 << 1 | in->L1 << 2 | in->R1 << 3 | in->Triangle << 4 | in->Circle << 5 | in->Cross << 6 | in->Square << 7);
 
@@ -159,8 +159,8 @@ void translate_pad_ds5(const struct ds5report *in, struct ds2report *out, u8 hav
     };
 
     u8 dpad = in->Dpad > DS4DpadDirectionReleased ? DS4DpadDirectionReleased : in->Dpad, // Just in case an unexpected value appears
-    select = in->Create,
-    start = in->Option;
+        select = in->Create,
+       start = in->Option;
 
     /*
     if (have_touchpad && in->TPad) {

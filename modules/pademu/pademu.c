@@ -49,7 +49,7 @@ typedef struct
     u8 mask[4];
 } pad_status_t;
 
-#define NEGCON_MODE 0x23
+#define NEGCON_MODE  0x23
 #define DIGITAL_MODE 0x41
 #define ANALOG_MODE  0x73
 #define ANALOGP_MODE 0x79
@@ -351,11 +351,11 @@ static void pademu_setup(u8 ports, u8 vib)
 
 static u8 pademu_data[6][6] =
     {
-        {0x00, 0x00, 0x02, 0x00, 0x00, 0x5A}, // 0x40
-        {0x03, 0x02, 0x00, 0x02, 0x01, 0x00}, // 0x45
-        {0x00, 0x00, 0x01, 0x02, 0x00, 0x0A}, // 0x46
-        {0x00, 0x00, 0x01, 0x01, 0x01, 0x14}, // 0x46
-        {0x00, 0x00, 0x02, 0x00, 0x01, 0x00}, // 0x47
+        {0x00, 0x00, 0x02, 0x00, 0x00, 0x5A},  // 0x40
+        {0x03, 0x02, 0x00, 0x02, 0x01, 0x00},  // 0x45
+        {0x00, 0x00, 0x01, 0x02, 0x00, 0x0A},  // 0x46
+        {0x00, 0x00, 0x01, 0x01, 0x01, 0x14},  // 0x46
+        {0x00, 0x00, 0x02, 0x00, 0x01, 0x00},  // 0x47
         {0x00, 0x01, 0xFF, 0xFF, 0xFF, 0xFF}}; // 0x4D
 
 static void pademu(sio2_transfer_data_t *td)
@@ -469,9 +469,9 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
 
             pad[port].mode_cfg = in[3];
             */
-            
+
             i = padf[port]->get_data(padf[port], &out[3], out_size - 3, port);
-            
+
             if (pad[port].mode_lock == 0) { // mode unlocked
                 if (pad[port].mode != i) {
                     pad[port].mode = i;
@@ -480,26 +480,26 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
                         pad[port].mode_id = ANALOG_MODE;
                     else
                         pad[port].mode_id = DIGITAL_MODE;
-                        
-                   out[2] = 0x00;
+
+                    out[2] = 0x00;
                 }
             }
-            
+
             pad[port].mode_cfg = in[3];
-            
+
             if (pad[port].mode_cfg != 0) { // NEW
                 out[1] = pad[port].mode_id;
             }
             break;
-            
+
         case 0x42: // read data
             if (in[1] == 0x42) {
                 if (pad[port].vibration) { // disable/enable vibration
                     padf[port]->set_rumble(padf[port], in[pad[port].lrum], in[pad[port].rrum]);
                 }
             }
-            
-            //padf[port]->set_rumble(padf[port], in[4], in[3]);
+
+            // padf[port]->set_rumble(padf[port], in[4], in[3]);
             i = padf[port]->get_data(padf[port], &out[3], out_size - 3, port);
 
             if (pad[port].mode_lock == 0) { // mode unlocked
@@ -510,8 +510,8 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
                         pad[port].mode_id = ANALOG_MODE;
                     else
                         pad[port].mode_id = DIGITAL_MODE;
-                        
-                   out[2] = 0x00; // NEW
+
+                    out[2] = 0x00; // NEW
                 }
             }
 
@@ -561,7 +561,7 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
 
         case 0x4D: // set act align
             memcpy(&out[3], &pademu_data[5], 6);
-            
+
             for (i = 0; i < 6; i++) { // vibration
                 if (in[3 + i] == 0x00)
                     pad[port].rrum = i + 3;
@@ -569,12 +569,12 @@ static void pademu_cmd(int port, u8 *in, u8 *out, u8 out_size)
                 if (in[3 + i] == 0x01)
                     pad[port].lrum = i + 3;
             }
- 
-            //pad[port].rrum = 3;
-            //pad[port].lrum = 4;
+
+            // pad[port].rrum = 3;
+            // pad[port].lrum = 4;
             break;
 
-        case 0x4F: // set button info
+        case 0x4F:                           // set button info
             pad[port].mode_id = NEGCON_MODE; // nc or ds2
             pad[port].mode_p = 1;
 

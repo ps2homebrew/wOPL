@@ -104,10 +104,10 @@ static int usb_probe(int devId)
 
     if (device->idVendor == DS34_VID && (device->idProduct == DS3_PID || device->idProduct == DS4_PID || device->idProduct == DS4_PID_SLIM || device->idProduct == DS5_PID))
         return 1;
-    
+
     if (device->idVendor == LG_VID && device->idProduct == LGDFX_PID)
         return 1;
-        
+
     return 0;
 }
 
@@ -278,7 +278,7 @@ static void usb_config_set(int result, int count, void *arg)
         sceUsbdInterruptTransfer(ds34pad[pad].outEndp, led, 3, NULL, NULL);
         DelayThread(10000);
     }
-    
+
     ds34pad[pad].status |= DS34USB_STATE_RUNNING;
 
     SignalSema(ds34pad[pad].sema);
@@ -301,14 +301,14 @@ static void DS3USB_init(int pad)
 static void readReport(u8 *data, int pad_idx)
 {
     ds34usb_device *pad = &ds34pad[pad_idx];
-    
+
     if (pad->type == LGDFX) {
         struct xbox360report *report;
-        
+
         report = (struct xbox360report *)data;
-        
+
         if (report->ReportID == 0x00 && report->Length == 0x14) {
-            
+
             /*
             // some ffb testing keys
             if (report->Back) {
@@ -326,17 +326,17 @@ static void readReport(u8 *data, int pad_idx)
                 }
             }
             */
-            
+
             pad->data[0] = ~(report->Start << 3 | report->Up << 4 | report->Right << 5 | report->Down << 6 | report->Left << 7);
             pad->data[1] = ~((report->LeftTrigger != 0) | (report->RightTrigger != 0) << 1 | report->LB << 2 | report->RB << 3 | report->Y << 4 | report->B << 5 | report->A << 6 | report->X << 7);
 
-            pad->data[2] = report->LeftStickXH + 128;  //rx -nc wheel
-            pad->data[3] = report->RightTrigger; //ry -nc gas
-            pad->data[4] = report->LeftTrigger;  //lx -nc brake
-            pad->data[5] = report->LB * 255;  //ly -nc l
+            pad->data[2] = report->LeftStickXH + 128; // rx -nc wheel
+            pad->data[3] = report->RightTrigger;      // ry -nc gas
+            pad->data[4] = report->LeftTrigger;       // lx -nc brake
+            pad->data[5] = report->LB * 255;          // ly -nc l
         }
     }
-    
+
     if (data[0]) {
 
         if (pad->type == DS3) {
@@ -351,8 +351,8 @@ static void readReport(u8 *data, int pad_idx)
             pad->data[1] = ~report->ButtonStateH;
 
             translate_pad_ds3(report, &pad->ds2, 0);
-            //padMacroPerform(&pad->ds2, report->PSButton);
-            
+            // padMacroPerform(&pad->ds2, report->PSButton);
+
             /*
             if (report->PSButton) {                                    // display battery level
                 if (report->Select && (pad->btn_delay == MAX_DELAY)) { // PS + SELECT
@@ -384,7 +384,7 @@ static void readReport(u8 *data, int pad_idx)
             struct ds4report *report;
             report = (struct ds4report *)data;
             translate_pad_ds4(report, &pad->ds2, 1);
-            //padMacroPerform(&pad->ds2, report->PSButton);
+            // padMacroPerform(&pad->ds2, report->PSButton);
 
             /*
             if (report->PSButton) {                                   // display battery level
@@ -422,7 +422,7 @@ static void readReport(u8 *data, int pad_idx)
             struct ds5report *report;
             report = (struct ds5report *)data;
             translate_pad_ds5(report, &pad->ds2, 1);
-            //padMacroPerform(&pad->ds2, report->PSButton);
+            // padMacroPerform(&pad->ds2, report->PSButton);
 
             /*
             if (report->PSButton) {                                    // display battery level
@@ -437,7 +437,7 @@ static void readReport(u8 *data, int pad_idx)
                     pad->oldled[2] = rgbled_patterns[pad_idx][(pad->analog_btn & 1)][2];
                     //pad->btn_delay = 1;
                } else {
-              
+
                     pad->oldled[0] = (report->Battery * 255) / 15;
                     pad->oldled[1] = 0;
                     pad->oldled[2] = 0;
@@ -455,8 +455,8 @@ static void readReport(u8 *data, int pad_idx)
             }
         */
         }
-        //if (pad->btn_delay > 0) {
-            //pad->update_rum = 1;
+        // if (pad->btn_delay > 0) {
+        // pad->update_rum = 1;
         //}
     }
 }
@@ -485,13 +485,13 @@ static int LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
 {
     int ret = 0;
     u8 new_lrum = 0;
-    
+
     PollSema(ds34pad[pad].cmd_sema);
 
     memset(usb_buf, 0, sizeof(usb_buf));
 
     if (ds34pad[pad].type == DS3 || ds34pad[pad].type == DS4 || ds34pad[pad].type == DS5) {
-        
+
         if (ds34pad[pad].type == DS3) {
             memcpy(usb_buf, output_01_report, sizeof(output_01_report));
 
@@ -534,7 +534,8 @@ static int LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
             usb_buf[1] = 0x03; // EnableRumbleEmulation & RumbleUseRumbleNotHaptics
             usb_buf[2] = 0x17;
 
-            usb_buf[3] = rrum * 255;; // light weight !!!ds5 has full control!!!
+            usb_buf[3] = rrum * 255;
+            ;                  // light weight !!!ds5 has full control!!!
             usb_buf[4] = lrum; // heavy weight
 
             usb_buf[39] = 0x07; // AllowLightBrightnessChange & AllowColorLightFadeAnimation & EnableImprovedRumbleEmulation
@@ -553,35 +554,35 @@ static int LEDRumble(u8 *led, u8 lrum, u8 rrum, int pad)
         ds34pad[pad].oldled[1] = led[1];
         ds34pad[pad].oldled[2] = led[2];
         ds34pad[pad].oldled[3] = led[3];
-        
+
     } else if (ds34pad[pad].type == LGDFX) {
-    
+
         new_lrum = processVibrationValue(lrum, &ds34pad[pad].lrum_wait, ds34pad[pad].lrum_wait_max);
-        
+
         if (new_lrum < ds34pad[pad].lrum_treshold) { // treshold
             new_lrum = 0;
         } else {
             new_lrum = lrum - (ds34pad[pad].lrum_treshold - ds34pad[pad].lrum_margin);
         }
-        
+
         /*
         if (new_lrum > (ds34pad[pad].lrum_clamp * 2)) // clamp
              new_lrum = (ds34pad[pad].lrum_clamp * 2);
         */
-          
+
         usb_buf[0] = 0x00;
         usb_buf[1] = 0x08;
         usb_buf[2] = 0x00;
-        usb_buf[3] = new_lrum; // big weight
+        usb_buf[3] = new_lrum;                                                                               // big weight
         usb_buf[4] = processVibrationValue(rrum * 255, &ds34pad[pad].rrum_wait, ds34pad[pad].rrum_wait_max); // small weight
         usb_buf[5] = 0x00;
         usb_buf[6] = 0x00;
         usb_buf[7] = 0x00;
 
         ret = sceUsbdInterruptTransfer(ds34pad[pad].outEndp, usb_buf, 8, usb_cmd_cb, (void *)pad);
-        
+
         /*
-        if (ret == USB_RC_OK) { 
+        if (ret == USB_RC_OK) {
             TransferWait(ds34pad[pad].cmd_sema); // if You ever impl xbox 360 pad then need this wait otherwise no rumble, and good to impl check if old led val diff from new led val, then send otherwise usb cmd so no spaming with led cmds (use this ds34pad[pad] struct like this ds34pad[pad].last_led or smth (all the same to xbox one pad))
             usb_buf[0] = 0x01;
             usb_buf[1] = 0x03;
@@ -717,7 +718,7 @@ static int ds34usb_get_model(struct pad_funcs *pf, int port)
     int ret;
 
     WaitSema(pad->sema);
-    
+
     if (pad->type == GUITAR_GH || pad->type == GUITAR_RB) {
         ret = MODEL_GUITAR;
     } else {

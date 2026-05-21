@@ -15,8 +15,8 @@
 #define DS5_PID             0x0CE6 // PS5 DualSense Controller
 #define GUITAR_HERO_PS3_PID 0x0100 // PS3 Guitar Hero Guitar
 #define ROCK_BAND_PS3_PID   0x0200 // PS3 Rock Band Guitar
-#define LG_VID            0x046D // Logitech
-#define LGDFX_PID            0xCAA3 // DriveFX
+#define LG_VID              0x046D // Logitech
+#define LGDFX_PID           0xCAA3 // DriveFX
 #define DS3                 0
 #define DS4                 1
 #define DS5                 2
@@ -352,22 +352,23 @@ struct ds5report
     uint8_t Reserved10[9];
 } __attribute__((packed));
 
-struct  xbox360report {
+struct xbox360report
+{
     u8 ReportID;
-    u8 Length; //0x14
+    u8 Length; // 0x14
     union
     {
         u8 ButtonStateL; // Main buttons Low
         struct
         {
-            u8 Up : 1;
-            u8 Down : 1;
-            u8 Left : 1;
+            u8 Up    : 1;
+            u8 Down  : 1;
+            u8 Left  : 1;
             u8 Right : 1;
             u8 Start : 1;
-            u8 Back : 1;
-            u8 LS : 1;
-            u8 RS : 1;
+            u8 Back  : 1;
+            u8 LS    : 1;
+            u8 RS    : 1;
         };
     };
     union
@@ -375,14 +376,14 @@ struct  xbox360report {
         u8 ButtonStateH; // Main buttons High
         struct
         {
-            u8 LB : 1;
-            u8 RB : 1;
-            u8 XBOX : 1;
+            u8 LB     : 1;
+            u8 RB     : 1;
+            u8 XBOX   : 1;
             u8 Dummy1 : 1;
-            u8 A : 1;
-            u8 B : 1;
-            u8 X : 1;
-            u8 Y : 1;
+            u8 A      : 1;
+            u8 B      : 1;
+            u8 X      : 1;
+            u8 Y      : 1;
         };
     };
     u8 LeftTrigger;
