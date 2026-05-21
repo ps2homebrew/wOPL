@@ -151,7 +151,7 @@ gui_strings:
 - label: GAME_BACKGROUND_ART
   string: Enable Game Background Art
 - label: HINT_RESTART
-  string: To apply this you will need to restart wOPL
+  string: To apply, you will need to restart wOPL
 - label: WIDE_SCREEN
   string: Widescreen
 - label: POWEROFF
