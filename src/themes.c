@@ -861,7 +861,7 @@ static void drawBDMIndex(struct menu_list *menu, struct submenu_list *item, conf
         return;
 
     char imgName[32];
-    snprintf(imgName, sizeof(imgName), "bdm_index_%d", itemList->mode);
+    snprintf(imgName, sizeof(imgName), "Index_%d", itemList->mode);
 
     int x = gWideScreen ? elem->wsX : elem->posX;
 
@@ -1552,8 +1552,6 @@ static void thmLoad(const char *themePath, int themeID)
 
     newT->itemsList = newT->gamesItemsList;
 
-    configFree(themeConfig);
-
     LOG("THEMES Number of cache: %d\n", newT->gameCacheCount);
     LOG("THEMES Used height: %d\n", newT->usedHeight);
 
@@ -1602,6 +1600,8 @@ static void thmLoad(const char *themePath, int themeID)
     } else
         texLoadInternal(&newT->textures[SETTINGS_BG], SETTINGS_BG);
 
+
+    configFree(themeConfig);
     gTheme = newT;
     thmFree(curT);
 }
