@@ -46,7 +46,9 @@ void moduleUpdateMenuInternal(opl_io_module_t *mod, int themeChanged, int langCh
             menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
 
         menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
-        menuAddHint(&mod->menuItem, _STR_FAV_HINT, R3_ICON);
+        if (gFAVStartMode) {
+            menuAddHint(&mod->menuItem, _STR_FAV_HINT, R3_ICON);
+        }
     }
 
     // refresh Cache
