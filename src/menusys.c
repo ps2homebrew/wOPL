@@ -738,8 +738,7 @@ static void menuNextV()
         selected_item->item->current = cur->next;
         sfxPlay(SFX_CURSOR);
 
-        isAnimating = 1;
-        animationDirection = 1;
+        thmTriggerCoverflowAnim(1);
 
         // if the current item is beyond the page start, move the page start one page down
         cur = selected_item->item->pagestart;
@@ -764,8 +763,7 @@ static void menuPrevV()
         selected_item->item->current = cur->prev;
         sfxPlay(SFX_CURSOR);
 
-        isAnimating = 1;
-        animationDirection = -1;
+        thmTriggerCoverflowAnim(-1);
 
         // if the current item is on the page start, move the page start one page up
         if (selected_item->item->pagestart == cur) {
