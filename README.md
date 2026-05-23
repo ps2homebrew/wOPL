@@ -54,8 +54,8 @@ v1.2
 * Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
 * Add neutrino for MMCE
 * Readded info about the format of the game or app
-* Added info about the section is being selected(Suggestion by Canal do Bis)
 * Added back the old background configuration
+* Added a hint to hide R3 while is being selected
 
 ### Art Tar
 Your all cover arts should be stored using .tar format, stored on ART/art.tar 
