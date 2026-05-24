@@ -12,7 +12,7 @@
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
-#include "include/art_tar.h"
+#include "include/tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/mcemu.h"
 #include <malloc.h>
@@ -164,7 +164,6 @@ static unsigned char hddModulesLoaded = 0;
 static unsigned char hddHDProKitDetected = 0;
 static unsigned char hddModulesLoadCount = 0;
 static unsigned char hddSupportModulesLoaded = 0;
-static unsigned char hddLoadedArchivedArt = 0;
 
 static char *hddPrefix = "pfs0:";
 static hdl_games_list_t hddGames;
@@ -510,12 +509,6 @@ static void hddInitModules(void)
 
     sprintf(path, "%sLNG", gHDDPrefix);
     lngAddLanguages(path, "/", hddGameList.mode);
-
-    if (!hddLoadedArchivedArt) {
-        sprintf(path, "%sART/art.tar", gHDDPrefix);
-        loadTarFile(path);
-        hddLoadedArchivedArt = 1;
-    }
 
     sbCreateFolders(gHDDPrefix, 0);
 }

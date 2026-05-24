@@ -2,7 +2,7 @@
 #include "include/textures.h"
 #include "include/util.h"
 #include "include/ioman.h"
-#include "include/art_tar.h"
+#include "include/tar.h"
 #include <png.h>
 #include <fcntl.h>
 #include <malloc.h>
@@ -467,7 +467,7 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
     void *PngFileBufferPtr;
     void *pFileBuffer = NULL;
     if (archived) {
-        pFileBuffer = getFileFromTar(filePath);
+        pFileBuffer = tarGet(TAR_KIND_ART, filePath);
         if (!pFileBuffer) {
             return ERR_BAD_FILE;
         }
@@ -618,7 +618,8 @@ int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archive
         snprintf(filePath, sizeof(filePath), "%s.%s", path, "png");
 
     if (archived) {
-        if (findTarEntry(filePath) != NULL) {
+        TarEntryBase *entry = tarFind(TAR_KIND_ART, filePath);
+        if (entry) {
             return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
         }
     } else {

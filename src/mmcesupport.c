@@ -17,7 +17,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "include/bdmsupport.h"
-#include "include/art_tar.h"
+#include "include/tar.h"
 #include <stdio.h>
 #include <unistd.h>
 #include "include/common.h"
@@ -108,7 +108,6 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 {
     static unsigned char ThemesLoaded = 0;
     static unsigned char LanguagesLoaded = 0;
-    static unsigned char ArtArchivedLoaded = 0;
 
     char path[256];
     int result = 0;
@@ -153,12 +152,6 @@ static int mmceNeedsUpdate(item_list_t *itemList)
         sprintf(path, "%sLNG", mmcePrefix);
         if (lngAddLanguages(path, "/", mmceGameList.mode) > 0)
             LanguagesLoaded = 1;
-    }
-
-    if (!ArtArchivedLoaded) {
-        sprintf(path, "%sART/art.tar", mmcePrefix);
-        loadTarFile(path);
-        ArtArchivedLoaded = 1;
     }
 
     sbCreateFolders(mmcePrefix, 1);
