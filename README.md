@@ -25,6 +25,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 <p>
 
 v1.0
+
 * Removal of UDPBD since there are not much users using this.
 * Add a easter egg when booting on wOPL.
 * Code cleanups/fixes and compiler warning fixes.
@@ -37,6 +38,7 @@ v1.0
 * Disc cover enable.
 
 v1.1
+
 * Added USB option in BDM
 * Reworked the mmce option(Suggestion by Hardlevel)
 * Enabled sfx/boot sounds by standard
@@ -49,6 +51,7 @@ v1.1
 * Added a persistence while the game it´s being selected on favourites
 
 v1.2
+
 * Added Code Inject for games support
 * Enable by standard USB on BDM
 * Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
@@ -56,17 +59,27 @@ v1.2
 * Readded info about the format of the game or app
 * Added back the old background configuration
 * Added a hint to hide R3 while is being selected
+* Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
 
-### Art Tar
-Your all cover arts should be stored using .tar format, stored on ART/art.tar 
+### ART/CFG/CHT .tar compact support
+
+You can now store your ART/CFG/CHT files using tar archive.
+All you need it´s to do it´s pack all the files into a `.tar` file name after the folder like this:
+
+`ART/art.tar`
+`CFG/cfg.tar`
+`CHT/cht.tar`
 
 ### wOPL Easter egg
+
 This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
 
-### Modularized art 
+### Modularized art
+
 You can see game list with both normal art and art.tar
 
 ### Code Inject
+
 Image Linker module allows patch files up to 4KiB in size to be linked as the game launches. IMG directory contains the GAMEID.img file the same as PS2RD CHT. This feature can be activated with "Enable Linker" under the game's "Cheat Settings."
 
 The binary format of img file can be discovered in ee_core/src/cheat_api.c LinkImage subroutine.
