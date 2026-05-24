@@ -1084,7 +1084,7 @@ static void guiRenderGreeting(int alpha)
     u64 mycolor = GS_SETREG_RGBA(0x00, 0x00, 0x00, alpha);
     rmDrawRect(0, 0, screenWidth, screenHeight, mycolor);
 
-    GSTEXTURE *logo = thmGetTexture(LOGO_PICTURE);
+    GSTEXTURE *logo = thmGetTexture(LOGO_01 + (guiFrameId / 6) % gTheme->logoIconCount);
     if (logo) {
         mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
         rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, logo->Width, logo->Height, SCALING_RATIO, mycolor);

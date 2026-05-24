@@ -134,6 +134,10 @@ typedef struct theme
     theme_element_t *loadingIcon;
     int loadingIconCount;
 
+    // Logo
+    theme_element_t *logoIcon;
+    int logoIconCount;
+
     GSTEXTURE textures[TEXTURES_COUNT];
     int fonts[THM_MAX_FONTS]; //!< Storage of font handles for removal once not needed
 
