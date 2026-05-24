@@ -1341,7 +1341,6 @@ int sbLoadCheats(const char *path, const char *file)
 int sbLoadImage(const char *path, const char *file)
 {
     char imgfile[64];
-    const u32 *image;
     int result = 0;
 
     if (GetImageEnabled()) {

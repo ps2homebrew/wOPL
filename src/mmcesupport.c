@@ -17,7 +17,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "include/bdmsupport.h"
-#include "include/tar.h"
 #include <stdio.h>
 #include <unistd.h>
 #include "include/common.h"

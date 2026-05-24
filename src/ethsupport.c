@@ -14,7 +14,6 @@
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
-#include "include/tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include <stdio.h>
 #include <ps2smb.h>

@@ -12,7 +12,6 @@
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
-#include "include/tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/mcemu.h"
 #include <malloc.h>

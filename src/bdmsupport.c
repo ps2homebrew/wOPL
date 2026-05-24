@@ -13,7 +13,6 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
-#include "include/tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/module.h"
 #include "include/initializer.h"
