@@ -70,6 +70,7 @@ void InitCheatsConfig(config_set_t *configSet);
 int GetCheatsEnabled(void);
 u32 *GetCheatsList(void);
 int load_cheats(const char *cheatfile);
+int load_cheats_buf(const char *buf, int size);
 void set_cheats_list(void);
 int GetImageEnabled(void);
 const u32 *GetImage(void);

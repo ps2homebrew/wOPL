@@ -17,6 +17,7 @@
 #include "include/gui.h"
 #include "include/bdmsupport.h"
 #include "include/hddsupport.h"
+#include "include/tar.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioMount("iso:", ***), fileXioUmount("iso:")
@@ -1208,7 +1209,22 @@ config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const
 
     snprintf(path, sizeof(path), "%sCFG%s%s.cfg", prefix, sep, game->startup);
     config_set_t *config = configAlloc(0, NULL, path);
-    configRead(config); // Does not matter if the config file could be loaded or not.
+
+    char filename[32];
+    snprintf(filename, sizeof(filename), "%s.cfg", game->startup);
+
+    if (!configRead(config)) {
+        TarEntryBase *e = tarFind(TAR_KIND_CFG, filename);
+        if (e) {
+            void *buf = malloc(e->rawSize);
+            if (buf) {
+                if (tarRead(TAR_KIND_CFG, e, buf, e->rawSize) == e->rawSize) {
+                    configReadBuffer(config, buf, e->rawSize);
+                }
+                free(buf);
+            }
+        }
+    }
 
     // Get game size if not already set
     if (game->sizeMB == 0) {
@@ -1284,6 +1300,29 @@ int sbLoadCheats(const char *path, const char *file)
     int cheatMode = 0;
 
     if (GetCheatsEnabled()) {
+        char filename[32];
+        snprintf(filename, sizeof(filename), "%s.cht", file);
+
+        TarEntryBase *entry = tarFind(TAR_KIND_CHT, filename);
+        if (entry) {
+            LOG("Loading Cheat File from TAR: %s\n", filename);
+
+            void *buf = tarGet(TAR_KIND_CHT, filename);
+            if (buf) {
+                cheatMode = load_cheats_buf((char *)buf, entry->rawSize);
+                free(buf);
+
+                if (cheatMode >= 0) {
+                    LOG("Cheats found in TAR\n");
+                    if ((gAutoLaunchGame == NULL) && (gAutoLaunchBDMGame == NULL) && (cheatMode == 1))
+                        guiManageCheats();
+                    return cheatMode;
+                }
+
+                LOG("Error: failed to parse cheats from TAR\n");
+            }
+        }
+
         snprintf(cheatfile, sizeof(cheatfile), "%sCHT/%s.cht", path, file);
         LOG("Loading Cheat File %s\n", cheatfile);
 

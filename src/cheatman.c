@@ -428,6 +428,22 @@ int load_cheats(const char *cheatfile)
     return (gCheatMode == 0) ? 0 : 1;
 }
 
+int load_cheats_buf(const char *buf, int size)
+{
+    int ret;
+
+    memset(gCheats, 0, sizeof(gCheats));
+
+    if (!buf || size <= 0)
+        return -1;
+
+    ret = parse_buf(buf);
+    if (ret < 0)
+        return ret;
+
+    return (gCheatMode == 0) ? 0 : 1;
+}
+
 void set_cheats_list(void)
 {
     int cheatCount = 0;

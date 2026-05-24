@@ -14,7 +14,7 @@
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
-#include "include/art_tar.h"
+#include "include/tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include <stdio.h>
 #include <ps2smb.h>
@@ -48,7 +48,6 @@ static int ethULSizePrev = -2;
 static time_t ethModifiedCDPrev;
 static time_t ethModifiedDVDPrev;
 static int ethGameCount = 0;
-static int ethEnableArchivedArt = 0;
 static unsigned char ethModulesLoaded = 0;
 static base_game_info_t *ethGames = NULL;
 
@@ -511,12 +510,6 @@ static int ethNeedsUpdate(item_list_t *itemList)
             st.st_mtime = 0;
         if (ethModifiedDVDPrev != st.st_mtime) {
             ethModifiedDVDPrev = st.st_mtime;
-            result = 1;
-        }
-
-        if (!ethEnableArchivedArt) {
-            sprintf(path, "%sART/art.tar", ethPrefix);
-            loadTarFile(path);
             result = 1;
         }
 

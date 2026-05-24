@@ -13,7 +13,7 @@
 #include "include/extern_irx.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
-#include "include/art_tar.h"
+#include "include/tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/module.h"
 #include "include/initializer.h"
@@ -278,12 +278,6 @@ static int bdmNeedsUpdate(item_list_t *itemList)
         sprintf(path, "%sTHM", pDeviceData->bdmPrefix);
         if (thmAddElements(path, "/", 1) > 0)
             pDeviceData->ThemesLoaded = 1;
-    }
-
-    if (!pDeviceData->ArtArchivedLoaded) {
-        sprintf(path, "%sART/art.tar", pDeviceData->bdmPrefix);
-        loadTarFile(path);
-        pDeviceData->ArtArchivedLoaded = 1;
     }
 
     // update Languages
