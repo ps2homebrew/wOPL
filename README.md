@@ -60,6 +60,7 @@ v1.2
 * Added back the old background configuration
 * Added a hint to hide R3 while is being selected
 * Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
+* Coverflow improvements thanks to KrahJohlito
 
 ### ART/CFG/CHT .tar compact support
 
