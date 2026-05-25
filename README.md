@@ -68,7 +68,9 @@ You can now store your ART/CFG/CHT files using tar archive.
 All you need it´s to do it´s pack all the files into a `.tar` file name after the folder like this:
 
 `ART/art.tar`
+
 `CFG/cfg.tar`
+
 `CHT/cht.tar`
 
 ### wOPL Easter egg
