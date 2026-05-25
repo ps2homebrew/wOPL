@@ -1523,6 +1523,7 @@ void guiGameLoadConfig(item_list_t *support, config_set_t *configSet)
     for (i = 0; i < COMPAT_MODE_COUNT; ++i)
         diaSetInt(diaCompatConfig, COMPAT_MODE_BASE + i, (compatMode & (1 << i)) > 0 ? 1 : 0);
 
+    coreLoader = 0;
     configGetInt(configSet, CONFIG_ITEM_CORE_LOADER, &coreLoader);
     diaSetInt(diaCompatConfig, COMPAT_LOADER, coreLoader);
 #ifdef GSM
