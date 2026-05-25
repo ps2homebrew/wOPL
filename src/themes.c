@@ -1033,15 +1033,28 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
     int coverDistance = coverWidth + coverSpacing;
     int basePosX = (coverSpacing << 1) + (coverWidth >> 1);
 
+    // Wrap left, if no prev.. use last item in the submenu list
+    submenu_list_t *leftItem = item->prev;
+    if (leftItem == NULL && menu->item->last != NULL && menu->item->last != item)
+        leftItem = menu->item->last;
+
+    // Wrap right, if no next.. use first item in the submeny list
+    submenu_list_t *rightItem = item->next;
+    if (rightItem == NULL) {
+        rightItem = menu->item->submenu; // head of the submenu list
+        if (rightItem == item)           // only 1 item.. dont show same item twice
+            rightItem = NULL;
+    }
+
     struct
     {
         submenu_list_t *game;
         mutable_image_t *cover;
         GSTEXTURE *texture;
     } covers[COVERFLOW_COUNT] = {
-        {item->prev, NULL, NULL},
+        {leftItem, NULL, NULL},
         {item, NULL, NULL},
-        {item->next, NULL, NULL}};
+        {rightItem, NULL, NULL}};
 
     float eased = 1.0f;
     float animOffset = 0.0f;

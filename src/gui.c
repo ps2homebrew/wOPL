@@ -1008,6 +1008,7 @@ static void guiHandleOp(struct gui_update_t *item)
                     DisableCron = 0; // Release Auto Start Last Played counter
             }
 
+            item->menu.menu->last = result;
             break;
 
         case GUI_OP_SELECT_MENU:
@@ -1020,6 +1021,7 @@ static void guiHandleOp(struct gui_update_t *item)
             item->menu.menu->submenu = NULL;
             item->menu.menu->current = NULL;
             item->menu.menu->pagestart = NULL;
+            item->menu.menu->last = NULL;
             break;
 
         case GUI_OP_SORT:
@@ -1030,6 +1032,11 @@ static void guiHandleOp(struct gui_update_t *item)
                 item->menu.menu->current = item->menu.menu->submenu;
 
             item->menu.menu->pagestart = item->menu.menu->current;
+
+            submenu_list_t *tail = item->menu.menu->submenu;
+            while (tail && tail->next)
+                tail = tail->next;
+            item->menu.menu->last = tail;
             break;
 
         case GUI_OP_ADD_HINT:
