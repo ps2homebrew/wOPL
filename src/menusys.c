@@ -738,8 +738,7 @@ static void menuNextV()
         selected_item->item->current = cur->next;
         sfxPlay(SFX_CURSOR);
 
-        isAnimating = 1;
-        animationDirection = 1;
+        thmTriggerCoverflowAnim(1);
 
         // if the current item is beyond the page start, move the page start one page down
         cur = selected_item->item->pagestart;
@@ -752,6 +751,7 @@ static void menuNextV()
 
         selected_item->item->pagestart = selected_item->item->current;
     } else { // wrap to start
+        thmTriggerCoverflowAnim(1);
         menuFirstPage();
     }
 }
@@ -764,8 +764,7 @@ static void menuPrevV()
         selected_item->item->current = cur->prev;
         sfxPlay(SFX_CURSOR);
 
-        isAnimating = 1;
-        animationDirection = -1;
+        thmTriggerCoverflowAnim(-1);
 
         // if the current item is on the page start, move the page start one page up
         if (selected_item->item->pagestart == cur) {
@@ -774,6 +773,7 @@ static void menuPrevV()
                 selected_item->item->pagestart = selected_item->item->pagestart->prev;
         }
     } else { // wrap to end
+        thmTriggerCoverflowAnim(-1);
         menuLastPage();
     }
 }
@@ -1422,6 +1422,7 @@ void menuClearGameList(opl_io_module_t *mdl)
         mdl->menuItem.submenu = NULL;
         mdl->menuItem.current = NULL;
         mdl->menuItem.pagestart = NULL;
+        mdl->menuItem.last = NULL;
         mdl->menuItem.remindLast = 0;
 
         // unlock
