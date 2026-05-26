@@ -555,11 +555,14 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
     if (bitDepth == 16)
         png_set_strip_16(pngPtr);
 
-    if (colorType == PNG_COLOR_TYPE_GRAY || bitDepth < 4) {
+    if (colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA || bitDepth < 4) {
         png_set_expand(pngPtr);
         if (png_get_valid(pngPtr, infoPtr, PNG_INFO_tRNS))
             png_set_tRNS_to_alpha(pngPtr);
     }
+
+    if (colorType == PNG_COLOR_TYPE_GRAY || colorType == PNG_COLOR_TYPE_GRAY_ALPHA)
+        png_set_gray_to_rgb(pngPtr);
 
     png_set_filler(pngPtr, 0xff, PNG_FILLER_AFTER);
     png_read_update_info(pngPtr, infoPtr);

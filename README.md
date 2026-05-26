@@ -61,6 +61,7 @@ v1.2
 * Added a hint to hide R3 while is being selected
 * Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
 * Coverflow improvements thanks to KrahJohlito
+* Support grayscale and grayscale+alpha images
 
 ### ART/CFG/CHT .tar compact support
 
