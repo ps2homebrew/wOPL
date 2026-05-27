@@ -5,6 +5,7 @@ enum SFX {
     SFX_BOOT = 0,
     SFX_CANCEL,
     SFX_CONFIRM,
+    SFX_COVERFLOW,
     SFX_CURSOR,
     SFX_MESSAGE,
     SFX_TRANSITION,

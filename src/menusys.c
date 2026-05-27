@@ -702,7 +702,7 @@ static void menuFirstPage()
     submenu_list_t *cur = selected_item->item->current;
     if (cur) {
         if (cur->prev) {
-            sfxPlay(SFX_CURSOR);
+            sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
         }
 
         selected_item->item->current = selected_item->item->submenu;
@@ -715,7 +715,7 @@ static void menuLastPage()
     submenu_list_t *cur = selected_item->item->current;
     if (cur) {
         if (cur->next) {
-            sfxPlay(SFX_CURSOR);
+            sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
         }
         while (cur->next)
             cur = cur->next; // go to end
@@ -736,7 +736,7 @@ static void menuNextV()
 
     if (cur && cur->next) {
         selected_item->item->current = cur->next;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
         thmTriggerCoverflowAnim(1);
 
@@ -762,7 +762,7 @@ static void menuPrevV()
 
     if (cur && cur->prev) {
         selected_item->item->current = cur->prev;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
         thmTriggerCoverflowAnim(-1);
 
@@ -784,7 +784,7 @@ static void menuNextPage()
 
     if (cur && cur->next) {
         int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
         while (--itms && cur->next)
             cur = cur->next;
@@ -802,7 +802,7 @@ static void menuPrevPage()
 
     if (cur && cur->prev) {
         int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
         while (--itms && cur->prev)
             cur = cur->prev;
