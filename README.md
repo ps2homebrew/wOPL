@@ -62,6 +62,7 @@ v1.2
 * Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
 * Coverflow improvements thanks to KrahJohlito
 * Support grayscale and grayscale+alpha images
+* App support to the favourites tab
 
 ### ART/CFG/CHT .tar compact support
 
