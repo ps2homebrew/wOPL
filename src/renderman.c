@@ -360,48 +360,7 @@ void rmSetBackground(GSTEXTURE *txt)
     order++;
 }
 
-void rmDrawPixmap(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color)
-{
-    rm_quad_t quad;
-    rmSetupQuad(txt, x, y, aligned, w, h, scaled, color, &quad);
-    rmDrawQuad(&quad);
-}
-
-void rmDrawOverlayPixmap(GSTEXTURE *overlay, int x, int y, short aligned, int w, int h, short scaled, u64 color,
-                         GSTEXTURE *inlay, int ulx, int uly, int urx, int ury, int blx, int bly, int brx, int bry)
-{
-    rm_quad_t quad;
-    rmSetupQuad(overlay, x, y, aligned, w, h, scaled, color, &quad);
-    ulx = X_SCALE(ulx * iAspectWidth) >> 2;
-    urx = X_SCALE(urx * iAspectWidth) >> 2;
-    blx = X_SCALE(blx * iAspectWidth) >> 2;
-    brx = X_SCALE(brx * iAspectWidth) >> 2;
-    uly = Y_SCALE(uly);
-    ury = Y_SCALE(ury);
-    bly = Y_SCALE(bly);
-    bry = Y_SCALE(bry);
-
-    if ((inlay->PSM == GS_PSM_CT32) || (inlay->Clut && inlay->ClutPSM == GS_PSM_CT32))
-        gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
-    else
-        gsGlobal->PrimAlphaEnable = GS_SETTING_OFF;
-
-    gsKit_TexManager_bind(gsGlobal, inlay);
-    gsKit_prim_quad_texture(gsGlobal, inlay,
-                            quad.ul.x + ulx + fRenderXOff, quad.ul.y + uly + fRenderYOff,
-                            0.0f, 0.0f,
-                            quad.ul.x + urx + fRenderXOff, quad.ul.y + ury + fRenderYOff,
-                            inlay->Width, 0.0f,
-                            quad.ul.x + blx + fRenderXOff, quad.ul.y + bly + fRenderYOff,
-                            0.0f, inlay->Height,
-                            quad.ul.x + brx + fRenderXOff, quad.ul.y + bry + fRenderYOff,
-                            inlay->Width, inlay->Height, order, gDefaultCol);
-    order++;
-
-    rmDrawQuad(&quad);
-}
-
-void rmDrawPixmapWithReflection(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color)
+void rmDrawPixmap(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color, int reflection)
 {
     rm_quad_t quad;
     rmSetupQuad(txt, x, y, aligned, w, h, scaled, color, &quad);
@@ -422,6 +381,9 @@ void rmDrawPixmapWithReflection(GSTEXTURE *txt, int x, int y, short aligned, int
                               quad.br.u, quad.br.v,
                               order, color);
     order++;
+
+    if (!reflection)
+        return;
 
     float rowHeight = 1.0f;
     float totalHeight = quad.br.y - quad.ul.y;
@@ -453,8 +415,8 @@ void rmDrawPixmapWithReflection(GSTEXTURE *txt, int x, int y, short aligned, int
     }
 }
 
-void rmDrawOverlayPixmapWithReflection(GSTEXTURE *overlay, int x, int y, short aligned, int w, int h, short scaled, u64 color,
-                                       GSTEXTURE *inlay, int ulx, int uly, int urx, int ury, int blx, int bly, int brx, int bry)
+void rmDrawOverlayPixmap(GSTEXTURE *overlay, int x, int y, short aligned, int w, int h, short scaled, u64 color,
+                         GSTEXTURE *inlay, int ulx, int uly, int urx, int ury, int blx, int bly, int brx, int bry, int reflection)
 {
     rm_quad_t quad;
     rmSetupQuad(overlay, x, y, aligned, w, h, scaled, color, &quad);
@@ -483,9 +445,12 @@ void rmDrawOverlayPixmapWithReflection(GSTEXTURE *overlay, int x, int y, short a
                             0.0f, inlay->Height,
                             quad.ul.x + brx + fRenderXOff, quad.ul.y + bry + fRenderYOff,
                             inlay->Width, inlay->Height, order, gDefaultCol);
-
     order++;
+
     rmDrawQuad(&quad);
+
+    if (!reflection)
+        return;
 
     float rowHeight = 1.0f;
     float totalHeight = quad.br.y - quad.ul.y;
