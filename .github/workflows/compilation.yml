@@ -13,26 +13,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2homebrew/ps2homebrew:main
+    container: 
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 0
     steps:
-      - name: Install required dependencies
-        run: |
-          apk update
-          apk add --no-cache \
-            make \
-            git \
-            python3 \
-            gcc \
-            g++ \
-            libtool \
-            automake \
-            bison \
-            flex \
-            texinfo \
-            gawk \
-            wget \
-            curl \
-            zip
 
       - name: git checkout
         uses: actions/checkout@v6
@@ -100,26 +84,10 @@ jobs:
         cheat: [CHEAT=0, CHEAT=1]
         pademu: [PADEMU=0, PADEMU=1]
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2homebrew/ps2homebrew:main
+    container:
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 0
     steps:
-      - name: Install required dependencies
-        run: |
-          apk update
-          apk add --no-cache \
-            make \
-            git \
-            python3 \
-            gcc \
-            g++ \
-            libtool \
-            automake \
-            bison \
-            flex \
-            texinfo \
-            gawk \
-            wget \
-            curl \
-            zip
 
       - name: git checkout
         uses: actions/checkout@v6
@@ -160,26 +128,10 @@ jobs:
 
   build-lang:
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2homebrew/ps2homebrew:main
+    container:
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 0
     steps:
-      - name: Install required dependencies
-        run: |
-          apk update
-          apk add --no-cache \
-            make \
-            git \
-            python3 \
-            gcc \
-            g++ \
-            libtool \
-            automake \
-            bison \
-            flex \
-            texinfo \
-            gawk \
-            wget \
-            curl \
-            zip
 
       - name: git checkout
         uses: actions/checkout@v6
@@ -209,26 +161,10 @@ jobs:
         debug: [iopcore_debug, ingame_debug, eesio_debug, DTL_T10000=1]
         container_commit: [":main"]
     runs-on: ubuntu-22.04
-    container: ghcr.io/ps2homebrew/ps2homebrew:main
+    container:
+        image: ghcr.io/bignaux/flakestation:main
+        options: --user 0
     steps:
-      - name: Install required dependencies
-        run: |
-          apk update
-          apk add --no-cache \
-            make \
-            git \
-            python3 \
-            gcc \
-            g++ \
-            libtool \
-            automake \
-            bison \
-            flex \
-            texinfo \
-            gawk \
-            wget \
-            curl \
-            zip
 
       - name: git checkout
         uses: actions/checkout@v6
