@@ -1,7 +1,6 @@
 #ifndef __IOSUPPORT_H
 #define __IOSUPPORT_H
 
-#include "include/config.h"
 #include <gsKit.h>
 
 struct menu_item;
@@ -13,6 +12,13 @@ struct menu_item;
 #define IO_CUSTOM_SIMPLEACTION  1 // handler for parameter-less actions
 #define IO_MENU_UPDATE_DEFFERED 2
 #define IO_CACHE_LOAD_ART       3 // io call to handle the loading of covers
+
+#define UL_GAME_NAME_MAX       32
+#define ISO_GAME_NAME_MAX      160
+#define ISO_GAME_EXTENSION_MAX 4
+#define GAME_STARTUP_MAX       12
+
+#define ISO_GAME_FNAME_MAX (ISO_GAME_NAME_MAX + ISO_GAME_EXTENSION_MAX)
 
 enum IO_MODES {
     BDM_MODE = 0,
@@ -89,6 +95,99 @@ enum ERROR_CODE {
 #define MENU_UPD_DELAY_NOUPDATE   -1 // Auto refresh is disabled for the item. The refresh button may be used to manually refresh the item.
 #define MENU_UPD_DELAY_GENREFRESH 0  // The item will be refreshed every MENU_GENERAL_UPDATE_DELAY frames, regardless of whether automatic refresh is enabled or not.
 
+typedef struct
+{
+#ifdef GSM
+    int gsm_enable;
+    int gsm_vmode;
+    int gsm_xoffset;
+    int gsm_yoffset;
+    int gsm_fieldfix;
+#endif
+#ifdef CHEAT
+    int cheat_enable;
+    int cheat_mode;
+    int cheat_enable_image;
+#endif
+#ifdef PADEMU
+    int pademu_enable;
+    int pademu_settings;
+    int padmacro_settings;
+#endif
+    int osd_enable;
+    int osd_langid;
+    int osd_tv_aspect;
+    int osd_vmode;
+} global_game_cfg_t;
+
+typedef struct
+{
+    int size_mb;
+    int compat;
+    int dma; // 7 = not set (device default)
+    int core_loader;
+    char format[8];
+    char media[4];
+    char dnas[32];
+    char alt_startup[32];
+    char vmc1[32];
+    char vmc2[32];
+#ifdef GSM
+    int gsm_source;
+    int gsm_enable;
+    int gsm_vmode;
+    int gsm_xoffset;
+    int gsm_yoffset;
+    int gsm_fieldfix;
+#endif
+#ifdef CHEAT
+    int cheat_source;
+    int cheat_enable;
+    int cheat_mode;
+    int cheat_enable_image;
+#endif
+#ifdef PADEMU
+    int pademu_source;
+    int pademu_enable;
+    int pademu_settings;
+    int padmacro_source;
+    int padmacro_settings;
+#endif
+    int osd_source;
+    int osd_enable;
+    int osd_langid;
+    int osd_tv_aspect;
+    int osd_vmode;
+} per_game_cfg_t;
+
+typedef struct
+{
+    char title[ISO_GAME_NAME_MAX + 1];
+    char description[256];
+    char developer[64];
+    char genre[64];
+    char publisher[64];
+    char serial[16];
+    char release[32];
+    char aspect[32];
+    char parental[32];
+    char region[32];
+    int players;
+    int user_rating;
+    char version[32];
+    char package[64];
+    char source[128];
+} game_info_t;
+
+typedef struct
+{
+    game_info_t *gi;
+    per_game_cfg_t *pg;
+    int uid;
+} render_ctx_t;
+
+extern global_game_cfg_t gGlobalGameCfg;
+
 typedef struct _item_list_t item_list_t;
 
 typedef struct _item_list_t
@@ -143,9 +242,13 @@ typedef struct _item_list_t
 
     void (*itemRename)(item_list_t *itemList, int id, char *newName);
 
-    void (*itemLaunch)(item_list_t *itemList, int id, config_set_t *configSet);
+    void (*itemLaunch)(item_list_t *itemList, int id, per_game_cfg_t *pgcfg);
 
-    config_set_t *(*itemGetConfig)(item_list_t *itemList, int id);
+    void (*itemGetInfo)(item_list_t *itemList, int id, game_info_t *gi);
+
+    void (*itemGetPgCfg)(item_list_t *itemList, int id, per_game_cfg_t *cfg);
+
+    int (*itemSavePgCfg)(item_list_t *itemList, int id, const per_game_cfg_t *cfg);
 
     int (*itemGetImage)(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
 
@@ -173,6 +276,5 @@ void itemExecSquare(struct menu_item *curMenu);
 void itemExecTriangle(struct menu_item *curMenu);
 
 void itemExecFav(struct menu_item *curMenu);
-
 
 #endif

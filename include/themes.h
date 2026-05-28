@@ -31,7 +31,7 @@ typedef struct
 {
     // Attributes for: AttributeImage
     int currentUid;
-    u32 currentConfigId;
+    int currentConfigId;
     char *currentValue;
 
     // Attributes  for: AttributeImage & GameImage
@@ -56,7 +56,7 @@ typedef struct
     char *alias;
     int displayMode;
 
-    u32 currentConfigId;
+    int currentConfigId;
     char *currentValue;
 } mutable_text_t;
 
@@ -85,7 +85,7 @@ typedef struct theme_element
 
     void *extended;
 
-    void (*drawElem)(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem);
+    void (*drawElem)(struct menu_list *menu, struct submenu_list *item, render_ctx_t *ctx, struct theme_element *elem);
     void (*endElem)(struct theme_element *elem);
 
     struct theme_element *next;

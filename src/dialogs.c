@@ -1160,3 +1160,33 @@ struct UIItem diaOSDConfig[] = {
     {UI_BREAK},
     // end of dialog
     {UI_TERMINATOR}};
+
+// DELETE_WITH_MIGRATION v
+struct UIItem diaCfgMigration[] = {
+    {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {"Config Migration", -1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Input Folder", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MIG_INPUT, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Output Folder", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MIG_OUTPUT, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Keep Originals", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_MIG_KEEP_ORIGINALS, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_BREAK},
+    {UI_BUTTON, CFG_MIG_CONVERT, 1, 1, -1, 0, 0, {.label = {"Convert", -1}}},
+    {UI_BREAK},
+
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    {UI_TERMINATOR}};
+// DELETE_WITH_MIGRATION ^

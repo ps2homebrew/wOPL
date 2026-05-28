@@ -10,6 +10,7 @@
 #include "include/themes.h"
 #include "include/favsupport.h"
 #include "include/common.h"
+#include "include/config_wopl.h"
 #include <malloc.h>
 #include <stdio.h>
 
@@ -24,7 +25,7 @@ void menuClearGameList(opl_io_module_t *mdl);
 void favInit(item_list_t *itemList)
 {
     LOG("FAVSUPPORT Init\n");
-    configGetInt(configGetByType(CONFIG_OPL), "fav_frames_delay", &favItemList.delay);
+    favItemList.delay = gFAVFramesDelay;
     favItemList.enabled = 1;
     itemList->enabled = 1;
 }
@@ -42,7 +43,11 @@ static int favNeedsUpdate(item_list_t *itemList)
     FILE *file;
     int fileSize = 0;
 
-    snprintf(filename, sizeof(filename), "%sfavourites.bin", configGetDir());
+    const char *dir = wOPLGetDir();
+    if (!dir)
+        return 1;
+
+    snprintf(filename, sizeof(filename), "%sfavourites.bin", dir);
 
     file = fopen(filename, "rb");
     if (file == NULL)
@@ -124,20 +129,36 @@ static int favGetIconId(item_list_t *itemList)
     return FAV_ICON;
 }
 
-static void favLaunchItem(item_list_t *itemList, int id, config_set_t *configSet)
+static void favLaunchItem(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 {
     opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
     item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
-
-    return favOwner->itemLaunch(favOwner, id, configSet);
+    favOwner->itemLaunch(favOwner, id, pgcfg);
 }
 
-static config_set_t *favGetConfig(item_list_t *itemList, int id)
+static void favGetInfo(item_list_t *itemList, int id, game_info_t *gi)
 {
     opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
     item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+    if (favOwner->itemGetInfo)
+        favOwner->itemGetInfo(favOwner, id, gi);
+}
 
-    return favOwner->itemGetConfig(favOwner, id);
+static void favGetPgCfg(item_list_t *itemList, int id, per_game_cfg_t *cfg)
+{
+    opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
+    item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+    if (favOwner->itemGetPgCfg)
+        favOwner->itemGetPgCfg(favOwner, id, cfg);
+}
+
+static int favSavePgCfg(item_list_t *itemList, int id, const per_game_cfg_t *cfg)
+{
+    opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
+    item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+    if (favOwner->itemSavePgCfg)
+        return favOwner->itemSavePgCfg(favOwner, id, cfg);
+    return 0;
 }
 
 static int favGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -186,7 +207,7 @@ static void favShutdown(item_list_t *itemList)
 static item_list_t favItemList = {
     FAV_MODE, -1, 0, 0, MENU_MIN_INACTIVE_FRAMES, FAV_MODE_UPDATE_DELAY, NULL, NULL, &favGetTextId, NULL, &favInit, &favNeedsUpdate, &favUpdateItemList,
     &favGetItemCount, NULL, &favGetItemName, &favGetItemNameLength, &favGetItemStartup, &favDeleteItem, &favRenameItem, &favLaunchItem,
-    &favGetConfig, &favGetImage, &favGetArchivedImage, &favCleanUp, &favShutdown, NULL, &favGetIconId};
+    &favGetInfo, &favGetPgCfg, &favSavePgCfg, &favGetImage, &favGetArchivedImage, &favCleanUp, &favShutdown, NULL, &favGetIconId};
 
 unsigned char favGetFlags(item_list_t *itemList)
 {
@@ -210,7 +231,11 @@ void writeFavouritesFile(submenu_item_t *items, int size)
     int count = size / sizeof(submenu_item_t);
     int i;
 
-    snprintf(filename, sizeof(filename), "%sfavourites.bin", configGetDir());
+    const char *dir = wOPLGetDir();
+    if (!dir)
+        return;
+
+    snprintf(filename, sizeof(filename), "%sfavourites.bin", dir);
     file = fopen(filename, "wb");
     if (file != NULL) {
         for (i = 0; i < count; ++i) {
@@ -239,7 +264,11 @@ submenu_item_t *readFavouritesFile(int *out_size)
     submenu_item_t *items = NULL;
     int size, count = 0, i;
 
-    snprintf(filename, sizeof(filename), "%sfavourites.bin", configGetDir());
+    const char *dir = wOPLGetDir();
+    if (!dir)
+        return NULL;
+
+    snprintf(filename, sizeof(filename), "%sfavourites.bin", dir);
     file = fopen(filename, "rb");
     if (file != NULL) {
         fseek(file, 0, SEEK_END);

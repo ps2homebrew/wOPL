@@ -1,13 +1,6 @@
 #ifndef __SUPPORT_BASE_H
 #define __SUPPORT_BASE_H
 
-#define UL_GAME_NAME_MAX       32
-#define ISO_GAME_NAME_MAX      160
-#define ISO_GAME_EXTENSION_MAX 4
-#define GAME_STARTUP_MAX       12
-
-#define ISO_GAME_FNAME_MAX (ISO_GAME_NAME_MAX + ISO_GAME_EXTENSION_MAX)
-
 enum GAME_FORMAT {
     GAME_FORMAT_USBLD = 0,
     GAME_FORMAT_OLD_ISO,
@@ -69,13 +62,13 @@ int sbCreateSemaphore(void);
 int sbListDir(char *path, const char *separator, int maxElem,
               int (*readEntry)(int index, const char *path, const char *separator, const char *name, unsigned char d_type));
 int sbReadList(base_game_info_t **list, const char *prefix, int *fsize, int *gamecount);
-int sbPrepare(base_game_info_t *game, config_set_t *configSet, int size_cdvdman, void **cdvdman_irx, int *patchindex);
+int sbPrepare(base_game_info_t *game, const per_game_cfg_t *pgcfg, int size_cdvdman, void **cdvdman_irx, int *patchindex);
 void sbUnprepare(void *pCommon);
 void sbRebuildULCfg(base_game_info_t **list, const char *prefix, int gamecount, int excludeID);
 void sbCreatePath(const base_game_info_t *game, char *path, const char *prefix, const char *sep, int part);
 void sbDelete(base_game_info_t **list, const char *prefix, const char *sep, int gamecount, int id);
 void sbRename(base_game_info_t **list, const char *prefix, const char *sep, int gamecount, int id, char *newname);
-config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const char *sep);
+void sbPopulateConfig(base_game_info_t *game, const char *prefix, const char *sep, game_info_t *gi, per_game_cfg_t *pgcfg);
 void sbCreateFolders(const char *path, int createDiscImgFolders);
 file_buffer_t *sbOpenFileBufferBuffer(short allocResult, const void *buffer, unsigned int size);
 file_buffer_t *sbOpenFileBuffer(char *fpath, int mode, short allocResult, unsigned int size);
@@ -83,6 +76,8 @@ int sbReadFileBuffer(file_buffer_t *readContext, char **outBuf);
 void sbWriteFileBuffer(file_buffer_t *fileBuffer, char *inBuf, int size);
 void sbCloseFileBuffer(file_buffer_t *fileBuffer);
 void sbMMCESendGameId(const char *gameId);
+
+int sbSaveConfig(base_game_info_t *game, const char *prefix, const char *sep, const per_game_cfg_t *cfg);
 
 // ISO9660 filesystem management functions.
 u32 sbGetISO9660MaxLBA(const char *path);

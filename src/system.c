@@ -979,7 +979,7 @@ void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdv
     // GSM now.
     config->EnableGSMOp = GetGSMEnabled();
     if (config->EnableGSMOp) {
-        PrepareGSM(NULL, &gsm_config);
+        PrepareGSM(NULL, &gsm_config, gGSMVMode, gGSMXOffset, gGSMYOffset, gGSMFIELDFix);
         config->GsmConfig.interlace = gsm_config.interlace;
         config->GsmConfig.mode = gsm_config.mode;
         config->GsmConfig.ffmd = gsm_config.ffmd;

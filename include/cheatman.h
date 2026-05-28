@@ -26,8 +26,6 @@
 #define _CHEATMAN_H_
 
 #include <tamtypes.h>
-#include "config.h"
-
 
 #define CHEAT_VERSION "0.5.3.7"
 
@@ -67,7 +65,7 @@ extern cheat_entry_t gCheats[MAX_CODES];
 extern int gCheatSource;
 extern int gEnableCheat; // Enables PS2RD Cheat Engine - 0 for Off, 1 for On
 
-void InitCheatsConfig(config_set_t *configSet);
+void InitCheatsConfig(int enable, int mode, int enable_image);
 int GetCheatsEnabled(void);
 u32 *GetCheatsList(void);
 int load_cheats(const char *cheatfile);

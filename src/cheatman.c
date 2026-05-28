@@ -43,29 +43,11 @@ static u32 gCheatList[MAX_CHEATLIST]; // Store hooks/codes addr+val pairs
 static u32 gImage[MAX_IMAGEWORDS];
 cheat_entry_t gCheats[MAX_CODES];
 
-void InitCheatsConfig(config_set_t *configSet)
+void InitCheatsConfig(int enable, int mode, int enable_image)
 {
-    config_set_t *configGame = configGetByType(CONFIG_GAME);
-
-    // Default values.
-    gCheatSource = 0;
-    gEnableCheat = 0;
-    gCheatMode = 0;
-    gEnableImage = 0;
-
-    if (configGetInt(configSet, CONFIG_ITEM_CHEATSSOURCE, &gCheatSource)) {
-        // Load the rest of the per-game CHEAT configuration if CHEAT is enabled.
-        if (configGetInt(configSet, CONFIG_ITEM_ENABLECHEAT, &gEnableCheat) && gEnableCheat) {
-            configGetInt(configSet, CONFIG_ITEM_CHEATMODE, &gCheatMode);
-        }
-        configGetInt(configSet, CONFIG_ITEM_ENABLEIMAGE, &gEnableImage);
-    } else {
-        if (configGetInt(configGame, CONFIG_ITEM_ENABLECHEAT, &gEnableCheat) && gEnableCheat) {
-            configGetInt(configGame, CONFIG_ITEM_CHEATMODE, &gCheatMode);
-        }
-
-        configGetInt(configSet, CONFIG_ITEM_ENABLEIMAGE, &gEnableImage);
-    }
+    gEnableCheat = enable;
+    gCheatMode = mode;
+    gEnableImage = enable_image;
 }
 
 int GetCheatsEnabled(void)

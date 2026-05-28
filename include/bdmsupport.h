@@ -4,6 +4,8 @@
 #include "include/supportbase.h"
 #include "include/iosupport.h"
 
+#include <time.h>
+
 typedef struct
 {
     int massDeviceIndex; // Underlying device index backing the mass fs partition, ex: usb0 = 0, usb1 = 1, etc.
@@ -46,7 +48,7 @@ extern bdm_device_data_t *gAutoLaunchDeviceData;
 
 int bdmFindPartition(char *target, const char *name, int write);
 void bdmLoadModules(void);
-void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
+void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg);
 
 void bdmInitSemaphore();
 void bdmEnumerateDevices();
