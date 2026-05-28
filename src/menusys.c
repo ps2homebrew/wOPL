@@ -738,7 +738,7 @@ static void menuNextV()
         selected_item->item->current = cur->next;
         sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
-        thmTriggerCoverflowAnim(1);
+        thmTriggerCoverflowAnim(-1);
 
         // if the current item is beyond the page start, move the page start one page down
         cur = selected_item->item->pagestart;
@@ -751,7 +751,8 @@ static void menuNextV()
 
         selected_item->item->pagestart = selected_item->item->current;
     } else { // wrap to start
-        thmTriggerCoverflowAnim(1);
+        if (selected_item->item->current->next || selected_item->item->current->prev)
+            thmTriggerCoverflowAnim(-1);
         menuFirstPage();
     }
 }
@@ -764,7 +765,7 @@ static void menuPrevV()
         selected_item->item->current = cur->prev;
         sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
-        thmTriggerCoverflowAnim(-1);
+        thmTriggerCoverflowAnim(1);
 
         // if the current item is on the page start, move the page start one page up
         if (selected_item->item->pagestart == cur) {
@@ -773,7 +774,8 @@ static void menuPrevV()
                 selected_item->item->pagestart = selected_item->item->pagestart->prev;
         }
     } else { // wrap to end
-        thmTriggerCoverflowAnim(-1);
+        if (selected_item->item->current->next || selected_item->item->current->prev)
+            thmTriggerCoverflowAnim(1);
         menuLastPage();
     }
 }

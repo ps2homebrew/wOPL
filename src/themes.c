@@ -1039,7 +1039,7 @@ static void drawInfoHintText(struct menu_list *menu, struct submenu_list *item, 
 // Coverflow ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static int isAnimating = 0;        // Animation flag
-static int animationDirection = 0; // 1 for right (next), -1 for left (prev)
+static int animationDirection = 0; // -1 for right (next), 1 for left (prev)
 static clock_t animationStartTime = 0;
 #define COVERFLOW_ANIM_DURATION_MS 200
 
@@ -1117,8 +1117,8 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
     int posX = basePosX + (int)animOffset;
 
     int scaling = 30;
-    // direction=1 (next): covers[2] is visually at center at t=0
-    // direction=-1 (prev): covers[0] is visually at center at t=0
+    // direction=-1 (next): covers[2] is visually at center at t=0
+    // direction=1 (prev): covers[0] is visually at center at t=0
     int leavingIndex = (animationDirection > 0) ? 2 : 0;
 
     for (int i = 0; i < COVERFLOW_COUNT; i++) {
