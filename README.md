@@ -1,7 +1,7 @@
 
 # Double Unofficial-Open-PS2-Loader
 
-![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo_15.png)
+![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo.png)
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
@@ -63,6 +63,8 @@ v1.2
 * Coverflow improvements thanks to KrahJohlito
 * Support grayscale and grayscale+alpha images
 * App support to the favourites tab
+* Pademu fixes on frontend thanka to krahjohilito
+* BDM USB fixes
 
 ### ART/CFG/CHT .tar compact support
 
