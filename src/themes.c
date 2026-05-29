@@ -923,7 +923,7 @@ static void drawItemsList(struct menu_list *menu, struct submenu_list *item, con
             posY -= elem->height >> 1;
         }
 
-        submenu_list_t *ps = menu->item->pagestart;
+        submenu_list_t *ps = (gTheme->coverflow != NULL) ? item : menu->item->pagestart;
         int others = 0;
         u64 color;
 
