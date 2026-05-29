@@ -113,13 +113,13 @@ static void bdmLoadBlockDeviceModules(void)
 {
     WaitSema(bdmLoadModuleLock);
 
-    if (gEnableUSB && !iUSBModLoaded) {
+    /*if (gEnableUSB && !iUSBModLoaded) {
         // Load USB Block Device drivers
         LOG("[USBMASS_BD]:\n");
         sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
 
         iUSBModLoaded = 1;
-    }
+    }*/
 
     if (gEnableILK && !iLinkModLoaded) {
         // Load iLink Block Device drivers
@@ -161,6 +161,12 @@ void bdmLoadModules(void)
     // Load FATFS (mass:) driver
     LOG("[BDMFS_FATFS]:\n");
     sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
+
+    LOG("[USBD]:\n");
+    sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
+
+    LOG("[USBMASS_BD]:\n");
+    sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
 
     // Load Optional Block Device drivers
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &bdmLoadBlockDeviceModules);
