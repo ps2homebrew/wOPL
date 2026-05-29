@@ -428,6 +428,14 @@ void loadConfig()
     lscret = result;
     lscstatus = 0;
     showCfgPopup = 1;
+
+#ifdef PADEMU
+    // DS34 modules were skipped at boot (config not loaded yet).. Now that CONFIG_GAME is available, init PADEMU if globally enabled for the gui.
+    config_set_t *configGame = configGetByType(CONFIG_GAME);
+    gEnablePadEmu = 0;
+    configGetInt(configGame, CONFIG_ITEM_ENABLEPADEMU, &gEnablePadEmu);
+    sysInitPadEmu();
+#endif
 }
 
 static int trySaveConfigBDM(int types)
