@@ -1172,7 +1172,7 @@ static const char *getDeviceName(const char *driver)
         return "ata";
     else if (!strncmp(driver, "apa", 3))
         return "apa";
-    else if (!strncmp(driver, "mmce", 3))
+    else if (!strncmp(driver, "mmce", 4))
         return "mmce";
     else
         return "unsupported";
