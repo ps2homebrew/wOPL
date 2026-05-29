@@ -204,6 +204,26 @@ void sysShutdownDev9(void)
     }
 }
 
+#ifdef PADEMU
+void sysInitPadEmu(void)
+{
+    if (gEnablePadEmu) {
+        int ds3pads = 1; // only one pad enabled
+
+        ds34usb_deinit();
+        ds34bt_deinit();
+
+        LOG("[DS34_USB]:\n");
+        sysLoadModuleBuffer(&ds34usb_irx, size_ds34usb_irx, 4, (char *)&ds3pads);
+        LOG("[DS34_BT]:\n");
+        sysLoadModuleBuffer(&ds34bt_irx, size_ds34bt_irx, 4, (char *)&ds3pads);
+
+        ds34usb_init();
+        ds34bt_init();
+    }
+}
+#endif
+
 void sysReset()
 {
 #ifdef PADEMU
@@ -288,18 +308,7 @@ void sysReset()
     sysLoadModuleBuffer(&audsrv_irx, size_audsrv_irx, 0, NULL);
 
 #ifdef PADEMU
-    int ds3pads = 1; // only one pad enabled
-
-    ds34usb_deinit();
-    ds34bt_deinit();
-
-    LOG("[DS34_USB]:\n");
-    sysLoadModuleBuffer(&ds34usb_irx, size_ds34usb_irx, 4, (char *)&ds3pads);
-    LOG("[DS34_BT]:\n");
-    sysLoadModuleBuffer(&ds34bt_irx, size_ds34bt_irx, 4, (char *)&ds3pads);
-
-    ds34usb_init();
-    ds34bt_init();
+    sysInitPadEmu();
 #endif
 
     fileXioInit();
