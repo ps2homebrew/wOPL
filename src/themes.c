@@ -1525,8 +1525,6 @@ static void thmLoad(const char *themePath, int themeID)
     newT->favsItemsList = NULL;
     newT->loadingIcon = NULL;
     newT->loadingIconCount = LOAD7_ICON - LOAD1_ICON + 1;
-    newT->logoIcon = NULL;
-    newT->logoIconCount = LOGO_21 - LOGO_01 + 1;
     newT->coverflow = NULL;
 
     config_set_t *themeConfig = NULL;
@@ -1641,10 +1639,7 @@ static void thmLoad(const char *themePath, int themeID)
     int customBusy = 0;
 
     // LOGO, loaded here to avoid flickering during startup with device in AUTO + theme set
-    for (i = LOGO_01; i <= LOGO_21; i++) {
-        thmLoadResource(&newT->textures[i], i, themePath_temp, GS_PSM_CT32, newT->useDefault);
-    }
-    newT->logoIconCount = i - LOGO_01;
+    texLoadInternal(&newT->textures[LOGO_PICTURE], LOGO_PICTURE);
 
     for (i = LOAD0_ICON; i <= LOAD7_ICON; i++) {
         if (thmLoadResource(&newT->textures[i], i, themePath_temp, GS_PSM_CT32, newT->useDefault) >= 0)
