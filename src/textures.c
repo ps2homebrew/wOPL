@@ -114,6 +114,29 @@ extern void *lm_case_png;
 extern void *lm_apps_case_png;
 extern void *lm_case_shadow_png;
 
+
+extern void *logo_01_png;
+extern void *logo_02_png;
+extern void *logo_03_png;
+extern void *logo_04_png;
+extern void *logo_05_png;
+extern void *logo_06_png;
+extern void *logo_07_png;
+extern void *logo_08_png;
+extern void *logo_09_png;
+extern void *logo_10_png;
+extern void *logo_11_png;
+extern void *logo_12_png;
+extern void *logo_13_png;
+extern void *logo_14_png;
+extern void *logo_15_png;
+extern void *logo_16_png;
+extern void *logo_17_png;
+extern void *logo_18_png;
+extern void *logo_19_png;
+extern void *logo_20_png;
+extern void *logo_21_png;
+
 // Not related to screen size, just to limit at some point
 static int maxSize = 720 * 512 * 4;
 
@@ -233,7 +256,27 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {VMODE_MULTI, "Vmode_multi", &Vmode_multi_png},
     {VMODE_NTSC, "Vmode_ntsc", &Vmode_ntsc_png},
     {VMODE_PAL, "Vmode_pal", &Vmode_pal_png},
-    {LOGO_PICTURE, "logo", &logo_png},
+    {LOGO_01, "logo_01", &logo_01_png},
+    {LOGO_02, "logo_02", &logo_02_png},
+    {LOGO_03, "logo_03", &logo_03_png},
+    {LOGO_04, "logo_04", &logo_04_png},
+    {LOGO_05, "logo_05", &logo_05_png},
+    {LOGO_06, "logo_06", &logo_06_png},
+    {LOGO_07, "logo_07", &logo_07_png},
+    {LOGO_08, "logo_08", &logo_08_png},
+    {LOGO_09, "logo_09", &logo_09_png},
+    {LOGO_10, "logo_10", &logo_10_png},
+    {LOGO_11, "logo_11", &logo_11_png},
+    {LOGO_12, "logo_12", &logo_12_png},
+    {LOGO_13, "logo_13", &logo_13_png},
+    {LOGO_14, "logo_14", &logo_14_png},
+    {LOGO_15, "logo_15", &logo_15_png},
+    {LOGO_16, "logo_16", &logo_16_png},
+    {LOGO_17, "logo_17", &logo_17_png},
+    {LOGO_18, "logo_18", &logo_18_png},
+    {LOGO_19, "logo_19", &logo_19_png},
+    {LOGO_20, "logo_20", &logo_20_png},
+    {LOGO_21, "logo_21", &logo_21_png},
     {CASE_OVERLAY, "case", &case_png},
     {APPS_CASE_OVERLAY, "apps_case", &apps_case_png},
     {PLANK, "plank", &plank_png},
