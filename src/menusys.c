@@ -751,8 +751,7 @@ static void menuNextV()
 
         selected_item->item->pagestart = selected_item->item->current;
     } else { // wrap to start
-        if (selected_item->item->current->next || selected_item->item->current->prev)
-            thmTriggerCoverflowAnim(-1);
+        thmTriggerCoverflowAnim(-1);
         menuFirstPage();
     }
 }
@@ -774,8 +773,7 @@ static void menuPrevV()
                 selected_item->item->pagestart = selected_item->item->pagestart->prev;
         }
     } else { // wrap to end
-        if (selected_item->item->current->next || selected_item->item->current->prev)
-            thmTriggerCoverflowAnim(1);
+        thmTriggerCoverflowAnim(1);
         menuLastPage();
     }
 }
