@@ -669,6 +669,7 @@ reselect_video_mode:
     diaSetInt(diaUIConfig, UICFG_XOFF, gXOff);
     diaSetInt(diaUIConfig, UICFG_YOFF, gYOff);
     diaSetInt(diaUIConfig, UICFG_OVERSCAN, gOverscan);
+    diaSetVisible(diaUIConfig, UICFG_COVERFLOW_BUTTON, gTheme->coverflow != NULL);
     guiUIUpdater(1);
 
     int ret = diaExecuteDialog(diaUIConfig, -1, 1, guiUIUpdater);
@@ -690,6 +691,9 @@ reselect_video_mode:
         diaGetInt(diaUIConfig, UICFG_XOFF, &gXOff);
         diaGetInt(diaUIConfig, UICFG_YOFF, &gYOff);
         diaGetInt(diaUIConfig, UICFG_OVERSCAN, &gOverscan);
+
+        if (ret == UICFG_COVERFLOW_BUTTON)
+            guiShowCoverflowConfig();
 
         if (ret == UICFG_RESETCOL)
             setDefaultColors();
@@ -934,6 +938,53 @@ void guiShowControllerConfig(void)
         }
 #endif
         configApply(-1, -1, 1);
+    }
+}
+
+void guiShowCoverflowConfig(void)
+{
+    int ret;
+
+    const char *coverCounts[] = {"3", "5", NULL};
+    const char *scaleNames[] = {"None", "Small", "Medium", "Large", NULL};
+    const char *animNames[] = {"Off", "Fast", "Normal", "Slow", NULL};
+
+    int scaleValues[] = {0, 15, 30, 45};
+    int animValues[] = {0, 100, 200, 400};
+
+    diaSetEnum(diaCoverflowConfig, CFG_COVERFLOW_COUNT, coverCounts);
+    diaSetEnum(diaCoverflowConfig, CFG_COVERFLOW_SCALE, scaleNames);
+    diaSetEnum(diaCoverflowConfig, CFG_COVERFLOW_ANIM, animNames);
+
+    diaSetInt(diaCoverflowConfig, CFG_COVERFLOW_COUNT, (gCoverflowCount == 5) ? 1 : 0);
+
+    int i, scaleId = 2; // default medium
+    for (i = 0; i < 4; i++)
+        if (scaleValues[i] == gCoverflowCenterScale)
+            scaleId = i;
+    diaSetInt(diaCoverflowConfig, CFG_COVERFLOW_SCALE, scaleId);
+
+    int animId = 2; // default normal
+    for (i = 0; i < 4; i++)
+        if (animValues[i] == gCoverflowAnimSpeed)
+            animId = i;
+    diaSetInt(diaCoverflowConfig, CFG_COVERFLOW_ANIM, animId);
+
+    diaSetInt(diaCoverflowConfig, CFG_COVERFLOW_DIM, gCoverflowDimCovers);
+
+    ret = diaExecuteDialog(diaCoverflowConfig, -1, 1, NULL);
+    if (ret) {
+        int id;
+        diaGetInt(diaCoverflowConfig, CFG_COVERFLOW_COUNT, &id);
+        gCoverflowCount = (id == 1) ? 5 : 3;
+
+        diaGetInt(diaCoverflowConfig, CFG_COVERFLOW_SCALE, &id);
+        gCoverflowCenterScale = scaleValues[id];
+
+        diaGetInt(diaCoverflowConfig, CFG_COVERFLOW_ANIM, &id);
+        gCoverflowAnimSpeed = animValues[id];
+
+        diaGetInt(diaCoverflowConfig, CFG_COVERFLOW_DIM, &gCoverflowDimCovers);
     }
 }
 

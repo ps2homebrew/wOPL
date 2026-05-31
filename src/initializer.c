@@ -215,6 +215,11 @@ static void setDefaults(void)
     gYOff = 0;
     gOverscan = 0;
 
+    gCoverflowCount = 3;
+    gCoverflowCenterScale = 30;
+    gCoverflowAnimSpeed = 200;
+    gCoverflowDimCovers = 0;
+
     setDefaultColors();
 
     // Last Played Auto Start

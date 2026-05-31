@@ -122,6 +122,11 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ENABLE_BDMHDD        "enable_bdm_hdd"
 #define CONFIG_OPL_ENABLE_MMCE          "enable_mmce"
 
+#define CONFIG_OPL_COVERFLOW_COUNT "coverflow_count"
+#define CONFIG_OPL_COVERFLOW_SCALE "coverflow_scale"
+#define CONFIG_OPL_COVERFLOW_ANIM  "coverflow_anim"
+#define CONFIG_OPL_COVERFLOW_DIM   "coverflow_dim"
+
 #define CONFIG_OPL_SWAP_SEL_BUTTON   "swap_select_btn"
 #define CONFIG_OPL_PARENTAL_LOCK_PWD "parental_lock_password"
 #define CONFIG_OPL_SFX               "enable_sfx"

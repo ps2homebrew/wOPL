@@ -18,10 +18,9 @@
 #include <dirent.h>
 #include <time.h>
 
-#define MENU_POS_V      50
-#define HINT_HEIGHT     32
-#define DECORATOR_SIZE  20
-#define COVERFLOW_COUNT 3
+#define MENU_POS_V     50
+#define HINT_HEIGHT    32
+#define DECORATOR_SIZE 20
 
 extern const char theme_list_cfg;
 extern u16 size_theme_list_cfg;
@@ -330,15 +329,19 @@ static theme_element_t *thmGetElemForItem(theme_element_t *defaultElem, struct m
 
 // Draw a texture with optional overlay, reflection, and overlay offsets
 // offsetX/offsetY are for animated scaling (coverflow).. 0 for normal use
-static void thmDrawTexture(GSTEXTURE *texture, mutable_image_t *img, int x, int y, short aligned, int w, int h, short scaled,
-                           u64 color, int reflection, int offsetX, int offsetY)
+// scaleFactor is for overlay/inlay scaling (coverflow).. 1.0f for normal use
+static void thmDrawTexture(GSTEXTURE *texture, mutable_image_t *img, int x, int y, short aligned, int w, int h, short scaled, u64 color, int reflection, int offsetX, int offsetY, float scaleFactor)
 {
     if (img->overlayTexture)
         rmDrawOverlayPixmap(&img->overlayTexture->source, x, y, aligned, w, h, scaled, color, texture,
-                            img->overlayTexture->upperLeft_x, img->overlayTexture->upperLeft_y,
-                            img->overlayTexture->upperRight_x + offsetX, img->overlayTexture->upperRight_y,
-                            img->overlayTexture->lowerLeft_x, img->overlayTexture->lowerLeft_y + offsetY,
-                            img->overlayTexture->lowerRight_x + offsetX, img->overlayTexture->lowerRight_y + offsetY, reflection);
+                            (int)(img->overlayTexture->upperLeft_x * scaleFactor),
+                            (int)(img->overlayTexture->upperLeft_y * scaleFactor),
+                            (int)(img->overlayTexture->upperRight_x * scaleFactor) + offsetX,
+                            (int)(img->overlayTexture->upperRight_y * scaleFactor),
+                            (int)(img->overlayTexture->lowerLeft_x * scaleFactor),
+                            (int)(img->overlayTexture->lowerLeft_y * scaleFactor) + offsetY,
+                            (int)(img->overlayTexture->lowerRight_x * scaleFactor) + offsetX,
+                            (int)(img->overlayTexture->lowerRight_y * scaleFactor) + offsetY, reflection);
     else
         rmDrawPixmap(texture, x, y, aligned, w, h, scaled, color, reflection);
 }
@@ -571,7 +574,7 @@ static void drawStaticImage(struct menu_list *menu, struct submenu_list *item, c
         return;
 
     mutable_image_t *staticImage = (mutable_image_t *)elem->extended;
-    thmDrawTexture(&staticImage->defaultTexture->source, staticImage, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol, 0, 0, 0);
+    thmDrawTexture(&staticImage->defaultTexture->source, staticImage, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol, 0, 0, 0, 1.0f);
 }
 
 static void initStaticImage(const char *themePath, config_set_t *themeConfig, theme_t *theme, theme_element_t *elem, const char *name, const char *imageName)
@@ -615,7 +618,7 @@ static void drawGameImage(struct menu_list *menu, struct submenu_list *item, con
         }
 
         int x = gWideScreen ? drawElem->wsX : drawElem->posX;
-        thmDrawTexture(texture, img, x, drawElem->posY, drawElem->aligned, drawElem->width, drawElem->height, drawElem->scaled, gDefaultCol, drawElem->reflection, 0, 0);
+        thmDrawTexture(texture, img, x, drawElem->posY, drawElem->aligned, drawElem->width, drawElem->height, drawElem->scaled, gDefaultCol, drawElem->reflection, 0, 0, 1.0f);
 
     } else if (elem->type == ELEM_TYPE_BACKGROUND) {
         if (gameImage->defaultTexture)
@@ -670,7 +673,7 @@ static void drawAttributeImage(struct menu_list *menu, struct submenu_list *item
                 int posZ = 0;
                 GSTEXTURE *texture = cacheGetTexture(attributeImage->cache, menu->item->userdata, &posZ, &attributeImage->currentUid, attributeImage->currentValue);
                 if (texture && texture->Mem) {
-                    thmDrawTexture(texture, attributeImage, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol, 0, 0, 0);
+                    thmDrawTexture(texture, attributeImage, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol, 0, 0, 0, 1.0f);
                     return;
                 }
             }
@@ -1041,7 +1044,11 @@ static void drawInfoHintText(struct menu_list *menu, struct submenu_list *item, 
 static int isAnimating = 0;        // Animation flag
 static int animationDirection = 0; // -1 for right (next), 1 for left (prev)
 static clock_t animationStartTime = 0;
-#define COVERFLOW_ANIM_DURATION_MS 200
+
+int gCoverflowCount = 3;
+int gCoverflowCenterScale = 30;
+int gCoverflowAnimSpeed = 200;
+int gCoverflowDimCovers = 0;
 
 void thmTriggerCoverflowAnim(int direction)
 {
@@ -1055,73 +1062,109 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
     if (item == NULL)
         return;
 
+    int coverCount = gCoverflowCount;
+    int centerIndex = coverCount / 2;
+
     int coverSpacing = 0;
     int coverHeight = elem->height;
     int coverWidth = gWideScreen ? rmWideScale(elem->width) : elem->width;
-    int totalCoversWidth = COVERFLOW_COUNT * coverWidth;
+    int origCoverWidth = coverWidth;
+
+    int coverYOffset = 0;
+    int maxCoverWidth = (screenWidth - (coverCount - 1) * 10) / coverCount;
+    if (coverWidth > maxCoverWidth) {
+        int origHeight = coverHeight;
+        coverHeight = (coverHeight * maxCoverWidth) / coverWidth;
+        coverWidth = maxCoverWidth;
+        coverYOffset = (origHeight - coverHeight) / 2;
+    }
+
+    float coverScaleRatio = (origCoverWidth > 0) ? (float)coverWidth / (float)origCoverWidth : 1.0f;
+
+    int totalCoversWidth = coverCount * coverWidth;
     int totalRemainingSpace = screenWidth - totalCoversWidth;
 
-    if (totalRemainingSpace >= 0) {
-        coverSpacing = totalRemainingSpace / 4; // Divide by 4 to distribute the space equally (2 spaces between covers + 2 on the sides)
-        // If coverSpacing ends up negative set it to a minimum value
-        if (coverSpacing < 0)
-            coverSpacing = 0;
-    }
+    coverSpacing = totalRemainingSpace / (coverCount + 1); // Divide by covercount to distribute the space equally (4 spaces for 3 covers.. 6 spaces for 5)
+    // If coverSpacing ends up negative set it to a minimum value
+    if (coverSpacing < 0)
+        coverSpacing = 0;
 
     if (gWideScreen)
         coverSpacing = rmWideScale(coverSpacing);
 
     int coverDistance = coverWidth + coverSpacing;
-    int basePosX = (coverSpacing << 1) + (coverWidth >> 1);
-
-    // Wrap left, if no prev.. use last item in the submenu list
-    submenu_list_t *leftItem = item->prev;
-    if (leftItem == NULL && menu->item->last != NULL && menu->item->last != item)
-        leftItem = menu->item->last;
-
-    // Wrap right, if no next.. use first item in the submeny list
-    submenu_list_t *rightItem = item->next;
-    if (rightItem == NULL) {
-        rightItem = menu->item->submenu; // head of the submenu list
-        if (rightItem == item)           // only 1 item.. dont show same item twice
-            rightItem = NULL;
-    }
+    int totalGroupWidth = (coverCount - 1) * coverDistance + coverWidth;
+    int basePosX = (screenWidth - totalGroupWidth) / 2 + (coverWidth >> 1) + (coverWidth * gTheme->coverflowCoverOffset / 256);
 
     struct
     {
         submenu_list_t *game;
         mutable_image_t *cover;
         GSTEXTURE *texture;
-    } covers[COVERFLOW_COUNT] = {
-        {leftItem, NULL, NULL},
-        {item, NULL, NULL},
-        {rightItem, NULL, NULL}};
+    } covers[5];
+
+    int ci;
+    for (ci = 0; ci < coverCount; ci++) {
+        covers[ci].game = NULL;
+        covers[ci].cover = NULL;
+        covers[ci].texture = NULL;
+    }
+
+    covers[centerIndex].game = item;
+
+    // Populate left, walk backwards from center
+    submenu_list_t *cur = item;
+    for (ci = centerIndex - 1; ci >= 0; ci--) {
+        submenu_list_t *prev = cur->prev;
+        if (prev == NULL && menu->item->last != NULL)
+            prev = menu->item->last;
+        if (prev == NULL || prev == item)
+            break;
+        covers[ci].game = prev;
+        cur = prev;
+    }
+
+    // Populate right, walk forwards from center
+    cur = item;
+    for (ci = centerIndex + 1; ci < coverCount; ci++) {
+        submenu_list_t *next = cur->next;
+        if (next == NULL)
+            next = menu->item->submenu;
+        if (next == NULL || next == item)
+            break;
+        covers[ci].game = next;
+        cur = next;
+    }
 
     float eased = 1.0f;
     float animOffset = 0.0f;
     if (isAnimating) {
-        clock_t elapsed = clock() - animationStartTime;
-        float t = (float)elapsed / ((float)COVERFLOW_ANIM_DURATION_MS * CLOCKS_PER_SEC / 1000);
-
-        if (t >= 1.0f) {
-            t = 1.0f;
+        if (gCoverflowAnimSpeed <= 0) {
             isAnimating = 0;
-            animationStartTime = 0;
-        }
+        } else {
+            clock_t elapsed = clock() - animationStartTime;
+            float t = (float)elapsed / ((float)gCoverflowAnimSpeed * CLOCKS_PER_SEC / 1000);
 
-        float inv = 1.0f - t;
-        eased = 1.0f - inv * inv * inv;
-        animOffset = (float)animationDirection * (float)coverDistance * (eased - 1.0f);
+            if (t >= 1.0f) {
+                t = 1.0f;
+                isAnimating = 0;
+                animationStartTime = 0;
+            }
+
+            float inv = 1.0f - t;
+            eased = 1.0f - inv * inv * inv;
+            animOffset = (float)animationDirection * (float)coverDistance * (eased - 1.0f);
+        }
     }
 
     int posX = basePosX + (int)animOffset;
+    int scaling = gCoverflowCenterScale;
 
-    int scaling = 30;
-    // direction=-1 (next): covers[2] is visually at center at t=0
-    // direction=1 (prev): covers[0] is visually at center at t=0
-    int leavingIndex = (animationDirection > 0) ? 2 : 0;
+    // direction=-1 (next): covers[centerIndex - 1] is visually at center at t=0
+    // direction=1 (prev): covers[centerIndex + 1] is visually at center at t=0
+    int leavingIndex = (animationDirection > 0) ? (centerIndex + 1) : (centerIndex - 1);
 
-    for (int i = 0; i < COVERFLOW_COUNT; i++) {
+    for (int i = 0; i < coverCount; i++) {
         int renderPosX = posX;
         posX += coverDistance;
 
@@ -1134,7 +1177,10 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
         mutable_image_t *img = (mutable_image_t *)coverElem->extended;
         item_list_t *sourceList = thmGetItemSource(menu, covers[i].game);
 
-        int baseCoverHeight = (coverElem != elem && coverElem->height != DIM_UNDEF) ? coverElem->height : coverHeight;
+        int baseCoverHeight = coverHeight;
+        if (coverElem != elem && coverElem->height != DIM_UNDEF)
+            baseCoverHeight = (int)(coverElem->height * coverScaleRatio);
+
         int currentCoverWidth = coverWidth;
         int currentCoverHeight = baseCoverHeight;
         int overlayOffsetY = 0;
@@ -1142,7 +1188,7 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
 
         // Interpolate scaling.. center cover grows in.. leaving cover shrinks out
         int currentScaling = 0;
-        if (i == 1) {
+        if (i == centerIndex) {
             // New selection.. grows into center as animation progresses
             float growFactor = isAnimating ? eased : 1.0f;
             currentScaling = (int)(scaling * growFactor);
@@ -1162,7 +1208,13 @@ static void drawCoverFlow(struct menu_list *menu, struct submenu_list *item, con
         if (!covers[i].texture || !covers[i].texture->Mem)
             covers[i].texture = img->defaultTexture ? &img->defaultTexture->source : thmGetTexture(COVER_DEFAULT);
 
-        thmDrawTexture(covers[i].texture, img, renderPosX, coverElem->posY, ALIGN_CENTER, currentCoverWidth, currentCoverHeight, SCALING_NONE, gDefaultCol, elem->reflection, overlayOffsetX, overlayOffsetY);
+        u64 coverColor = gDefaultCol;
+        if (gCoverflowDimCovers && i != centerIndex)
+            coverColor = GS_SETREG_RGBA(0x80, 0x80, 0x80, 0x40);
+
+        int thisCoverYOffset = (coverElem != elem && coverElem->height != DIM_UNDEF) ? (coverElem->height - baseCoverHeight) / 2 : coverYOffset;
+
+        thmDrawTexture(covers[i].texture, img, renderPosX, coverElem->posY + thisCoverYOffset, ALIGN_CENTER, currentCoverWidth, currentCoverHeight, SCALING_NONE, coverColor, elem->reflection, overlayOffsetX, overlayOffsetY, coverScaleRatio);
     }
 }
 
@@ -1528,6 +1580,7 @@ static void thmLoad(const char *themePath, int themeID)
     newT->logoIcon = NULL;
     newT->logoIconCount = LOGO_21 - LOGO_01 + 1;
     newT->coverflow = NULL;
+    newT->coverflowCoverOffset = 0;
 
     config_set_t *themeConfig = NULL;
     if (!themePath && themeID == 0) {
@@ -1681,6 +1734,7 @@ static void thmLoad(const char *themePath, int themeID)
     } else
         texLoadInternal(&newT->textures[SETTINGS_BG], SETTINGS_BG);
 
+    configGetInt(themeConfig, "coverflow_cover_offset", &newT->coverflowCoverOffset);
 
     configFree(themeConfig);
     gTheme = newT;
