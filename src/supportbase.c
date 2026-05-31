@@ -45,6 +45,7 @@ extern int size_icon_del_icn;
 struct game_list_t
 {
     base_game_info_t gameinfo;
+    char filename[128];
     struct game_list_t *next;
 };
 
@@ -729,6 +730,41 @@ static int queryISOGameListCache(const struct game_cache_list *cache, base_game_
     return ENOENT;
 }
 
+static void applyISOSizes(char *path, struct game_list_t *glist)
+{
+    iox_dirent_t dirent;
+
+    int fd = fileXioDopen(path);
+    if (fd < 0)
+        return;
+
+    while (fileXioDread(fd, &dirent) > 0) {
+        if (dirent.name[0] == '\0')
+            continue;
+
+        u32 sizeMB = (((u64)dirent.stat.hisize << 32) | dirent.stat.size) >> 20;
+        struct game_list_t *g = glist;
+        while (g) {
+            if (g->gameinfo.format == GAME_FORMAT_USBLD) {
+                const char *fname = dirent.name + 12;
+
+                if (!strncmp(fname, g->gameinfo.startup, strlen(g->gameinfo.startup))) {
+                    g->gameinfo.sizeMB += sizeMB;
+                    break;
+                }
+            } else {
+                if (strcmp(g->filename, dirent.name) == 0) {
+                    g->gameinfo.sizeMB = sizeMB;
+                    break;
+                }
+            }
+            g = g->next;
+        }
+    }
+
+    fileXioDclose(fd);
+}
+
 static int scanForISO(char *path, char type, struct game_list_t **glist)
 {
     int count = 0;
@@ -761,6 +797,7 @@ static int scanForISO(char *path, char type, struct game_list_t **glist)
             next->next = *glist;
             *glist = next;
             base_game_info_t *game = &next->gameinfo;
+            strcpy(next->filename, dirent->d_name);
             memset(game, 0, sizeof(base_game_info_t));
 
             if (format == GAME_FORMAT_OLD_ISO) {
@@ -811,6 +848,8 @@ static int scanForISO(char *path, char type, struct game_list_t **glist)
     } else {
         updateISOGameList(path, NULL, *glist, count);
     }
+
+    applyISOSizes(path, *glist);
 
     return count;
 }
