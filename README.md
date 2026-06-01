@@ -1,7 +1,7 @@
 
 # Double Unofficial-Open-PS2-Loader
 
-![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo16.png)
+![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo_16.png)
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
