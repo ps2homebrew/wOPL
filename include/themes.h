@@ -134,19 +134,21 @@ typedef struct theme
     theme_element_t *loadingIcon;
     int loadingIconCount;
 
-    // Logo
-    theme_element_t *logoIcon;
-    int logoIconCount;
-
     GSTEXTURE textures[TEXTURES_COUNT];
     int fonts[THM_MAX_FONTS]; //!< Storage of font handles for removal once not needed
 
     theme_element_t *coverflow;
+    int coverflowCoverOffset; // used to compensate for asymmetric overlay transparency, in texture pixels (half the transparent padding). e.g. overlay 256px wide with 29px right padding = 14 (29/2)
 } theme_t;
 
 extern theme_t *gTheme;
 
 extern int gDiscEnableArt;
+
+extern int gCoverflowCount;
+extern int gCoverflowCenterScale;
+extern int gCoverflowAnimSpeed;
+extern int gCoverflowDimCovers;
 
 void thmInit(void);
 void thmReinit(const char *path);

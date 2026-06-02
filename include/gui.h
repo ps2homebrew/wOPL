@@ -151,6 +151,7 @@ void guiShowAudioConfig();
 void guiShowControllerConfig();
 void guiShowNetConfig();
 void guiShowParentalLockConfig();
+void guiShowCoverflowConfig(void);
 
 void guiCheckNotifications(int checkTheme, int checkLang);
 

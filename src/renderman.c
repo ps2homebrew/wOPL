@@ -444,7 +444,7 @@ void rmDrawOverlayPixmap(GSTEXTURE *overlay, int x, int y, short aligned, int w,
                             quad.ul.x + blx + fRenderXOff, quad.ul.y + bly + fRenderYOff,
                             0.0f, inlay->Height,
                             quad.ul.x + brx + fRenderXOff, quad.ul.y + bry + fRenderYOff,
-                            inlay->Width, inlay->Height, order, gDefaultCol);
+                            inlay->Width, inlay->Height, order, color);
     order++;
 
     rmDrawQuad(&quad);
