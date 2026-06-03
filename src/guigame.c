@@ -42,7 +42,6 @@ static int GSMFIELDFix;
 #endif
 
 #ifdef CHEAT
-static int EnableCheat;
 static int CheatMode;
 static int EnableImage;
 #endif
@@ -50,7 +49,6 @@ static int EnableImage;
 static int forceGlobalOSDLanguage;
 
 #ifdef PADEMU
-static int EnablePadEmu;
 static int PadEmuSettings;
 static union
 {
@@ -364,12 +362,11 @@ static void guiGameSetGSMSettingsState(void)
         configSetInt(configSet, CONFIG_ITEM_GSMSOURCE, gGSMSource);
         guiGameLoadGSMConfig(configSet, configGetByType(CONFIG_GAME));
     }
-
-    diaGetInt(diaGSConfig, GSMCFG_ENABLEGSM, &EnableGSM);
-    diaSetEnabled(diaGSConfig, GSMCFG_GSMVMODE, EnableGSM);
-    diaSetEnabled(diaGSConfig, GSMCFG_GSMXOFFSET, EnableGSM);
-    diaSetEnabled(diaGSConfig, GSMCFG_GSMYOFFSET, EnableGSM);
-    diaSetEnabled(diaGSConfig, GSMCFG_GSMFIELDFIX, EnableGSM);
+    diaGetInt(diaGSConfig, GSMCFG_ENABLEGSM, &gEnableGSM);
+    diaSetEnabled(diaGSConfig, GSMCFG_GSMVMODE, gEnableGSM);
+    diaSetEnabled(diaGSConfig, GSMCFG_GSMXOFFSET, gEnableGSM);
+    diaSetEnabled(diaGSConfig, GSMCFG_GSMYOFFSET, gEnableGSM);
+    diaSetEnabled(diaGSConfig, GSMCFG_GSMFIELDFIX, gEnableGSM);
 }
 
 static int guiGameGSMUpdater(int modified)
@@ -450,10 +447,10 @@ static void guiGameSetCheatSettingsState(void)
         guiGameLoadCheatsConfig(configSet, configGetByType(CONFIG_GAME));
     }
 
-    diaGetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, &EnableCheat);
+    diaGetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, &gEnableCheat);
     diaGetInt(diaCheatConfig, CHTCFG_CHEATMODE, &CheatMode);
     diaGetInt(diaCheatConfig, CHTCFG_ENABLEIMAGE, &EnableImage);
-    diaSetEnabled(diaCheatConfig, CHTCFG_CHEATMODE, EnableCheat);
+    diaSetEnabled(diaCheatConfig, CHTCFG_CHEATMODE, gEnableCheat);
 }
 
 static int guiGameCheatUpdater(int modified)
@@ -473,7 +470,7 @@ void guiGameShowCheatConfig(void)
 
     diaSetEnum(diaCheatConfig, CHTCFG_CHEATSOURCE, settingsSource);
     diaSetEnum(diaCheatConfig, CHTCFG_CHEATMODE, cheatmodeNames);
-    diaSetEnabled(diaCheatConfig, CHTCFG_CHEATMODE, EnableCheat);
+    diaSetEnabled(diaCheatConfig, CHTCFG_CHEATMODE, gEnableCheat);
 
     diaExecuteDialog(diaCheatConfig, -1, 1, &guiGameCheatUpdater);
 }
@@ -633,7 +630,7 @@ static int guiGamePadEmuUpdater(int modified)
         guiGameLoadPadEmuConfig(configSet, configGetByType(CONFIG_GAME));
     }
 
-    diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_ENABLE, &EnablePadEmu);
+    diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_ENABLE, &gEnablePadEmu);
     diaGetInt(diaPadEmuConfig, PADCFG_PADPORT, &PadPort);
     diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_PORT, &PadEmuPort);
     diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_VIB, &PadEmuVib);
@@ -642,32 +639,32 @@ static int guiGamePadEmuUpdater(int modified)
     diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_MTAP_PORT, &PadEmuMtapPort);
     diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND, &PadEmuWorkaround);
 
-    diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_MTAP, EnablePadEmu);
+    diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_MTAP, gEnablePadEmu);
     diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_MTAP_PORT, PadEmuMtap);
 
-    diaSetEnabled(diaPadEmuConfig, PADCFG_PADPORT, EnablePadEmu);
-    diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_VIB, PadEmuPort & EnablePadEmu);
+    diaSetEnabled(diaPadEmuConfig, PADCFG_PADPORT, gEnablePadEmu);
+    diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_VIB, PadEmuPort & gEnablePadEmu);
 
-    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC, EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC, EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR, EnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC, gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC, gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR, gEnablePadEmu);
 
-    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC_STR, EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC_STR, EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR_STR, EnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC_STR, gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC_STR, gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR_STR, gEnablePadEmu);
 
-    diaSetVisible(diaPadEmuConfig, PADCFG_BTINFO, EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND, EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND_STR, EnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_BTINFO, gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND, gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND_STR, gEnablePadEmu);
 
     if (modified) {
         if (PadEmuMtap) {
             diaSetEnum(diaPadEmuConfig, PADCFG_PADPORT, PadEmuPorts_enums[PadEmuMtapPort]);
-            diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_PORT, (PadPort == 0) & EnablePadEmu);
+            diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_PORT, (PadPort == 0) & gEnablePadEmu);
             PadEmuSettings |= 0x00000E00;
         } else {
             diaSetEnum(diaPadEmuConfig, PADCFG_PADPORT, PadEmuPorts_enums[0]);
-            diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_PORT, EnablePadEmu);
+            diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_PORT, gEnablePadEmu);
             PadEmuSettings &= 0xFFFF03FF;
             if (PadPort > 1) {
                 PadPort = 0;
@@ -793,19 +790,19 @@ void guiGameShowPadEmuConfig(int forceGlobal)
     PadEmuMtap = (PadEmuSettings >> 24) & 1;
     PadEmuMtapPort = ((PadEmuSettings >> 25) & 1) + 1;
 
-    diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_PORT, EnablePadEmu);
+    diaSetEnabled(diaPadEmuConfig, PADCFG_PADEMU_PORT, gEnablePadEmu);
 
-    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC, PadEmuSettings & EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC, PadEmuSettings & EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR, PadEmuSettings & EnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC, PadEmuSettings & gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC, PadEmuSettings & gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR, PadEmuSettings & gEnablePadEmu);
 
-    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC_STR, PadEmuSettings & EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC_STR, PadEmuSettings & EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR_STR, PadEmuSettings & EnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_USBDG_MAC_STR, PadEmuSettings & gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAD_MAC_STR, PadEmuSettings & gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PAIR_STR, PadEmuSettings & gEnablePadEmu);
 
-    diaSetVisible(diaPadEmuConfig, PADCFG_BTINFO, PadEmuSettings & EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND, PadEmuSettings & EnablePadEmu);
-    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND_STR, PadEmuSettings & EnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_BTINFO, PadEmuSettings & gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND, PadEmuSettings & gEnablePadEmu);
+    diaSetVisible(diaPadEmuConfig, PADCFG_PADEMU_WORKAROUND_STR, PadEmuSettings & gEnablePadEmu);
 
     if (PadEmuMtap) {
         diaSetEnum(diaPadEmuConfig, PADCFG_PADPORT, PadEmuPorts_enums[PadEmuMtapPort]);
@@ -927,11 +924,11 @@ void guiGameShowPadMacroConfig(int forceGlobal)
 static int guiGameSavePadEmuGameConfig(config_set_t *configSet, int result)
 {
     if (gPadEmuSource == SETTINGS_PERGAME) {
-        diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_ENABLE, &EnablePadEmu);
+        diaGetInt(diaPadEmuConfig, PADCFG_PADEMU_ENABLE, &gEnablePadEmu);
 
         result = configSetInt(configSet, CONFIG_ITEM_PADEMUSOURCE, gPadEmuSource);
-        if (EnablePadEmu != 0)
-            result = configSetInt(configSet, CONFIG_ITEM_ENABLEPADEMU, EnablePadEmu);
+        if (gEnablePadEmu != 0)
+            result = configSetInt(configSet, CONFIG_ITEM_ENABLEPADEMU, gEnablePadEmu);
         else
             configRemoveKey(configSet, CONFIG_ITEM_ENABLEPADEMU);
 
@@ -960,7 +957,7 @@ static int guiGameSavePadMacroGameConfig(config_set_t *configSet, int result)
 void guiGameSavePadEmuGlobalConfig(config_set_t *configGame)
 {
     if (gPadEmuSource == SETTINGS_GLOBAL) {
-        configSetInt(configGame, CONFIG_ITEM_ENABLEPADEMU, EnablePadEmu);
+        configSetInt(configGame, CONFIG_ITEM_ENABLEPADEMU, gEnablePadEmu);
         configSetInt(configGame, CONFIG_ITEM_PADEMUSETTINGS, PadEmuSettings);
     }
 }
@@ -1046,7 +1043,7 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
 
         /// GSM ///
 #ifdef GSM
-    diaGetInt(diaGSConfig, GSMCFG_ENABLEGSM, &EnableGSM);
+    diaGetInt(diaGSConfig, GSMCFG_ENABLEGSM, &gEnableGSM);
     diaGetInt(diaGSConfig, GSMCFG_GSMVMODE, &GSMVMode);
     diaGetInt(diaGSConfig, GSMCFG_GSMXOFFSET, &GSMXOffset);
     diaGetInt(diaGSConfig, GSMCFG_GSMYOFFSET, &GSMYOffset);
@@ -1054,8 +1051,8 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
 
     if (gGSMSource == SETTINGS_PERGAME) {
         result = configSetInt(configSet, CONFIG_ITEM_GSMSOURCE, gGSMSource);
-        if (EnableGSM != 0)
-            result = configSetInt(configSet, CONFIG_ITEM_ENABLEGSM, EnableGSM);
+        if (gEnableGSM != 0)
+            result = configSetInt(configSet, CONFIG_ITEM_ENABLEGSM, gEnableGSM);
         else
             configRemoveKey(configSet, CONFIG_ITEM_ENABLEGSM);
 
@@ -1079,7 +1076,7 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
         else
             configRemoveKey(configSet, CONFIG_ITEM_GSMFIELDFIX);
     } else if (gGSMSource == SETTINGS_GLOBAL) {
-        configSetInt(configGame, CONFIG_ITEM_ENABLEGSM, EnableGSM);
+        configSetInt(configGame, CONFIG_ITEM_ENABLEGSM, gEnableGSM);
         configSetInt(configGame, CONFIG_ITEM_GSMVMODE, GSMVMode);
         configSetInt(configGame, CONFIG_ITEM_GSMXOFFSET, GSMXOffset);
         configSetInt(configGame, CONFIG_ITEM_GSMYOFFSET, GSMYOffset);
@@ -1090,14 +1087,14 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
     /// Cheats ///
 #ifdef CHEAT
     diaGetInt(diaCheatConfig, CHTCFG_CHEATSOURCE, &gCheatSource);
-    diaGetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, &EnableCheat);
+    diaGetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, &gEnableCheat);
     diaGetInt(diaCheatConfig, CHTCFG_CHEATMODE, &CheatMode);
     diaGetInt(diaCheatConfig, CHTCFG_ENABLEIMAGE, &EnableImage);
 
     if (gCheatSource == SETTINGS_PERGAME) {
         result = configSetInt(configSet, CONFIG_ITEM_CHEATSSOURCE, gCheatSource);
-        if (EnableCheat != 0)
-            result = configSetInt(configSet, CONFIG_ITEM_ENABLECHEAT, EnableCheat);
+        if (gEnableCheat != 0)
+            result = configSetInt(configSet, CONFIG_ITEM_ENABLECHEAT, gEnableCheat);
         else
             configRemoveKey(configSet, CONFIG_ITEM_ENABLECHEAT);
 
@@ -1111,7 +1108,7 @@ int guiGameSaveConfig(config_set_t *configSet, item_list_t *support)
         else
             configRemoveKey(configSet, CONFIG_ITEM_ENABLEIMAGE);
     } else if (gCheatSource == SETTINGS_GLOBAL) {
-        configSetInt(configGame, CONFIG_ITEM_ENABLECHEAT, EnableCheat);
+        configSetInt(configGame, CONFIG_ITEM_ENABLECHEAT, gEnableCheat);
         configSetInt(configGame, CONFIG_ITEM_CHEATMODE, CheatMode);
         configSetInt(configGame, CONFIG_ITEM_ENABLEIMAGE, EnableImage);
     }
@@ -1247,7 +1244,7 @@ static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGa
 
     // set global settings.
     gGSMSource = 0;
-    configGetInt(configGame, CONFIG_ITEM_ENABLEGSM, &EnableGSM);
+    configGetInt(configGame, CONFIG_ITEM_ENABLEGSM, &gEnableGSM);
     configGetInt(configGame, CONFIG_ITEM_GSMVMODE, &GSMVMode);
     configGetInt(configGame, CONFIG_ITEM_GSMXOFFSET, &GSMXOffset);
     configGetInt(configGame, CONFIG_ITEM_GSMYOFFSET, &GSMYOffset);
@@ -1256,8 +1253,8 @@ static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGa
     // override global with per-game settings if available and selected.
     configGetInt(configSet, CONFIG_ITEM_GSMSOURCE, &gGSMSource);
     if (gGSMSource == SETTINGS_PERGAME) {
-        if (!configGetInt(configSet, CONFIG_ITEM_ENABLEGSM, &EnableGSM))
-            EnableGSM = 0;
+        if (!configGetInt(configSet, CONFIG_ITEM_ENABLEGSM, &gEnableGSM))
+            gEnableGSM = 0;
         if (!configGetInt(configSet, CONFIG_ITEM_GSMVMODE, &GSMVMode))
             GSMVMode = 0;
         if (!configGetInt(configSet, CONFIG_ITEM_GSMXOFFSET, &GSMXOffset))
@@ -1270,7 +1267,7 @@ static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGa
 
     // set gui settings.
     diaSetInt(diaGSConfig, GSMCFG_GSMSOURCE, gGSMSource);
-    diaSetInt(diaGSConfig, GSMCFG_ENABLEGSM, EnableGSM);
+    diaSetInt(diaGSConfig, GSMCFG_ENABLEGSM, gEnableGSM);
     diaSetInt(diaGSConfig, GSMCFG_GSMVMODE, GSMVMode);
     diaSetInt(diaGSConfig, GSMCFG_GSMXOFFSET, GSMXOffset);
     diaSetInt(diaGSConfig, GSMCFG_GSMYOFFSET, GSMYOffset);
@@ -1281,20 +1278,20 @@ static void guiGameLoadGSMConfig(config_set_t *configSet, config_set_t *configGa
 #ifdef CHEAT
 static void guiGameLoadCheatsConfig(config_set_t *configSet, config_set_t *configGame)
 {
-    EnableCheat = 0;
+    gEnableCheat = 0;
     CheatMode = 0;
 
     // set global settings.
     gCheatSource = 0;
-    configGetInt(configGame, CONFIG_ITEM_ENABLECHEAT, &EnableCheat);
+    configGetInt(configGame, CONFIG_ITEM_ENABLECHEAT, &gEnableCheat);
     configGetInt(configGame, CONFIG_ITEM_CHEATMODE, &CheatMode);
     configGetInt(configGame, CONFIG_ITEM_ENABLEIMAGE, &EnableImage);
 
     // override global with per-game settings if available and selected.
     configGetInt(configSet, CONFIG_ITEM_CHEATSSOURCE, &gCheatSource);
     if (gCheatSource == SETTINGS_PERGAME) {
-        if (!configGetInt(configSet, CONFIG_ITEM_ENABLECHEAT, &EnableCheat))
-            EnableCheat = 0;
+        if (!configGetInt(configSet, CONFIG_ITEM_ENABLECHEAT, &gEnableCheat))
+            gEnableCheat = 0;
         if (!configGetInt(configSet, CONFIG_ITEM_CHEATMODE, &CheatMode))
             CheatMode = 0;
         if (!configGetInt(configSet, CONFIG_ITEM_ENABLEIMAGE, &EnableImage))
@@ -1303,7 +1300,7 @@ static void guiGameLoadCheatsConfig(config_set_t *configSet, config_set_t *confi
 
     // set gui settings.
     diaSetInt(diaCheatConfig, CHTCFG_CHEATSOURCE, gCheatSource);
-    diaSetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, EnableCheat);
+    diaSetInt(diaCheatConfig, CHTCFG_ENABLECHEAT, gEnableCheat);
     diaSetInt(diaCheatConfig, CHTCFG_CHEATMODE, CheatMode);
     diaSetInt(diaCheatConfig, CHTCFG_ENABLEIMAGE, EnableImage);
 }
@@ -1312,20 +1309,20 @@ static void guiGameLoadCheatsConfig(config_set_t *configSet, config_set_t *confi
 #ifdef PADEMU
 static void guiGameLoadPadEmuConfig(config_set_t *configSet, config_set_t *configGame)
 {
-    EnablePadEmu = 0;
+    gEnablePadEmu = 0;
     PadEmuSettings = 0;
 
     // set global settings.
     gPadEmuSource = 0;
-    configGetInt(configGame, CONFIG_ITEM_ENABLEPADEMU, &EnablePadEmu);
+    configGetInt(configGame, CONFIG_ITEM_ENABLEPADEMU, &gEnablePadEmu);
     configGetInt(configGame, CONFIG_ITEM_PADEMUSETTINGS, &PadEmuSettings);
 
     // override global with per-game settings if available and selected.
     if (!forceGlobalPadEmu) {
         configGetInt(configSet, CONFIG_ITEM_PADEMUSOURCE, &gPadEmuSource);
         if (gPadEmuSource == SETTINGS_PERGAME) {
-            if (!configGetInt(configSet, CONFIG_ITEM_ENABLEPADEMU, &EnablePadEmu))
-                EnablePadEmu = 0;
+            if (!configGetInt(configSet, CONFIG_ITEM_ENABLEPADEMU, &gEnablePadEmu))
+                gEnablePadEmu = 0;
             if (!configGetInt(configSet, CONFIG_ITEM_PADEMUSETTINGS, &PadEmuSettings))
                 PadEmuSettings = 0;
         }
@@ -1335,7 +1332,7 @@ static void guiGameLoadPadEmuConfig(config_set_t *configSet, config_set_t *confi
     int PadEmuMtapPort = ((PadEmuSettings >> 25) & 1) + 1;
 
     diaSetInt(diaPadEmuConfig, PADCFG_PADEMU_SOURCE, gPadEmuSource);
-    diaSetInt(diaPadEmuConfig, PADCFG_PADEMU_ENABLE, EnablePadEmu);
+    diaSetInt(diaPadEmuConfig, PADCFG_PADEMU_ENABLE, gEnablePadEmu);
 
     diaSetInt(diaPadEmuConfig, PADCFG_PADPORT, 0);
     diaSetInt(diaPadEmuConfig, PADCFG_PADEMU_VIB, (PadEmuSettings >> 16) & 1);

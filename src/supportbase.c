@@ -1307,6 +1307,19 @@ config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const
 
     configSetStr(config, CONFIG_ITEM_STARTUP, game->startup);
 
+#ifdef PADEMU
+    configSetStr(config, CONFIG_ITEM_ENABLEPADEMU, gEnablePadEmu ? "pademu_on" : "pademu_off");
+#endif
+
+#ifdef CHEAT
+    configSetStr(config, CONFIG_ITEM_ENABLECHEAT, gEnableCheat ? "cht_on" : "cht_off");
+#endif
+
+#ifdef GSM
+    configSetStr(config, CONFIG_ITEM_ENABLEGSM, gEnableGSM ? "gsm_on" : "gsm_off");
+#endif
+
+
     return config;
 }
 

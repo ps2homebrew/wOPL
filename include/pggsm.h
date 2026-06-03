@@ -49,6 +49,7 @@ typedef struct predef_vmode_struct
     u64 syncv;
 } predef_vmode_struct;
 
+extern int gEnableGSM; // Enables GSM - 0 for Off, 1 for On
 extern int gGSMSource;
 
 void InitGSMConfig(config_set_t *configSet);

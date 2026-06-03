@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-static int gEnableGSM;   // Enables GSM - 0 for Off, 1 for On
+int gEnableGSM;          // Enables GSM - 0 for Off, 1 for On
 static int gGSMVMode;    // See the related predef_vmode
 static int gGSMXOffset;  // 0 - Off, Any other positive or negative value - Relative position for X Offset
 static int gGSMYOffset;  // 0 - Off, Any other positive or negative value - Relative position for Y Offset

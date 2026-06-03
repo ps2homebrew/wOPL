@@ -65,6 +65,7 @@ typedef struct
 
 extern cheat_entry_t gCheats[MAX_CODES];
 extern int gCheatSource;
+extern int gEnableCheat; // Enables PS2RD Cheat Engine - 0 for Off, 1 for On
 
 void InitCheatsConfig(config_set_t *configSet);
 int GetCheatsEnabled(void);

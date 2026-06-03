@@ -34,8 +34,8 @@
 #include "include/ioman.h"
 #include "include/common.h"
 
-static int gEnableCheat; // Enables PS2RD Cheat Engine - 0 for Off, 1 for On
-static int gCheatMode;   // Cheat Mode - 0 Enable all cheats, 1 Cheats selected by user
+int gEnableCheat;      // Enables PS2RD Cheat Engine - 0 for Off, 1 for On
+static int gCheatMode; // Cheat Mode - 0 Enable all cheats, 1 Cheats selected by user
 static int gEnableImage;
 int gCheatSource;
 

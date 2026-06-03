@@ -74,6 +74,14 @@ extern void *Aspect_s_png;
 extern void *Aspect_w_png;
 extern void *Aspect_w1_png;
 extern void *Aspect_w2_png;
+
+extern void *pademu_on_png;
+extern void *pademu_off_png;
+extern void *gsm_on_png;
+extern void *gsm_off_png;
+extern void *cht_on_png;
+extern void *cht_off_png;
+
 extern void *Device_1_png;
 extern void *Device_2_png;
 extern void *Device_3_png;
@@ -225,6 +233,12 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {ASPECT_WIDE, "Aspect_w", &Aspect_w_png},
     {ASPECT_WIDE1, "Aspect_w1", &Aspect_w1_png},
     {ASPECT_WIDE2, "Aspect_w2", &Aspect_w2_png},
+    {PADEMU_ON, "pademu_on", &pademu_on_png},
+    {PADEMU_OFF, "pademu_off", &pademu_off_png},
+    {GSM_ON, "gsm_on", &gsm_on_png},
+    {GSM_OFF, "gsm_off", &gsm_off_png},
+    {CHT_ON, "cht_on", &cht_on_png},
+    {CHT_OFF, "cht_off", &cht_off_png},
     {DEVICE_1, "Device_1", &Device_1_png},
     {DEVICE_2, "Device_2", &Device_2_png},
     {DEVICE_3, "Device_3", &Device_3_png},
