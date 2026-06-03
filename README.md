@@ -65,6 +65,7 @@ v1.2
 * App support to the favourites tab
 * Pademu fixes on frontend thanks to krahjohilito
 * BDM USB fixes
+* Added icons for enabling pademu, cheats and gsm
 
 ### ART/CFG/CHT .tar compact support
 
