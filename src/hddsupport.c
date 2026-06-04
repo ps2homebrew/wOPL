@@ -1114,6 +1114,8 @@ void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         }
     }
 
+    sbMMCESendGameId(game->startup);
+
     if (gAutoLaunchGame == NULL)
         deinit(NO_EXCEPTION, HDD_MODE); // CAREFUL: deinit will call hddCleanUp, so hddGames/game will be freed
     else {

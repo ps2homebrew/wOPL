@@ -612,6 +612,8 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         }
     }
 
+    sbMMCESendGameId(game->startup);
+
     if (gAutoLaunchBDMGame == NULL)
         deinit(NO_EXCEPTION, itemList->mode); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
     else {
