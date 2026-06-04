@@ -82,6 +82,7 @@ file_buffer_t *sbOpenFileBuffer(char *fpath, int mode, short allocResult, unsign
 int sbReadFileBuffer(file_buffer_t *readContext, char **outBuf);
 void sbWriteFileBuffer(file_buffer_t *fileBuffer, char *inBuf, int size);
 void sbCloseFileBuffer(file_buffer_t *fileBuffer);
+void sbMMCESendGameId(const char *gameId);
 
 // ISO9660 filesystem management functions.
 u32 sbGetISO9660MaxLBA(const char *path);

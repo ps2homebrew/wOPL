@@ -17,6 +17,7 @@
 #include "include/gui.h"
 #include "include/bdmsupport.h"
 #include "include/hddsupport.h"
+#include "include/mmcesupport.h"
 #include "include/tar.h"
 
 #define NEWLIB_PORT_AWARE
@@ -523,6 +524,11 @@ void sbCloseFileBuffer(file_buffer_t *fileBuffer)
     }
     free(fileBuffer->buffer);
     free(fileBuffer);
+}
+
+void sbMMCESendGameId(const char *gameId)
+{
+    mmceSendGameId(gameId);
 }
 
 static int GetStartupExecName(const char *path, char *filename, int maxlength)

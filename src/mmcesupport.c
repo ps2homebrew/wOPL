@@ -96,6 +96,40 @@ void mmceInit(item_list_t *itemList)
     mmceGameList.enabled = 1;
 }
 
+void mmceSendGameId(const char *gameId)
+{
+    if (!gameId || !gameId[0])
+        return;
+
+    // probe and set device
+    const char *dev = NULL;
+    if (fileXioDevctl("mmce0:/", 0x1, NULL, 0, NULL, 0) != -1)
+        dev = "mmce0:/";
+    else if (fileXioDevctl("mmce1:/", 0x1, NULL, 0, NULL, 0) != -1)
+        dev = "mmce1:/";
+    else
+        return;
+
+    // small delay to let config write before sending game id (remember last game)
+    usleep(200000); // 200 ms
+
+    // send game id to mmce
+    if (fileXioDevctl(dev, 0x8, (void *)gameId, (strlen(gameId) + 1), NULL, 0) < 0)
+        return;
+
+    // wait for busy bit clear 2 seconds 100ms poll
+    for (int i = 0; i < 20; i++) {
+        usleep(100000);
+
+        int status = fileXioDevctl(dev, 0x2, NULL, 0, NULL, 0);
+        if (status < 0)
+            break;
+
+        if ((status & 1) == 0)
+            return; // ready
+    }
+}
+
 item_list_t *mmceGetObject(int initOnly)
 {
     if (initOnly && !mmceGameList.enabled)
@@ -356,27 +390,6 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     LOG("name: %s\n", game->name);
     LOG("start: %s\n", game->startup);
 
-    // Set gameid and poll card until ready
-#ifdef __DEBUG
-    if (gMMCEEnableGameID) {
-#endif
-
-        // Send GameID to MMCE
-        fileXioDevctl(mmcePrefix, 0x8, game->startup, (strlen(game->startup) + 1), NULL, 0);
-
-        for (int i = 0; i < 15; i++) {
-            sleep(1);
-
-            // Poll MMCE status until busy bit is clear
-            if ((fileXioDevctl(mmcePrefix, 0x2, NULL, 0, NULL, 0) & 1) == 0) {
-                LOG("Set MMCE GameID to: %s\n", game->startup);
-                break;
-            }
-        }
-#ifdef __DEBUG
-    }
-#endif
-
     int coreLoader = 0;
     configGetInt(configSet, CONFIG_ITEM_CORE_LOADER, &coreLoader);
 
@@ -395,6 +408,8 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     // mcReset();
     // mcInit(MC_TYPE_XMC);
+
+    mmceSendGameId(game->startup);
 
     if (gAutoLaunchBDMGame == NULL)
         deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
