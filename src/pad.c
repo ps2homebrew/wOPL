@@ -202,6 +202,9 @@ static u32 readLeftJoy(struct pad_data_t *pad, u32 pdata)
     u32 padData = pdata;
     int xDeadzone, yDeadzone;
 
+    if (pdata & (PAD_SQUARE | PAD_CROSS | PAD_CIRCLE | PAD_TRIANGLE | PAD_START | PAD_SELECT))
+        return padData;
+
     if ((pad->buttons.mode >> 4) == 0x07) {
         switch (gXSensitivity) {
             case 0:
@@ -215,6 +218,7 @@ static u32 readLeftJoy(struct pad_data_t *pad, u32 pdata)
                 break;
             default:
                 xDeadzone = 80;
+                break;
         }
 
         switch (gYSensitivity) {
@@ -229,6 +233,7 @@ static u32 readLeftJoy(struct pad_data_t *pad, u32 pdata)
                 break;
             default:
                 yDeadzone = 80;
+                break;
         }
 
         if (pad->buttons.ljoy_h < 127 - xDeadzone)
