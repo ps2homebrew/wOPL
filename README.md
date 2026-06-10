@@ -52,7 +52,7 @@ v1.1
 
 v1.2
 
-* Added Code Inject for games support
+* Added Code Inject for games support(Credits: fniq5)
 * Enable by standard USB on BDM
 * Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
 * Add neutrino for MMCE
@@ -61,11 +61,11 @@ v1.2
 * Added a hint to hide R3 while is being selected
 * Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
 * Coverflow improvements thanks to KrahJohlito
-* Support grayscale and grayscale+alpha images
+* Support grayscale and grayscale+alpha images(DarkMokus)
 * App support to the favourites tab
 * Pademu fixes on frontend thanks to krahjohilito
 * BDM USB fixes
-* Fix send game id on mmce
+* Fix send game id on mmce thanks to mystq
 
 ### ART/CFG/CHT .tar compact support
 
