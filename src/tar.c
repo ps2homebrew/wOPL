@@ -39,6 +39,7 @@ static void *s_index[TAR_KIND_MAX] = {NULL, NULL, NULL};
 static u32 s_count[TAR_KIND_MAX] = {0, 0, 0};
 static u32 s_cap[TAR_KIND_MAX] = {0, 0, 0};
 static const TarDevice *s_dev[TAR_KIND_MAX] = {NULL, NULL, NULL};
+static int s_inactive[TAR_KIND_MAX] = {0, 0, 0};
 
 static const unsigned char s_zeroBlock[TAR_BLOCK_SIZE] __attribute__((aligned(64))) = {0};
 
@@ -286,6 +287,9 @@ int tarLoadFile(TarKind kind, const char *path)
 
 int tarLoadFromAnyDevice(TarKind kind)
 {
+    if (s_inactive[kind])
+        return -1;
+
     if (s_index[kind] && s_dev[kind]) {
         char tarPath[256];
         if (buildTarPath(s_dev[kind], kind, tarPath, sizeof(tarPath)) == 0) {
@@ -297,6 +301,8 @@ int tarLoadFromAnyDevice(TarKind kind)
         }
         tarCloseInternal(kind);
     }
+
+    int found = 0;
 
     for (int i = 0; gDevices[i].prefix; i++) {
         const TarDevice *dev = &gDevices[i];
@@ -311,23 +317,32 @@ int tarLoadFromAnyDevice(TarKind kind)
         close(fd);
 
         s_dev[kind] = dev;
-        if (tarParseFile(kind, tarPath) == 0)
-            return 0;
+        if (tarParseFile(kind, tarPath) == 0) {
+            found = 1;
+            break;
+        }
 
         tarCloseInternal(kind);
     }
 
-    return -1;
+    if (!found)
+        s_inactive[kind] = 1;
+
+    return found ? 0 : -1;
 }
 
 int tarClose(TarKind kind)
 {
     tarCloseInternal(kind);
+    s_inactive[kind] = 0;
     return 0;
 }
 
 TarEntryBase *tarFind(TarKind kind, const char *filename)
 {
+    if (s_inactive[kind])
+        return NULL;
+
     if (!s_index[kind] || s_count[kind] == 0)
         if (tarLoadFromAnyDevice(kind) < 0)
             return NULL;
@@ -347,6 +362,9 @@ TarEntryBase *tarFind(TarKind kind, const char *filename)
 
 u32 tarRead(TarKind kind, const TarEntryBase *entry, void *dst, u32 dstSize)
 {
+    if (s_inactive[kind])
+        return 0;
+
     if (!entry || dstSize < entry->rawSize)
         return 0;
 
@@ -383,6 +401,9 @@ u32 tarRead(TarKind kind, const TarEntryBase *entry, void *dst, u32 dstSize)
 
 void *tarGet(TarKind kind, const char *filename)
 {
+    if (s_inactive[kind])
+        return NULL;
+
     TarEntryBase *entry = tarFind(kind, filename);
     if (!entry)
         return NULL;
@@ -401,6 +422,9 @@ void *tarGet(TarKind kind, const char *filename)
 
 int tarEnsureLoaded(TarKind kind)
 {
+    if (s_inactive[kind])
+        return -1;
+
     if (!s_index[kind] || s_count[kind] == 0)
         return tarLoadFromAnyDevice(kind);
     return 0;
@@ -409,6 +433,7 @@ int tarEnsureLoaded(TarKind kind)
 void tarInvalidate(TarKind kind)
 {
     tarCloseInternal(kind);
+    s_inactive[kind] = 0;
 }
 
 const char *tarGetDevicePrefix(TarKind kind)
