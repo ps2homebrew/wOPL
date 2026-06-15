@@ -878,16 +878,19 @@ int sbReadList(base_game_info_t **list, const char *prefix, int *fsize, int *gam
     struct game_list_t *dlist_head = NULL;
 
     // count iso games in "cd" directory
+    guiSetBootStatusIfActive("Scanning CD images...");
     snprintf(path, sizeof(path), "%sCD", prefix);
     count = scanForISO(path, SCECdPS2CD, &dlist_head);
 
     // count iso games in "dvd" directory
+    guiSetBootStatusIfActive("Scanning DVD images...");
     snprintf(path, sizeof(path), "%sDVD", prefix);
     if ((result = scanForISO(path, SCECdPS2DVD, &dlist_head)) >= 0) {
         count = count < 0 ? result : count + result;
     }
 
     // count and process games in ul.cfg
+    guiSetBootStatusIfActive("Checking USBExtreme games...");
     snprintf(path, sizeof(path), "%sul.cfg", prefix);
     fd = sbOpenFile(path, O_RDONLY);
     if (fd >= 0) {

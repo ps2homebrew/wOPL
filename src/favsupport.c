@@ -68,6 +68,8 @@ static int favUpdateItemList(item_list_t *itemList)
     // we need to keep the id of the owner to use its corresponding functions
     // return a count of 0 so updateMenuFromGameList() doesn't attempt to update the list, we've done it already with loadFavourites()
 
+    guiSetBootStatusIfActive("Loading favourites...");
+
     loadFavourites();
     return 0;
 }
