@@ -403,24 +403,33 @@ void loadFavourites(void)
 
 void addFavouriteItem(const submenu_item_t *item)
 {
-    int size;
+    int size, i;
     submenu_item_t *items = readFavouritesFile(&size);
 
     if (items != NULL) {
         // add the new item
+        int count = size / sizeof(submenu_item_t);
         int new_size = size + sizeof(submenu_item_t);
         submenu_item_t *new_items = memalign(64, new_size);
 
         if (new_items != NULL) {
             memcpy(new_items, items, size);
             memcpy((char *)new_items + size, item, sizeof(submenu_item_t));
-            new_items[size / sizeof(submenu_item_t)].text = strdup(item->text);
-            writeFavouritesFile(new_items, new_size);
+            new_items[count].text = strdup(item->text);
+
+            if (new_items[count].text != NULL) {
+                writeFavouritesFile(new_items, new_size);
+                free(new_items[count].text);
+            } else
+                LOG("Failed to allocate memory for new favourite text.\n");
+
             free(new_items);
-        } else {
-            free(items); // free old memory if allocation fails
+        } else
             LOG("Failed to allocate memory for new favourite.\n");
-        }
+
+        for (i = 0; i < count; ++i)
+            free(items[i].text);
+        free(items);
     } else {
         // if no existing items, create new list
         int new_size = sizeof(submenu_item_t);
@@ -429,7 +438,13 @@ void addFavouriteItem(const submenu_item_t *item)
         if (new_items != NULL) {
             memcpy(new_items, item, sizeof(submenu_item_t));
             new_items[0].text = strdup(item->text);
-            writeFavouritesFile(new_items, new_size);
+
+            if (new_items[0].text != NULL) {
+                writeFavouritesFile(new_items, new_size);
+                free(new_items[0].text);
+            } else
+                LOG("Failed to allocate memory for new favourite text.\n");
+
             free(new_items);
         } else
             LOG("Failed to allocate memory for new favourite.\n");
