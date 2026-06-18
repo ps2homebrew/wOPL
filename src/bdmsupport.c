@@ -400,77 +400,104 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         game = gAutoLaunchBDMGame;
     }
 
-    char vmc_name[32], vmc_path[256], have_error = 0;
-    int vmc_id, size_mcemu_irx = 0;
-    bdm_vmc_infos_t bdm_vmc_infos;
-    vmc_superblock_t vmc_superblock;
+    int selectedCore = pgcfg->core_loader == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
 
-    for (vmc_id = 0; vmc_id < 2; vmc_id++) {
-        memset(&bdm_vmc_infos, 0, sizeof(bdm_vmc_infos_t));
-        strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
-        vmc_name[sizeof(vmc_name) - 1] = '\0';
-        if (vmc_name[0]) {
-            have_error = 1;
-            int vmcSizeInMb = sysCheckVMC(pDeviceData->bdmPrefix, "/", vmc_name, 0, &vmc_superblock);
-            if (vmcSizeInMb > 0) {
-                bdm_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
-                bdm_vmc_infos.flags |= 0x100;
-                bdm_vmc_infos.specs.page_size = vmc_superblock.page_size;
-                bdm_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
-                bdm_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
+    neutrino_path_t neutrinoPath;
+    char neutrinoVmc0[256];
+    char neutrinoVmc1[256];
 
-                sprintf(vmc_path, "%sVMC/%s.bin", pDeviceData->bdmPrefix, vmc_name);
+    neutrinoPath.elf[0] = '\0';
+    neutrinoPath.cwd[0] = '\0';
+    neutrinoVmc0[0] = '\0';
+    neutrinoVmc1[0] = '\0';
 
-                fd = open(vmc_path, O_RDONLY);
-                if (fd >= 0) {
-                    iop_fd = ps2sdk_get_iop_fd(fd);
-                    if (fileXioIoctl2(iop_fd, USBMASS_IOCTL_GET_LBA, NULL, 0, &startingLBA, sizeof(startingLBA)) == 0 && (startCluster = (unsigned int)fileXioIoctl(iop_fd, USBMASS_IOCTL_GET_CLUSTER, vmc_path)) != 0) {
-
-                        // VMC only supports 32bit LBAs at the moment, so if the starting LBA + size of the VMC crosses the 32bit boundary
-                        // just report the VMC as being fragmented to prevent file system corruption.
-                        int vmcSectorCount = vmcSizeInMb * ((1024 * 1024) / 512); // size in MB * sectors per MB
-                        if (startingLBA + vmcSectorCount > 0x100000000) {
-                            LOG("BDMSUPPORT VMC bad LBA range\n");
-                            have_error = 2;
-                        }
-                        // Check VMC cluster chain for fragmentation (write operation can cause damage to the filesystem).
-                        else if (fileXioIoctl(iop_fd, USBMASS_IOCTL_CHECK_CHAIN, "") == 1) {
-                            LOG("BDMSUPPORT Cluster Chain OK\n");
-                            have_error = 0;
-                            bdm_vmc_infos.active = 1;
-                            bdm_vmc_infos.start_sector = (u32)startingLBA;
-                            LOG("BDMSUPPORT VMC slot %d start: 0x%X\n", vmc_id, (u32)startingLBA);
-                        } else {
-                            LOG("BDMSUPPORT Cluster Chain NG\n");
-                            have_error = 2;
-                        }
-                    }
-
-                    close(fd);
-                }
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        if (game->format == GAME_FORMAT_USBLD || !strcasecmp(game->extension, ".zso")) {
+            guiWarning("Neutrino does not support this file format, launching with <wOPL> core", 6);
+            selectedCore = CORE_LOADER_WOPL;
+        } else {
+            if (!sbFindNeutrino(&neutrinoPath, pDeviceData->bdmPrefix)) {
+                guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
+                selectedCore = CORE_LOADER_WOPL;
             }
         }
+    }
 
-        if (gAutoLaunchBDMGame == NULL) {
-            if (have_error) {
-                char error[256];
-                if (have_error == 2) // VMC file is fragmented
-                    snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name, (vmc_id + 1));
-                else
-                    snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name, (vmc_id + 1));
-                if (!guiMsgBox(error, 1, NULL)) {
-                    return;
+    int size_mcemu_irx = 0;
+
+    if (selectedCore == CORE_LOADER_WOPL) {
+        char vmc_name[32], vmc_path[256], have_error = 0;
+        int vmc_id;
+        bdm_vmc_infos_t bdm_vmc_infos;
+        vmc_superblock_t vmc_superblock;
+
+        for (vmc_id = 0; vmc_id < 2; vmc_id++) {
+            memset(&bdm_vmc_infos, 0, sizeof(bdm_vmc_infos_t));
+            strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
+            vmc_name[sizeof(vmc_name) - 1] = '\0';
+            if (vmc_name[0]) {
+                have_error = 1;
+                int vmcSizeInMb = sysCheckVMC(pDeviceData->bdmPrefix, "/", vmc_name, 0, &vmc_superblock);
+                if (vmcSizeInMb > 0) {
+                    bdm_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
+                    bdm_vmc_infos.flags |= 0x100;
+                    bdm_vmc_infos.specs.page_size = vmc_superblock.page_size;
+                    bdm_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
+                    bdm_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
+
+                    sprintf(vmc_path, "%sVMC/%s.bin", pDeviceData->bdmPrefix, vmc_name);
+
+                    fd = open(vmc_path, O_RDONLY);
+                    if (fd >= 0) {
+                        iop_fd = ps2sdk_get_iop_fd(fd);
+                        if (fileXioIoctl2(iop_fd, USBMASS_IOCTL_GET_LBA, NULL, 0, &startingLBA, sizeof(startingLBA)) == 0 && (startCluster = (unsigned int)fileXioIoctl(iop_fd, USBMASS_IOCTL_GET_CLUSTER, vmc_path)) != 0) {
+
+                            // VMC only supports 32bit LBAs at the moment, so if the starting LBA + size of the VMC crosses the 32bit boundary
+                            // just report the VMC as being fragmented to prevent file system corruption.
+                            int vmcSectorCount = vmcSizeInMb * ((1024 * 1024) / 512); // size in MB * sectors per MB
+                            if (startingLBA + vmcSectorCount > 0x100000000) {
+                                LOG("BDMSUPPORT VMC bad LBA range\n");
+                                have_error = 2;
+                            }
+                            // Check VMC cluster chain for fragmentation (write operation can cause damage to the filesystem).
+                            else if (fileXioIoctl(iop_fd, USBMASS_IOCTL_CHECK_CHAIN, "") == 1) {
+                                LOG("BDMSUPPORT Cluster Chain OK\n");
+                                have_error = 0;
+                                bdm_vmc_infos.active = 1;
+                                bdm_vmc_infos.start_sector = (u32)startingLBA;
+                                LOG("BDMSUPPORT VMC slot %d start: 0x%X\n", vmc_id, (u32)startingLBA);
+                            } else {
+                                LOG("BDMSUPPORT Cluster Chain NG\n");
+                                have_error = 2;
+                            }
+                        }
+
+                        close(fd);
+                    }
                 }
             }
-        } else
-            LOG("VMC error\n");
 
-        for (i = 0; i < size_bdm_mcemu_irx; i++) {
-            if (((u32 *)&bdm_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
-                if (bdm_vmc_infos.active)
-                    size_mcemu_irx = size_bdm_mcemu_irx;
-                memcpy(&((u32 *)&bdm_mcemu_irx)[i], &bdm_vmc_infos, sizeof(bdm_vmc_infos_t));
-                break;
+            if (gAutoLaunchBDMGame == NULL) {
+                if (have_error) {
+                    char error[256];
+                    if (have_error == 2) // VMC file is fragmented
+                        snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name, (vmc_id + 1));
+                    else
+                        snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name, (vmc_id + 1));
+                    if (!guiMsgBox(error, 1, NULL)) {
+                        return;
+                    }
+                }
+            } else
+                LOG("VMC error\n");
+
+            for (i = 0; i < size_bdm_mcemu_irx; i++) {
+                if (((u32 *)&bdm_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
+                    if (bdm_vmc_infos.active)
+                        size_mcemu_irx = size_bdm_mcemu_irx;
+                    memcpy(&((u32 *)&bdm_mcemu_irx)[i], &bdm_vmc_infos, sizeof(bdm_vmc_infos_t));
+                    break;
+                }
             }
         }
     }
@@ -617,26 +644,31 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         settings->hddIsLBA48 = pDeviceData->bdmHddIsLBA48;
     }
 
-    int coreLoader = 0;
-    coreLoader = pgcfg->core_loader;
-
-    const char *neutrinoPath = NULL;
-    if (coreLoader) {
-        neutrinoPath = sbFileExists(NEUTRINO_PATH) ? NEUTRINO_PATH : (sbFileExists(NEUTRINO_ALT_PATH) ? NEUTRINO_ALT_PATH : NULL);
-
-        if (game->format == GAME_FORMAT_USBLD || !strcasecmp(game->extension, ".zso")) {
-            guiWarning("Neutrino does not support this file format, launching with <OPL> core", 6);
-            coreLoader = 0;
-        } else if (neutrinoPath == NULL) {
-            guiWarning("Neutrino ELF not found, launching with <OPL> core", 6);
-            coreLoader = 0;
-        }
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sbCreateNeutrinoVMCPath(neutrinoVmc0, sizeof(neutrinoVmc0), pDeviceData->bdmPrefix, pgcfg->vmc1);
+        sbCreateNeutrinoVMCPath(neutrinoVmc1, sizeof(neutrinoVmc1), pDeviceData->bdmPrefix, pgcfg->vmc2);
     }
 
-    sbMMCESendGameId(game->startup);
+    if (!(selectedCore == CORE_LOADER_NEUTRINO && sbPathIsMC(neutrinoPath.elf)))
+        sbMMCESendGameId(game->startup);
+
+    int deinitException = NO_EXCEPTION;
+    int deinitMode = itemList->mode;
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        int elfDevice = -1;
+        int elfMode = sbGetPathModeAndDevice(neutrinoPath.elf, &elfDevice);
+
+        if (elfMode >= 0) {
+            deinitException = UNMOUNT_EXCEPTION;
+            deinitMode = elfMode;
+        }
+
+        LOG("NEUTRINO ELF MODE=%d DEVICE=%d\n", elfMode, elfDevice);
+    }
 
     if (gAutoLaunchBDMGame == NULL)
-        deinit(NO_EXCEPTION, itemList->mode); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
+        deinit(deinitException, deinitMode); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
     else {
         miniDeinit();
 
@@ -649,8 +681,8 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 
     LOG("bdm pre sysLaunchLoaderElf\n");
 
-    if (coreLoader) {
-        sysLaunchNeutrino(bdmCurrentDriver, partname, compatmask, EnablePS2Logo, neutrinoPath);
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sysLaunchNeutrino(bdmCurrentDriver, partname, compatmask, EnablePS2Logo, neutrinoPath.elf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
         return;
     }
 

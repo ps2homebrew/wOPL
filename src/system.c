@@ -66,6 +66,9 @@ typedef struct
 extern unsigned char eecore_elf[];
 extern unsigned int size_eecore_elf;
 
+extern unsigned char neutrino_loader_elf[];
+extern unsigned int size_neutrino_loader_elf;
+
 extern unsigned char IOPRP_img[];
 extern unsigned int size_IOPRP_img;
 
@@ -1163,10 +1166,10 @@ static const char *getDeviceName(const char *driver)
 {
     if (!strncmp(driver, "usb", 3))
         return "usb";
-    else if (!strncmp(driver, "sd", 2))
-        return "ilink";
     else if (!strncmp(driver, "sdc", 3))
         return "mx4sio";
+    else if (!strncmp(driver, "sd", 2))
+        return "ilink";
     else if (!strncmp(driver, "ata", 3))
         return "ata";
     else if (!strncmp(driver, "apa", 3))
@@ -1202,21 +1205,79 @@ static int convertCompatmaskToModes(int compatmask)
     return atoi(result);
 }
 
-void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath)
+static int LoadNeutrinoELF(const char *filename, int argc, char *argv[])
+{
+    u8 *boot_elf;
+    elf_header_t *eh;
+    elf_pheader_t *eph;
+    void *pdata;
+    char *execArgv[16];
+    int i;
+
+    if (!filename || !filename[0])
+        return -1;
+
+    if (argc + 2 > (int)(sizeof(execArgv) / sizeof(execArgv[0]))) {
+        LOG("NEUTRINO ERROR: too many args\n");
+        return -1;
+    }
+
+    execArgv[0] = "";
+    execArgv[1] = (char *)filename;
+
+    for (i = 0; i < argc; i++)
+        execArgv[i + 2] = argv[i];
+
+    boot_elf = (u8 *)&neutrino_loader_elf;
+    eh = (elf_header_t *)boot_elf;
+    if (*(u32 *)boot_elf != ELF_MAGIC) {
+        LOG("NEUTRINO ERROR: bad loader stub ELF\n");
+        return -1;
+    }
+    eph = (elf_pheader_t *)(boot_elf + eh->phoff);
+
+    memset((void *)0x00084000, 0, 0x00100000 - 0x00084000);
+
+    for (i = 0; i < eh->phnum; i++) {
+        if (eph[i].type != ELF_PT_LOAD)
+            continue;
+        pdata = (void *)(boot_elf + eph[i].offset);
+        memcpy(eph[i].vaddr, pdata, eph[i].filesz);
+        if (eph[i].memsz > eph[i].filesz)
+            memset((u8 *)eph[i].vaddr + eph[i].filesz, 0, eph[i].memsz - eph[i].filesz);
+    }
+
+    LOG("NEUTRINO loader handoff ELF=%s argc=%d\n", filename, argc + 2);
+    for (i = 0; i < argc + 2; i++)
+        LOG("execArgv[%d]=%s\n", i, execArgv[i]);
+
+    SifExitRpc();
+    FlushCache(0);
+    FlushCache(2);
+    return ExecPS2((void *)eh->entry, NULL, argc + 2, execArgv);
+}
+
+void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath, const char *neutrinoCwd, const char *vmc0, const char *vmc1)
 {
     char device[64];
+    char bsdfs[64];
     char filePath[256];
     char compatModes[64];
-    char *argv[6];
+    char cwd[256 + 5];
+    char mc0[256 + 5];
+    char mc1[256 + 5];
+    char *argv[12];
     int argc = 0;
 
     const char *deviceName = getDeviceName(driver);
-    if (!strncmp(deviceName, "apa", 3)) {
+    int isHDL = !strcmp(deviceName, "apa");
+
+    if (isHDL) {
         snprintf(device, sizeof(device), "-bsd=ata");
         argv[argc++] = device;
 
-        snprintf(device, sizeof(device), "-bsdfs=hdl");
-        argv[argc++] = device;
+        snprintf(bsdfs, sizeof(bsdfs), "-bsdfs=hdl");
+        argv[argc++] = bsdfs;
 
         snprintf(filePath, sizeof(filePath), "-dvd=hdl:%s", path);
         argv[argc++] = filePath;
@@ -1228,17 +1289,42 @@ void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int
         argv[argc++] = filePath;
     }
 
+    if (neutrinoCwd && neutrinoCwd[0]) {
+        snprintf(cwd, sizeof(cwd), "-cwd=%s", neutrinoCwd);
+        argv[argc++] = cwd;
+    }
+
+    if (vmc0 && vmc0[0]) {
+        snprintf(mc0, sizeof(mc0), "-mc0=%s", vmc0);
+        argv[argc++] = mc0;
+    }
+
+    if (vmc1 && vmc1[0]) {
+        snprintf(mc1, sizeof(mc1), "-mc1=%s", vmc1);
+        argv[argc++] = mc1;
+    }
+
     snprintf(compatModes, sizeof(compatModes), "-gc=%d", convertCompatmaskToModes(compatmask));
     argv[argc++] = compatModes;
-
-    LOG("COMPAT MODE ARG=%s\n", compatModes);
-    LOG("FILE PATH=%s\n", filePath);
 
     if (gEnableDebug)
         argv[argc++] = "-dbc";
 
-    if (EnablePS2Logo)
+    if (!isHDL)
+        argv[argc++] = "-qb";
+    else if (EnablePS2Logo)
         argv[argc++] = "-logo";
 
-    LoadELFFromFileWithPartition(neutrinoPath, "", argc, argv);
+    LOG("NEUTRINO ELF=%s\n", neutrinoPath);
+    LOG("NEUTRINO CWD=%s\n", neutrinoCwd ? neutrinoCwd : "");
+    LOG("VMC0=%s\n", vmc0 ? vmc0 : "");
+    LOG("VMC1=%s\n", vmc1 ? vmc1 : "");
+    LOG("COMPAT MODE ARG=%s\n", compatModes);
+    LOG("FILE PATH=%s\n", filePath);
+
+    LOG("Launching Neutrino: argc=%d\n", argc);
+    for (int i = 0; i < argc; i++)
+        LOG("argv[%d]=%s\n", i, argv[i]);
+
+    LoadNeutrinoELF(neutrinoPath, argc, argv);
 }
