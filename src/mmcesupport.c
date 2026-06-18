@@ -408,14 +408,14 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     int coreLoader = 0;
     coreLoader = pgcfg->core_loader;
 
-    const char *neutrinoPath = NULL;
+    neutrino_path_t neutrinoPath;
+    const char *neutrinoElf = NULL;
     if (coreLoader) {
-        neutrinoPath = sbFileExists(NEUTRINO_PATH) ? NEUTRINO_PATH : (sbFileExists(NEUTRINO_ALT_PATH) ? NEUTRINO_ALT_PATH : NULL);
-
+        neutrinoElf = sbFindNeutrino(&neutrinoPath, mmcePrefix);
         if (game->format == GAME_FORMAT_USBLD || !strcasecmp(game->extension, ".zso")) {
             guiWarning("Neutrino does not support this file format, launching with <OPL> core", 6);
             coreLoader = 0;
-        } else if (neutrinoPath == NULL) {
+        } else if (neutrinoElf == NULL) {
             guiWarning("Neutrino ELF not found, launching with <OPL> core", 6);
             coreLoader = 0;
         }
@@ -438,7 +438,7 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     }*/
 
     if (coreLoader) {
-        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoPath);
+        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd);
         return;
     }
 

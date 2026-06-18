@@ -1,4 +1,3 @@
-
 #include "include/common.h"
 #include "include/lang.h"
 #include "include/util.h"
@@ -1389,3 +1388,137 @@ int sbLoadImage(const char *path, const char *file)
     return result;
 }
 #endif
+
+static int sbTryNeutrinoPath(neutrino_path_t *path, const char *cwd)
+{
+    int length;
+
+    if (!path || !cwd || !cwd[0])
+        return 0;
+
+    snprintf(path->cwd, sizeof(path->cwd), "%s", cwd);
+
+    length = strlen(path->cwd);
+    if (length <= 0 || length >= sizeof(path->cwd) - 1)
+        return 0;
+
+    if (path->cwd[length - 1] != '/') {
+        path->cwd[length++] = '/';
+        path->cwd[length] = '\0';
+    }
+
+    snprintf(path->elf, sizeof(path->elf), "%sneutrino.elf", path->cwd);
+
+    if (sbFileExists(path->elf)) {
+        LOG("SUPPORTBASE: Neutrino ELF found at '%s'\n", path->elf);
+        return 1;
+    }
+
+    path->elf[0] = '\0';
+    path->cwd[0] = '\0';
+
+    return 0;
+}
+
+/*
+ * HDD path must not use pfs0: because hddLaunchGame() deinitializes/unmounts it before launching Neutrino
+ * For +wOPL: hdd0:+wOPL/neutrino/neutrino.elf
+ * For __common: hdd0:__common/wOPL/neutrino/neutrino.elf
+ */
+const char *sbFindNeutrino(neutrino_path_t *path, const char *preferredPrefix)
+{
+    int i;
+    char cwd[256];
+
+    if (!path)
+        return NULL;
+
+    path->elf[0] = '\0';
+    path->cwd[0] = '\0';
+
+    if (preferredPrefix && preferredPrefix[0]) {
+        if (!strncmp(preferredPrefix, "hdd0:", 5)) {
+            if (preferredPrefix[5] != '+') {
+                snprintf(cwd, sizeof(cwd), "%s/%s/neutrino", preferredPrefix, WOPL_CONFIG_NAME);
+                if (sbTryNeutrinoPath(path, cwd))
+                    return path->elf;
+
+                snprintf(cwd, sizeof(cwd), "%s/%s/NEUTRINO", preferredPrefix, WOPL_CONFIG_NAME);
+                if (sbTryNeutrinoPath(path, cwd))
+                    return path->elf;
+            }
+
+            snprintf(cwd, sizeof(cwd), "%s/neutrino", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return path->elf;
+
+            snprintf(cwd, sizeof(cwd), "%s/NEUTRINO", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return path->elf;
+        } else {
+            snprintf(cwd, sizeof(cwd), "%sneutrino", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return path->elf;
+
+            snprintf(cwd, sizeof(cwd), "%sNEUTRINO", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return path->elf;
+        }
+    }
+
+    for (i = 0; i < MAX_BDM_DEVICES; i++) {
+        snprintf(cwd, sizeof(cwd), "mass%d:/neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:/NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+    }
+
+    for (i = 0; i < 2; i++) {
+        snprintf(cwd, sizeof(cwd), "mmce%d:/neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:/NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return path->elf;
+    }
+
+    if (sbTryNeutrinoPath(path, "mc0:NEUTRINO"))
+        return path->elf;
+
+    if (sbTryNeutrinoPath(path, "mc1:NEUTRINO"))
+        return path->elf;
+
+    if (sbTryNeutrinoPath(path, "mc0:/NEUTRINO"))
+        return path->elf;
+
+    if (sbTryNeutrinoPath(path, "mc1:/NEUTRINO"))
+        return path->elf;
+
+    if (sbTryNeutrinoPath(path, "mc0:/APPS/neutrino"))
+        return path->elf;
+
+    if (sbTryNeutrinoPath(path, "mc1:/APPS/neutrino"))
+        return path->elf;
+
+    return NULL;
+}

@@ -1202,21 +1202,30 @@ static int convertCompatmaskToModes(int compatmask)
     return atoi(result);
 }
 
-void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath)
+void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath, const char *neutrinoCwd)
 {
     char device[64];
+    char bsdfs[64];
     char filePath[256];
     char compatModes[64];
-    char *argv[6];
+    char cwd[256 + 5];
+    char *argv[8];
     int argc = 0;
-
     const char *deviceName = getDeviceName(driver);
+
+    argv[argc++] = (char *)neutrinoPath;
+
+    if (neutrinoCwd && neutrinoCwd[0]) {
+        snprintf(cwd, sizeof(cwd), "-cwd=%s", neutrinoCwd);
+        argv[argc++] = cwd;
+    }
+
     if (!strncmp(deviceName, "apa", 3)) {
         snprintf(device, sizeof(device), "-bsd=ata");
         argv[argc++] = device;
 
-        snprintf(device, sizeof(device), "-bsdfs=hdl");
-        argv[argc++] = device;
+        snprintf(bsdfs, sizeof(bsdfs), "-bsdfs=hdl");
+        argv[argc++] = bsdfs;
 
         snprintf(filePath, sizeof(filePath), "-dvd=hdl:%s", path);
         argv[argc++] = filePath;
@@ -1231,6 +1240,8 @@ void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int
     snprintf(compatModes, sizeof(compatModes), "-gc=%d", convertCompatmaskToModes(compatmask));
     argv[argc++] = compatModes;
 
+    LOG("NEUTRINO ELF=%s\n", neutrinoPath);
+    LOG("NEUTRINO CWD=%s\n", neutrinoCwd ? neutrinoCwd : "");
     LOG("COMPAT MODE ARG=%s\n", compatModes);
     LOG("FILE PATH=%s\n", filePath);
 

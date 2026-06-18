@@ -1122,18 +1122,21 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         isZSO = 1;
     }
 
-    const char *neutrinoPath = NULL;
+    neutrino_path_t neutrinoPath;
+    const char *neutrinoElf = NULL;
     if (coreLoader) {
-        neutrinoPath = sbFileExists(NEUTRINO_PATH) ? NEUTRINO_PATH : (sbFileExists(NEUTRINO_ALT_PATH) ? NEUTRINO_ALT_PATH : NULL);
-
+        neutrinoElf = sbFindNeutrino(&neutrinoPath, gOPLPart);
         if (isZSO) {
             guiWarning("Neutrino does not support this file format, launching with <OPL> core", 6);
             coreLoader = 0;
-        } else if (neutrinoPath == NULL) {
+        } else if (neutrinoElf == NULL) {
             guiWarning("Neutrino ELF not found, launching with <OPL> core", 6);
             coreLoader = 0;
         }
     }
+
+    char partitionName[APA_IDMAX + 1];
+    snprintf(partitionName, sizeof(partitionName), "%s", game->partition_name);
 
     sbMMCESendGameId(game->startup);
 
@@ -1150,8 +1153,8 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     }
 
     if (coreLoader) {
-        LOG("partition_name=[%s] name=[%s] startup=[%s]\n", game->partition_name, game->name, game->startup);
-        sysLaunchNeutrino("apa", game->partition_name, compatMode, EnablePS2Logo, neutrinoPath);
+        LOG("partition_name=[%s]\n", partitionName);
+        sysLaunchNeutrino("apa", partitionName, compatMode, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd);
         return;
     }
 

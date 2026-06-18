@@ -3,9 +3,6 @@
 
 #include "include/mcemu.h"
 
-#define NEUTRINO_PATH     "mc0:NEUTRINO/neutrino.elf"
-#define NEUTRINO_ALT_PATH "mc1:NEUTRINO/neutrino.elf"
-
 extern int gOSDLanguageValue;
 extern int gOSDTVAspectRatio;
 extern int gOSDVideOutput;
@@ -34,7 +31,7 @@ void sysInitPadEmu(void);
 #endif
 
 void sysLaunchLoaderElf(const char *filename, const char *mode_str, int size_cdvdman_irx, void **cdvdman_irx, int size_mcemu_irx, void **mcemu_irx, int EnablePS2Logo, unsigned int compatflags);
-void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath);
+void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath, const char *neutrinoCwd);
 
 int sysLoadModuleBuffer(void *buffer, int size, int argc, char *argv);
 int sysCheckMC(void);
