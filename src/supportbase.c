@@ -1522,3 +1522,22 @@ const char *sbFindNeutrino(neutrino_path_t *path, const char *preferredPrefix)
 
     return NULL;
 }
+
+void sbCreateNeutrinoVMCPath(char *path, int length, const char *prefix, const char *vmc)
+{
+    if (!path || length <= 0)
+        return;
+
+    path[0] = '\0';
+
+    if (!prefix || !prefix[0] || !vmc || !vmc[0])
+        return;
+
+    if (!strncmp(prefix, "hdd0:", 5)) {
+        if (prefix[5] != '+')
+            snprintf(path, length, "%s/%s/VMC/%s.bin", prefix, WOPL_CONFIG_NAME, vmc);
+        else
+            snprintf(path, length, "%s/VMC/%s.bin", prefix, vmc);
+    } else
+        snprintf(path, length, "%sVMC/%s.bin", prefix, vmc);
+}

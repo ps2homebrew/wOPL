@@ -261,11 +261,38 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     u32 layer1_start, layer1_offset;
     unsigned short int layer1_part;
 
-    // No Autolaunch yet
-    if (gAutoLaunchBDMGame == NULL)
+    /* No Autolaunch yet
+    if (gAutoLaunchMMCEGame == NULL)
         game = &mmceGames[id];
     else
-        game = gAutoLaunchBDMGame;
+        game = gAutoLaunchMMCEGame;*/
+
+    game = &mmceGames[id];
+
+    int selectedCore = pgcfg->core_loader == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
+
+    neutrino_path_t neutrinoPath;
+    const char *neutrinoElf = NULL;
+    char neutrinoVmc0[256];
+    char neutrinoVmc1[256];
+
+    neutrinoPath.elf[0] = '\0';
+    neutrinoPath.cwd[0] = '\0';
+    neutrinoVmc0[0] = '\0';
+    neutrinoVmc1[0] = '\0';
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        if (game->format == GAME_FORMAT_USBLD || !strcasecmp(game->extension, ".zso")) {
+            guiWarning("Neutrino does not support this file format, launching with <wOPL> core", 6);
+            selectedCore = CORE_LOADER_WOPL;
+        } else {
+            neutrinoElf = sbFindNeutrino(&neutrinoPath, mmcePrefix);
+            if (neutrinoElf == NULL) {
+                guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
+                selectedCore = CORE_LOADER_WOPL;
+            }
+        }
+    }
 
     void *irx = &mmce_cdvdman_irx;
     int irx_size = size_mmce_cdvdman_irx;
@@ -274,43 +301,47 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     if (settings == NULL)
         return;
 
-    char vmc_name[32];
-    char vmc_path[256];
-    int vmc_size_mb;
-    int vmc_id, size_mcemu_irx = 0;
-    int vmc_fd;
-    mmce_vmc_infos_t mmce_vmc_infos;
-    vmc_superblock_t vmc_superblock;
+    int size_mcemu_irx = 0;
 
-    for (vmc_id = 0; vmc_id < 2; vmc_id++) {
-        memset(&mmce_vmc_infos, 0, sizeof(mmce_vmc_infos));
-        strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
-        vmc_name[sizeof(vmc_name) - 1] = '\0';
-        if (vmc_name[0]) {
-            vmc_size_mb = sysCheckVMC(mmcePrefix, "/", vmc_name, 0, &vmc_superblock);
-            if (vmc_size_mb > 0) {
-                mmce_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
-                mmce_vmc_infos.flags |= 0x100;
-                mmce_vmc_infos.specs.page_size = vmc_superblock.page_size;
-                mmce_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
-                mmce_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
+    if (selectedCore == CORE_LOADER_WOPL) {
+        char vmc_name[32];
+        char vmc_path[256];
+        int vmc_size_mb;
+        int vmc_id;
+        int vmc_fd;
+        mmce_vmc_infos_t mmce_vmc_infos;
+        vmc_superblock_t vmc_superblock;
 
-                sprintf(vmc_path, "%sVMC/%s.bin", mmcePrefix, vmc_name);
+        for (vmc_id = 0; vmc_id < 2; vmc_id++) {
+            memset(&mmce_vmc_infos, 0, sizeof(mmce_vmc_infos));
+            strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
+            vmc_name[sizeof(vmc_name) - 1] = '\0';
+            if (vmc_name[0]) {
+                vmc_size_mb = sysCheckVMC(mmcePrefix, "/", vmc_name, 0, &vmc_superblock);
+                if (vmc_size_mb > 0) {
+                    mmce_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
+                    mmce_vmc_infos.flags |= 0x100;
+                    mmce_vmc_infos.specs.page_size = vmc_superblock.page_size;
+                    mmce_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
+                    mmce_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
 
-                vmc_fd = fileXioOpen(vmc_path, 0x3, 0666);
-                if (vmc_fd >= 0) {
-                    mmce_vmc_infos.fd = fileXioIoctl2(vmc_fd, 0x80, NULL, 0, NULL, 0);
-                    mmce_vmc_infos.active = 1;
+                    sprintf(vmc_path, "%sVMC/%s.bin", mmcePrefix, vmc_name);
+
+                    vmc_fd = fileXioOpen(vmc_path, 0x3, 0666);
+                    if (vmc_fd >= 0) {
+                        mmce_vmc_infos.fd = fileXioIoctl2(vmc_fd, 0x80, NULL, 0, NULL, 0);
+                        mmce_vmc_infos.active = 1;
+                    }
                 }
             }
-        }
 
-        for (i = 0; i < size_mmce_mcemu_irx; i++) {
-            if (((u32 *)&mmce_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
-                if (mmce_vmc_infos.active)
-                    size_mcemu_irx = size_mmce_mcemu_irx;
-                memcpy(&((u32 *)&mmce_mcemu_irx)[i], &mmce_vmc_infos, sizeof(mmce_vmc_infos_t));
-                break;
+            for (i = 0; i < size_mmce_mcemu_irx; i++) {
+                if (((u32 *)&mmce_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
+                    if (mmce_vmc_infos.active)
+                        size_mcemu_irx = size_mmce_mcemu_irx;
+                    memcpy(&((u32 *)&mmce_mcemu_irx)[i], &mmce_vmc_infos, sizeof(mmce_vmc_infos_t));
+                    break;
+                }
             }
         }
     }
@@ -405,20 +436,9 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     LOG("name: %s\n", game->name);
     LOG("start: %s\n", game->startup);
 
-    int coreLoader = 0;
-    coreLoader = pgcfg->core_loader;
-
-    neutrino_path_t neutrinoPath;
-    const char *neutrinoElf = NULL;
-    if (coreLoader) {
-        neutrinoElf = sbFindNeutrino(&neutrinoPath, mmcePrefix);
-        if (game->format == GAME_FORMAT_USBLD || !strcasecmp(game->extension, ".zso")) {
-            guiWarning("Neutrino does not support this file format, launching with <OPL> core", 6);
-            coreLoader = 0;
-        } else if (neutrinoElf == NULL) {
-            guiWarning("Neutrino ELF not found, launching with <OPL> core", 6);
-            coreLoader = 0;
-        }
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sbCreateNeutrinoVMCPath(neutrinoVmc0, sizeof(neutrinoVmc0), mmcePrefix, pgcfg->vmc1);
+        sbCreateNeutrinoVMCPath(neutrinoVmc1, sizeof(neutrinoVmc1), mmcePrefix, pgcfg->vmc2);
     }
 
     // mcReset();
@@ -426,22 +446,22 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 
     mmceSendGameId(game->startup);
 
-    if (gAutoLaunchBDMGame == NULL)
-        deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
+    deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
 
     /* No autolaunch yet
+    if (gAutoLaunchMMCEGame == NULL)
+        deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
     else {
         miniDeinit();
 
-        free(gAutoLaunchBDMGame);
-        gAutoLaunchBDMGame = NULL;
+        free(gAutoLaunchMMCEGame);
+        gAutoLaunchMMCEGame = NULL;
     }*/
 
-    if (coreLoader) {
-        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd);
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
         return;
     }
-
 
     settings->common.zso_cache = 0;
 

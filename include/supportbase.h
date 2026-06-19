@@ -96,5 +96,6 @@ int sbLoadImage(const char *path, const char *file);
 #endif
 
 const char *sbFindNeutrino(neutrino_path_t *path, const char *preferredPrefix);
+void sbCreateNeutrinoVMCPath(char *path, int length, const char *prefix, const char *vmc);
 
 #endif

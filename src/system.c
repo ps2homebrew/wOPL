@@ -1202,14 +1202,16 @@ static int convertCompatmaskToModes(int compatmask)
     return atoi(result);
 }
 
-void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath, const char *neutrinoCwd)
+void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int EnablePS2Logo, const char *neutrinoPath, const char *neutrinoCwd, const char *vmc0, const char *vmc1)
 {
     char device[64];
     char bsdfs[64];
     char filePath[256];
     char compatModes[64];
     char cwd[256 + 5];
-    char *argv[8];
+    char mc0[256 + 5];
+    char mc1[256 + 5];
+    char *argv[12];
     int argc = 0;
     const char *deviceName = getDeviceName(driver);
 
@@ -1237,11 +1239,23 @@ void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int
         argv[argc++] = filePath;
     }
 
+    if (vmc0 && vmc0[0]) {
+        snprintf(mc0, sizeof(mc0), "-mc0=%s", vmc0);
+        argv[argc++] = mc0;
+    }
+
+    if (vmc1 && vmc1[0]) {
+        snprintf(mc1, sizeof(mc1), "-mc1=%s", vmc1);
+        argv[argc++] = mc1;
+    }
+
     snprintf(compatModes, sizeof(compatModes), "-gc=%d", convertCompatmaskToModes(compatmask));
     argv[argc++] = compatModes;
 
     LOG("NEUTRINO ELF=%s\n", neutrinoPath);
     LOG("NEUTRINO CWD=%s\n", neutrinoCwd ? neutrinoCwd : "");
+    LOG("VMC0=%s\n", vmc0 ? vmc0 : "");
+    LOG("VMC1=%s\n", vmc1 ? vmc1 : "");
     LOG("COMPAT MODE ARG=%s\n", compatModes);
     LOG("FILE PATH=%s\n", filePath);
 

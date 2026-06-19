@@ -947,89 +947,25 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     else
         game = gAutoLaunchGame;
 
-    apa_sub_t parts[APA_MAXSUB + 1];
-    char vmc_name[2][32];
-    int part_valid = 0, size_mcemu_irx = 0, nparts;
-    hdd_vmc_infos_t hdd_vmc_infos;
-    memset(&hdd_vmc_infos, 0, sizeof(hdd_vmc_infos_t));
+    int selectedCore = pgcfg->core_loader == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
+    int isZSO = 0;
+    int size_mcemu_irx = 0;
 
-    strncpy(vmc_name[0], pgcfg->vmc1, sizeof(vmc_name[0]) - 1);
-    vmc_name[0][sizeof(vmc_name[0]) - 1] = '\0';
+    neutrino_path_t neutrinoPath;
+    const char *neutrinoElf = NULL;
+    char neutrinoVmc0[256];
+    char neutrinoVmc1[256];
 
-    strncpy(vmc_name[1], pgcfg->vmc2, sizeof(vmc_name[1]) - 1);
-    vmc_name[1][sizeof(vmc_name[1]) - 1] = '\0';
+    neutrinoPath.elf[0] = '\0';
+    neutrinoPath.cwd[0] = '\0';
+    neutrinoVmc0[0] = '\0';
+    neutrinoVmc1[0] = '\0';
 
-    if (vmc_name[0][0] || vmc_name[1][0]) {
-        nparts = hddGetPartitionInfo(gOPLPart, parts);
-        if (nparts > 0 && nparts <= 5) {
-            for (i = 0; i < nparts; i++) {
-                hdd_vmc_infos.parts[i].start = parts[i].start;
-                hdd_vmc_infos.parts[i].length = parts[i].length;
-                LOG("HDDSUPPORT hdd_vmc_infos.parts[%d].start : 0x%X\n", i, hdd_vmc_infos.parts[i].start);
-                LOG("HDDSUPPORT hdd_vmc_infos.parts[%d].length : 0x%X\n", i, hdd_vmc_infos.parts[i].length);
-            }
-            part_valid = 1;
-        }
-    }
-
-    if (part_valid) {
-        char vmc_path[256];
-        int vmc_id, have_error = 0;
-        vmc_superblock_t vmc_superblock;
-        pfs_blockinfo_t blocks[11];
-
-        for (vmc_id = 0; vmc_id < 2; vmc_id++) {
-            if (vmc_name[vmc_id][0]) {
-                have_error = 1;
-                hdd_vmc_infos.active = 0;
-                if (sysCheckVMC(gHDDPrefix, "/", vmc_name[vmc_id], 0, &vmc_superblock) > 0) {
-                    hdd_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
-                    hdd_vmc_infos.flags |= 0x100;
-                    hdd_vmc_infos.specs.page_size = vmc_superblock.page_size;
-                    hdd_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
-                    hdd_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
-
-                    // Check vmc inode block chain (write operation can cause damage)
-                    snprintf(vmc_path, sizeof(vmc_path), "%sVMC/%s.bin", gHDDPrefix, vmc_name[vmc_id]);
-                    if ((nparts = hddGetFileBlockInfo(vmc_path, parts, blocks, 11)) > 0) {
-                        have_error = 0;
-                        hdd_vmc_infos.active = 1;
-                        for (i = 0; i < nparts - 1; i++) {
-                            hdd_vmc_infos.blocks[i].number = blocks[i + 1].number;
-                            hdd_vmc_infos.blocks[i].subpart = blocks[i + 1].subpart;
-                            hdd_vmc_infos.blocks[i].count = blocks[i + 1].count;
-                            LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].number     : 0x%X\n", i, hdd_vmc_infos.blocks[i].number);
-                            LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].subpart    : 0x%X\n", i, hdd_vmc_infos.blocks[i].subpart);
-                            LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].count      : 0x%X\n", i, hdd_vmc_infos.blocks[i].count);
-                        }
-                    } else { // else VMC file is too fragmented
-                        LOG("HDDSUPPORT Block Chain NG\n");
-                        have_error = 2;
-                    }
-                }
-
-                if (have_error) {
-                    if (gAutoLaunchGame == NULL) {
-                        char error[256];
-                        if (have_error == 2) // VMC file is fragmented
-                            snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name[vmc_id], (vmc_id + 1));
-                        else
-                            snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name[vmc_id], (vmc_id + 1));
-                        if (!guiMsgBox(error, 1, NULL))
-                            return;
-                    } else
-                        LOG("VMC error\n");
-                }
-
-                for (i = 0; i < size_hdd_mcemu_irx; i++) {
-                    if (((u32 *)&hdd_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
-                        if (hdd_vmc_infos.active)
-                            size_mcemu_irx = size_hdd_mcemu_irx;
-                        memcpy(&((u32 *)&hdd_mcemu_irx)[i], &hdd_vmc_infos, sizeof(hdd_vmc_infos_t));
-                        break;
-                    }
-                }
-            }
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        neutrinoElf = sbFindNeutrino(&neutrinoPath, gOPLPart);
+        if (neutrinoElf == NULL) {
+            guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
+            selectedCore = CORE_LOADER_WOPL;
         }
     }
 
@@ -1103,10 +1039,6 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     if (gPS2Logo)
         EnablePS2Logo = CheckPS2Logo(0, game->start_sector + OPL_HDD_MODE_PS2LOGO_OFFSET);
 
-    int coreLoader = 0;
-    int isZSO = 0;
-    coreLoader = pgcfg->core_loader;
-
     // Check for ZSO to correctly adjust layer1 start
     settings->common.layer1_start = 0; // cdvdman will read it from APA header
     hddReadSectors(game->start_sector + OPL_HDD_MODE_PS2LOGO_OFFSET, 1, IOBuffer);
@@ -1122,21 +1054,108 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         isZSO = 1;
     }
 
-    neutrino_path_t neutrinoPath;
-    const char *neutrinoElf = NULL;
-    if (coreLoader) {
-        neutrinoElf = sbFindNeutrino(&neutrinoPath, gOPLPart);
-        if (isZSO) {
-            guiWarning("Neutrino does not support this file format, launching with <OPL> core", 6);
-            coreLoader = 0;
-        } else if (neutrinoElf == NULL) {
-            guiWarning("Neutrino ELF not found, launching with <OPL> core", 6);
-            coreLoader = 0;
+    if (selectedCore == CORE_LOADER_NEUTRINO && isZSO) {
+        guiWarning("Neutrino does not support this file format, launching with <wOPL> core", 6);
+        selectedCore = CORE_LOADER_WOPL;
+    }
+
+    if (selectedCore == CORE_LOADER_WOPL) {
+        apa_sub_t parts[APA_MAXSUB + 1];
+        char vmc_name[2][32];
+        int part_valid = 0, nparts;
+        hdd_vmc_infos_t hdd_vmc_infos;
+        memset(&hdd_vmc_infos, 0, sizeof(hdd_vmc_infos_t));
+
+        strncpy(vmc_name[0], pgcfg->vmc1, sizeof(vmc_name[0]) - 1);
+        vmc_name[0][sizeof(vmc_name[0]) - 1] = '\0';
+
+        strncpy(vmc_name[1], pgcfg->vmc2, sizeof(vmc_name[1]) - 1);
+        vmc_name[1][sizeof(vmc_name[1]) - 1] = '\0';
+
+        if (vmc_name[0][0] || vmc_name[1][0]) {
+            nparts = hddGetPartitionInfo(gOPLPart, parts);
+            if (nparts > 0 && nparts <= 5) {
+                for (i = 0; i < nparts; i++) {
+                    hdd_vmc_infos.parts[i].start = parts[i].start;
+                    hdd_vmc_infos.parts[i].length = parts[i].length;
+                    LOG("HDDSUPPORT hdd_vmc_infos.parts[%d].start : 0x%X\n", i, hdd_vmc_infos.parts[i].start);
+                    LOG("HDDSUPPORT hdd_vmc_infos.parts[%d].length : 0x%X\n", i, hdd_vmc_infos.parts[i].length);
+                }
+                part_valid = 1;
+            }
+        }
+
+        if (part_valid) {
+            char vmc_path[256];
+            int vmc_id;
+            vmc_superblock_t vmc_superblock;
+            pfs_blockinfo_t blocks[11];
+
+            for (vmc_id = 0; vmc_id < 2; vmc_id++) {
+                int have_error = 0;
+
+                if (vmc_name[vmc_id][0]) {
+                    have_error = 1;
+                    hdd_vmc_infos.active = 0;
+                    if (sysCheckVMC(gHDDPrefix, "/", vmc_name[vmc_id], 0, &vmc_superblock) > 0) {
+                        hdd_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
+                        hdd_vmc_infos.flags |= 0x100;
+                        hdd_vmc_infos.specs.page_size = vmc_superblock.page_size;
+                        hdd_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
+                        hdd_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
+
+                        // Check vmc inode block chain (write operation can cause damage)
+                        snprintf(vmc_path, sizeof(vmc_path), "%sVMC/%s.bin", gHDDPrefix, vmc_name[vmc_id]);
+                        if ((nparts = hddGetFileBlockInfo(vmc_path, parts, blocks, 11)) > 0) {
+                            have_error = 0;
+                            hdd_vmc_infos.active = 1;
+                            for (i = 0; i < nparts - 1; i++) {
+                                hdd_vmc_infos.blocks[i].number = blocks[i + 1].number;
+                                hdd_vmc_infos.blocks[i].subpart = blocks[i + 1].subpart;
+                                hdd_vmc_infos.blocks[i].count = blocks[i + 1].count;
+                                LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].number     : 0x%X\n", i, hdd_vmc_infos.blocks[i].number);
+                                LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].subpart    : 0x%X\n", i, hdd_vmc_infos.blocks[i].subpart);
+                                LOG("HDDSUPPORT hdd_vmc_infos.blocks[%d].count      : 0x%X\n", i, hdd_vmc_infos.blocks[i].count);
+                            }
+                        } else { // else VMC file is too fragmented
+                            LOG("HDDSUPPORT Block Chain NG\n");
+                            have_error = 2;
+                        }
+                    }
+
+                    if (have_error) {
+                        if (gAutoLaunchGame == NULL) {
+                            char error[256];
+                            if (have_error == 2) // VMC file is fragmented
+                                snprintf(error, sizeof(error), _l(_STR_ERR_VMC_FRAGMENTED_CONTINUE), vmc_name[vmc_id], (vmc_id + 1));
+                            else
+                                snprintf(error, sizeof(error), _l(_STR_ERR_VMC_CONTINUE), vmc_name[vmc_id], (vmc_id + 1));
+                            if (!guiMsgBox(error, 1, NULL))
+                                return;
+                        } else
+                            LOG("VMC error\n");
+                    }
+
+                    for (i = 0; i < size_hdd_mcemu_irx; i++) {
+                        if (((u32 *)&hdd_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
+                            if (hdd_vmc_infos.active)
+                                size_mcemu_irx = size_hdd_mcemu_irx;
+                            memcpy(&((u32 *)&hdd_mcemu_irx)[i], &hdd_vmc_infos, sizeof(hdd_vmc_infos_t));
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 
     char partitionName[APA_IDMAX + 1];
     snprintf(partitionName, sizeof(partitionName), "%s", game->partition_name);
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sbCreateNeutrinoVMCPath(neutrinoVmc0, sizeof(neutrinoVmc0), gOPLPart, pgcfg->vmc1);
+        sbCreateNeutrinoVMCPath(neutrinoVmc1, sizeof(neutrinoVmc1), gOPLPart, pgcfg->vmc2);
+    }
 
     sbMMCESendGameId(game->startup);
 
@@ -1152,9 +1171,9 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
     }
 
-    if (coreLoader) {
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
         LOG("partition_name=[%s]\n", partitionName);
-        sysLaunchNeutrino("apa", partitionName, compatMode, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd);
+        sysLaunchNeutrino("apa", partitionName, compatMode, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
         return;
     }
 

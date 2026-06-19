@@ -9,6 +9,9 @@
 #define CONFIG_GAME    16
 #define CONFIG_ALL     (CONFIG_OPL | CONFIG_NETWORK | CONFIG_GAME)
 
+#define CORE_LOADER_WOPL     0
+#define CORE_LOADER_NEUTRINO 1
+
 extern int gBDMFramesDelay;
 extern int gETHFramesDelay;
 extern int gHDDFramesDelay;
