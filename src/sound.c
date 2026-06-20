@@ -538,14 +538,14 @@ int isBgmPlaying(void)
 // HACK: BGM stutters while perfroming certain tasks, mute during these operations and unmute once completed.
 void bgmMute(void)
 {
-    if (audio_initialized)
-        audsrv_set_volume(0);
+    /*if (audio_initialized)
+        audsrv_set_volume(0);*/
 }
 
 void bgmUnMute(void)
 {
-    if (audio_initialized)
-        audsrv_set_volume(gBGMVolume);
+    /*if (audio_initialized)
+        audsrv_set_volume(gBGMVolume);*/
 }
 
 /*--    General Audio    ------------------------------------------------------------------------------------------------------

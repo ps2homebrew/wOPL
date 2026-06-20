@@ -1,4 +1,3 @@
-
 #include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
@@ -16,6 +15,7 @@
 #include "modules/iopcore/common/cdvd_config.h"
 #include "include/module.h"
 #include "include/initializer.h"
+#include "include/config_wopl.h"
 #include <fcntl.h>
 #include <stdlib.h>
 #include <ps2sdkapi.h>
@@ -44,7 +44,7 @@ typedef struct
     vmc_spec_t specs; /* Card specifications */
 } bdm_vmc_infos_t;
 
-static int iUSBModLoaded = 0;
+//static int usbModLoaded = 0;
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
@@ -113,12 +113,12 @@ static void bdmLoadBlockDeviceModules(void)
 {
     WaitSema(bdmLoadModuleLock);
 
-    /*if (gEnableUSB && !iUSBModLoaded) {
+    /*if (gEnableUSB && !usbModLoaded) {
         // Load USB Block Device drivers
         LOG("[USBMASS_BD]:\n");
         sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
 
-        iUSBModLoaded = 1;
+        usbModLoaded = 1;
     }*/
 
     if (gEnableILK && !iLinkModLoaded) {
@@ -189,7 +189,7 @@ static void bdmInit(item_list_t *itemList)
     pDeviceData->bdmGameCount = 0;
     pDeviceData->bdmGames = NULL;
     bdmLoadModules();
-    configGetInt(configGetByType(CONFIG_OPL), "usb_frames_delay", &itemList->delay);
+    itemList->delay = gBDMFramesDelay;
     itemList->enabled = 1;
 }
 
@@ -358,7 +358,7 @@ static void bdmRenameGame(item_list_t *itemList, int id, char *newName)
     pDeviceData->ForceRefresh = 1;
 }
 
-void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
+void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 {
     int i, fd, iop_fd, index, compatmask = 0;
     int EnablePS2Logo = 0;
@@ -390,7 +390,8 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
 
     for (vmc_id = 0; vmc_id < 2; vmc_id++) {
         memset(&bdm_vmc_infos, 0, sizeof(bdm_vmc_infos_t));
-        configGetVMC(configSet, vmc_name, sizeof(vmc_name), vmc_id);
+        strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
+        vmc_name[sizeof(vmc_name) - 1] = '\0';
         if (vmc_name[0]) {
             have_error = 1;
             int vmcSizeInMb = sysCheckVMC(pDeviceData->bdmPrefix, "/", vmc_name, 0, &vmc_superblock);
@@ -467,7 +468,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         irx_size = size_bdm_cdvdman_irx;
     }
 
-    compatmask = sbPrepare(game, configSet, irx_size, irx, &index);
+    compatmask = sbPrepare(game, pgcfg, irx_size, irx, &index);
     settings = (struct cdvdman_settings_bdm *)((u8 *)irx + index);
     if (settings == NULL)
         return;
@@ -561,13 +562,16 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     }
 #endif
 
-    if (gRememberLastPlayed) {
-        configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        configSave(CONFIG_LAST, 0);
-    }
+    if (gRememberLastPlayed)
+        wOPLLastSave(game->startup);
 
-    if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
-        strcpy(filename, game->startup);
+    if (pgcfg->alt_startup[0]) {
+        strncpy(filename, pgcfg->alt_startup, sizeof(filename) - 1);
+        filename[sizeof(filename) - 1] = '\0';
+    } else {
+        strncpy(filename, game->startup, sizeof(filename) - 1);
+        filename[sizeof(filename) - 1] = '\0';
+    }
 
     // deinit will free per device data.. copy driver name before free to compare for launch
     char bdmCurrentDriver[32];
@@ -577,7 +581,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     if (!strcmp(bdmCurrentDriver, "ata") && strlen(bdmCurrentDriver) == 3) {
         // Get DMA settings for ATA mode.
         int dmaType = 0, dmaMode = 7;
-        configGetInt(configSet, CONFIG_ITEM_DMA, &dmaMode);
+        dmaMode = (pgcfg->dma != 7) ? pgcfg->dma : 7;
 
         // Set DMA mode and spindown time.
         if (dmaMode < 3)
@@ -597,7 +601,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     }
 
     int coreLoader = 0;
-    configGetInt(configSet, CONFIG_ITEM_CORE_LOADER, &coreLoader);
+    coreLoader = pgcfg->core_loader;
 
     const char *neutrinoPath = NULL;
     if (coreLoader) {
@@ -617,7 +621,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     if (gAutoLaunchBDMGame == NULL)
         deinit(NO_EXCEPTION, itemList->mode); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
     else {
-        miniDeinit(configSet);
+        miniDeinit();
 
         free(gAutoLaunchBDMGame);
         gAutoLaunchBDMGame = NULL;
@@ -652,10 +656,22 @@ void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     }
 }
 
-static config_set_t *bdmGetConfig(item_list_t *itemList, int id)
+static void bdmGetInfo(item_list_t *itemList, int id, game_info_t *gi)
 {
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
-    return sbPopulateConfig(&pDeviceData->bdmGames[id], pDeviceData->bdmPrefix, "/");
+    sbPopulateConfig(&pDeviceData->bdmGames[id], pDeviceData->bdmPrefix, "/", gi, NULL);
+}
+
+static void bdmGetPgCfg(item_list_t *itemList, int id, per_game_cfg_t *cfg)
+{
+    bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
+    sbPopulateConfig(&pDeviceData->bdmGames[id], pDeviceData->bdmPrefix, "/", NULL, cfg);
+}
+
+static int bdmSavePgCfg(item_list_t *itemList, int id, const per_game_cfg_t *cfg)
+{
+    bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
+    return sbSaveConfig(&pDeviceData->bdmGames[id], pDeviceData->bdmPrefix, "/", cfg);
 }
 
 static int bdmGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -773,7 +789,7 @@ static char *bdmGetPrefix(item_list_t *itemList)
 static item_list_t bdmGameList = {
     BDM_MODE, 2, 0, 0, MENU_MIN_INACTIVE_FRAMES, BDM_MODE_UPDATE_DELAY, NULL, NULL, &bdmGetTextId, &bdmGetPrefix, &bdmInit, &bdmNeedsUpdate,
     &bdmUpdateGameList, &bdmGetGameCount, &bdmGetGame, &bdmGetGameName, &bdmGetGameNameLength, &bdmGetGameStartup, &bdmDeleteGame, &bdmRenameGame,
-    &bdmLaunchGame, &bdmGetConfig, &bdmGetImage, &bdmGetArchivedImage, &bdmCleanUp, &bdmShutdown, &bdmCheckVMC, &bdmGetIconId};
+    &bdmLaunchGame, &bdmGetInfo, &bdmGetPgCfg, &bdmSavePgCfg, &bdmGetImage, &bdmGetArchivedImage, &bdmCleanUp, &bdmShutdown, &bdmCheckVMC, &bdmGetIconId};
 
 void bdmInitSemaphore()
 {
@@ -952,7 +968,6 @@ int bdmUpdateDeviceData(item_list_t *itemList)
 void autoLaunchBDMGame(char *argv[])
 {
     char path[256];
-    config_set_t *configSet;
 
     miniInit(BDM_MODE);
 
@@ -1026,10 +1041,10 @@ void autoLaunchBDMGame(char *argv[])
         snprintf(gAutoLaunchDeviceData->bdmPrefix, sizeof(gAutoLaunchDeviceData->bdmPrefix), "%s", apaDevicePrefix);
     }
 
-    configSet = configAlloc(0, NULL, path);
-    configRead(configSet);
+    per_game_cfg_t pgcfg;
+    sbPopulateConfig(gAutoLaunchBDMGame, gAutoLaunchDeviceData->bdmPrefix, "/", NULL, &pgcfg);
 
-    bdmLaunchGame(NULL, -1, configSet);
+    bdmLaunchGame(NULL, -1, &pgcfg);
 }
 
 static int bdmWaitForDevice(int deviceId, u32 timeoutMs)

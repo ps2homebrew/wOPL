@@ -1,53 +1,74 @@
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef CONFIG_MIGRATION_H
+#define CONFIG_MIGRATION_H
 
-#include <sys/stat.h>
-#include <tamtypes.h>
+#include "include/iosupport.h"
+#include "include/config_wopl.h"
 
-// Enum for the different types of config files. Game-specific config files (<game ID>.cfg) will always have an ID of 0.
+// ---------------------------------------------------------------------------
+// DELETE_WITH_MIGRATION.. legacy key=value config infrastructure
+// Everything in this file is only needed during the migration period
+// ---------------------------------------------------------------------------
+
+// Each returns 1 on success.. 0 if not found or failed
+int cfgMigrateLegacyOPL(const char *path, int *out_theme_id, int *out_lang_id);
+int cfgMigrateLegacyNet(const char *path);
+int cfgMigrateLegacyGlobalGame(const char *path);
+int cfgMigrateLegacyAppTitleCfg(const char *path);
+int cfgMigrateLegacyTheme(const char *oldPath, const char *newPath);
+
+int cfgBatchMigratePerGame(const char *inputPrefix, const char *outputPrefix, int keepOriginals, void (*progressCb)(int done, int total));
+
+// Config type bits
 enum CONFIG_INDEX {
     CONFIG_INDEX_OPL = 0,
     CONFIG_INDEX_LAST,
     CONFIG_INDEX_APPS,
     CONFIG_INDEX_NETWORK,
     CONFIG_INDEX_GAME,
-
     CONFIG_INDEX_COUNT
 };
 
-// Config type bits
-#define CONFIG_OPL     (1 << CONFIG_INDEX_OPL)
-#define CONFIG_LAST    (1 << CONFIG_INDEX_LAST)
-#define CONFIG_APPS    (1 << CONFIG_INDEX_APPS)
-#define CONFIG_NETWORK (1 << CONFIG_INDEX_NETWORK)
-#define CONFIG_GAME    (1 << CONFIG_INDEX_GAME)
-#define CONFIG_ALL     0xFF
+#define CONFIG_LAST (1 << CONFIG_INDEX_LAST)
+#define CONFIG_APPS (1 << CONFIG_INDEX_APPS)
 
-#define CONFIG_SOURCE_DEFAULT 0
-#define CONFIG_SOURCE_USER    1
-#define CONFIG_SOURCE_DLOAD   2 // Downloaded from the network
+#define CONFIG_KEY_NAME_LEN  32
+#define CONFIG_KEY_VALUE_LEN 256
 
-// Items for per-game config files.
-#define CONFIG_ITEM_NAME         "#Name"
-#define CONFIG_ITEM_LONGNAME     "#LongName"
-#define CONFIG_ITEM_SIZE         "#Size"
-#define CONFIG_ITEM_FORMAT       "#Format"
-#define CONFIG_ITEM_MEDIA        "#Media"
-#define CONFIG_ITEM_STARTUP      "#Startup"
-#define CONFIG_ITEM_ALTSTARTUP   "$AltStartup"
-#define CONFIG_ITEM_VMC          "$VMC"
-#define CONFIG_ITEM_COMPAT       "$Compatibility"
-#define CONFIG_ITEM_DMA          "$DMA"
-#define CONFIG_ITEM_DNAS         "$DNAS"
-#define CONFIG_ITEM_CONFIGSOURCE "$ConfigSource"
-#define CONFIG_ITEM_CORE_LOADER  "$CoreLoader"
+struct config_kv_t
+{
+    char key[CONFIG_KEY_NAME_LEN];
+    char val[CONFIG_KEY_VALUE_LEN];
+    struct config_kv_t *next;
+};
 
+typedef struct
+{
+    int type;
+    struct config_kv_t *head;
+    struct config_kv_t *tail;
+    char *filename;
+    int modified;
+    u32 uid;
+} config_set_t;
+
+// Per-game config keys
+#define CONFIG_ITEM_NAME                "#Name"
+#define CONFIG_ITEM_LONGNAME            "#LongName"
+#define CONFIG_ITEM_SIZE                "#Size"
+#define CONFIG_ITEM_FORMAT              "#Format"
+#define CONFIG_ITEM_MEDIA               "#Media"
+#define CONFIG_ITEM_STARTUP             "#Startup"
+#define CONFIG_ITEM_ALTSTARTUP          "$AltStartup"
+#define CONFIG_ITEM_VMC                 "$VMC"
+#define CONFIG_ITEM_COMPAT              "$Compatibility"
+#define CONFIG_ITEM_DMA                 "$DMA"
+#define CONFIG_ITEM_DNAS                "$DNAS"
+#define CONFIG_ITEM_CORE_LOADER         "$CoreLoader"
 #define CONFIG_ITEM_OSD_SETTINGS_LANGID "$CustomLanguageValue"
 #define CONFIG_ITEM_OSD_SETTINGS_SOURCE "$CustomLanguageSource"
 #define CONFIG_ITEM_OSD_SETTINGS_ENABLE "$OSDSettingsEnable"
 #define CONFIG_ITEM_OSD_SETTINGS_TV_ASP "$OSDAspectRatio"
 #define CONFIG_ITEM_OSD_SETTINGS_VMODE  "$OSDVideoMode"
-// Per-Game GSM keys. -Bat-
 #ifdef GSM
 #define CONFIG_ITEM_GSMSOURCE   "$GSMSource"
 #define CONFIG_ITEM_ENABLEGSM   "$EnableGSM"
@@ -56,15 +77,12 @@ enum CONFIG_INDEX {
 #define CONFIG_ITEM_GSMYOFFSET  "$GSMYOffset"
 #define CONFIG_ITEM_GSMFIELDFIX "$GSMFIELDFix"
 #endif
-
-// Per-Game CHEAT keys. -Bat-
 #ifdef CHEAT
 #define CONFIG_ITEM_CHEATSSOURCE "$CheatsSource"
 #define CONFIG_ITEM_ENABLECHEAT  "$EnableCheat"
 #define CONFIG_ITEM_CHEATMODE    "$CheatMode"
 #define CONFIG_ITEM_ENABLEIMAGE  "$EnableImage"
 #endif
-
 #define CONFIG_ITEM_PADEMUSOURCE     "$PADEMUSource"
 #define CONFIG_ITEM_ENABLEPADEMU     "$EnablePadEmu"
 #define CONFIG_ITEM_PADEMUSETTINGS   "$PadEmuSettings"
@@ -97,11 +115,11 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_DEFAULT_DEVICE       "default_device"
 #define CONFIG_OPL_ENABLE_WRITE         "enable_delete_rename"
 #define CONFIG_OPL_HDD_SPINDOWN         "hdd_spindown"
-#define CONFIG_OPL_BDM_PREFIX           "usb_prefix" // Leave this "usb" for compatibility
+#define CONFIG_OPL_BDM_PREFIX           "usb_prefix"
 #define CONFIG_OPL_ETH_PREFIX           "eth_prefix"
 #define CONFIG_OPL_REMEMBER_LAST        "remember_last"
 #define CONFIG_OPL_AUTOSTART_LAST       "autostart_last"
-#define CONFIG_OPL_BDM_MODE             "usb_mode" // Leave this "usb" for compatibility
+#define CONFIG_OPL_BDM_MODE             "usb_mode"
 #define CONFIG_OPL_HDD_MODE             "hdd_mode"
 #define CONFIG_OPL_ETH_MODE             "eth_mode"
 #define CONFIG_OPL_APP_MODE             "app_mode"
@@ -121,23 +139,21 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ENABLE_MX4SIO        "enable_mx4sio"
 #define CONFIG_OPL_ENABLE_BDMHDD        "enable_bdm_hdd"
 #define CONFIG_OPL_ENABLE_MMCE          "enable_mmce"
-
-#define CONFIG_OPL_COVERFLOW_COUNT "coverflow_count"
-#define CONFIG_OPL_COVERFLOW_SCALE "coverflow_scale"
-#define CONFIG_OPL_COVERFLOW_ANIM  "coverflow_anim"
-#define CONFIG_OPL_COVERFLOW_DIM   "coverflow_dim"
-
-#define CONFIG_OPL_SWAP_SEL_BUTTON   "swap_select_btn"
-#define CONFIG_OPL_PARENTAL_LOCK_PWD "parental_lock_password"
-#define CONFIG_OPL_SFX               "enable_sfx"
-#define CONFIG_OPL_BOOT_SND          "enable_boot_snd"
-#define CONFIG_OPL_BGM               "enable_bgm"
-#define CONFIG_OPL_SFX_VOLUME        "sfx_volume"
-#define CONFIG_OPL_BOOT_SND_VOLUME   "boot_snd_volume"
-#define CONFIG_OPL_BGM_VOLUME        "bgm_volume"
-#define CONFIG_OPL_DEFAULT_BGM_PATH  "default_bgm_path"
-#define CONFIG_OPL_XSENSITIVITY      "x_sensitivity"
-#define CONFIG_OPL_YSENSITIVITY      "y_sensitivity"
+#define CONFIG_OPL_COVERFLOW_COUNT      "coverflow_count"
+#define CONFIG_OPL_COVERFLOW_SCALE      "coverflow_scale"
+#define CONFIG_OPL_COVERFLOW_ANIM       "coverflow_anim"
+#define CONFIG_OPL_COVERFLOW_DIM        "coverflow_dim"
+#define CONFIG_OPL_SWAP_SEL_BUTTON      "swap_select_btn"
+#define CONFIG_OPL_PARENTAL_LOCK_PWD    "parental_lock_password"
+#define CONFIG_OPL_SFX                  "enable_sfx"
+#define CONFIG_OPL_BOOT_SND             "enable_boot_snd"
+#define CONFIG_OPL_BGM                  "enable_bgm"
+#define CONFIG_OPL_SFX_VOLUME           "sfx_volume"
+#define CONFIG_OPL_BOOT_SND_VOLUME      "boot_snd_volume"
+#define CONFIG_OPL_BGM_VOLUME           "bgm_volume"
+#define CONFIG_OPL_DEFAULT_BGM_PATH     "default_bgm_path"
+#define CONFIG_OPL_XSENSITIVITY         "x_sensitivity"
+#define CONFIG_OPL_YSENSITIVITY         "y_sensitivity"
 
 // Network config keys
 #define CONFIG_NET_ETH_LINKM          "eth_linkmode"
@@ -155,37 +171,17 @@ enum CONFIG_INDEX {
 #define CONFIG_NET_SMB_PORT           "smb_port"
 #define CONFIG_NET_NBD_DEFAULT_EXPORT "nbd_default_export"
 
-#define CONFIG_KEY_NAME_LEN  32
-#define CONFIG_KEY_VALUE_LEN 256
-
-struct config_value_t
-{
-    // Including the NULL terminator
-    char key[CONFIG_KEY_NAME_LEN];
-    char val[CONFIG_KEY_VALUE_LEN];
-
-    struct config_value_t *next;
-};
-
-typedef struct
-{
-    int type;
-    struct config_value_t *head;
-    struct config_value_t *tail;
-    char *filename;
-    int modified;
-    u32 uid;
-} config_set_t;
-
-extern char *gBaseMCDir;
-
-void configInit(char *prefix);
-void configSetMove(char *prefix);
-void configMove(config_set_t *configSet, const char *fileName);
-void configEnd();
+// Function declarations
 config_set_t *configAlloc(int type, config_set_t *configSet, char *fileName);
 void configFree(config_set_t *configSet);
 config_set_t *configGetByType(int type);
+void configMove(config_set_t *configSet, const char *fileName);
+void configClear(config_set_t *configSet);
+
+void configInit(char *prefix);
+void configSetMove(char *prefix);
+void configEnd(void);
+
 int configSetStr(config_set_t *configSet, const char *key, const char *value);
 int configGetStr(config_set_t *configSet, const char *key, const char **value);
 int configGetStrCopy(config_set_t *configSet, const char *key, char *value, int length);
@@ -195,14 +191,11 @@ int configSetColor(config_set_t *configSet, const char *key, unsigned char *colo
 int configGetColor(config_set_t *configSet, const char *key, unsigned char *color);
 int configRemoveKey(config_set_t *configSet, const char *key);
 
-void configGetDiscIDBinary(config_set_t *configSet, void *dst);
-
 int configRead(config_set_t *configSet);
 int configReadBuffer(config_set_t *configSet, const void *buffer, int size);
 int configReadMulti(int types);
 int configWrite(config_set_t *configSet);
 int configWriteMulti(int types);
-void configClear(config_set_t *configSet);
 
 void configGetVMC(config_set_t *configSet, char *vmc, int length, int slot);
 void configSetVMC(config_set_t *configSet, const char *vmc, int slot);
@@ -210,15 +203,5 @@ void configRemoveVMC(config_set_t *configSet, int slot);
 
 char *configGetDir(void);
 void configPrepareNotifications(char *prefix);
-
-void loadConfig();
-
-int configCheckLoadConfigBDM(int types);
-
-int configCheckLoadConfigHDD(int types);
-
-int configLoad(int types);
-int configSave(int types, int showUI);
-void configApply(int themeID, int langID, int skipDeviceRefresh);
 
 #endif

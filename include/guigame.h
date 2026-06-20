@@ -6,11 +6,9 @@
 
 int guiGameAltStartupNameHandler(char *text, int maxLen);
 
-char *gameConfigSource(void);
-
 int guiGameVmcNameHandler(char *text, int maxLen);
 void guiGameShowVMCMenu(int id, item_list_t *support);
-void guiGameShowCompatConfig(int id, item_list_t *support, config_set_t *configSet);
+void guiGameShowCompatConfig(int id, item_list_t *support);
 #ifdef GSM
 void guiGameShowGSConfig(void);
 #endif
@@ -22,17 +20,18 @@ void guiGameShowCheatConfig(void);
 #ifdef PADEMU
 void guiGameShowPadEmuConfig(int forceGlobal);
 void guiGameShowPadMacroConfig(int forceGlobal);
-void guiGameSavePadEmuGlobalConfig(config_set_t *configGame);
-void guiGameSavePadMacroGlobalConfig(config_set_t *configGame);
+void guiGameSavePadEmuGlobalConfig(void);
+void guiGameSavePadMacroGlobalConfig(void);
 #endif
 
 void guiGameShowOSDLanguageConfig(int forceGlobal);
-void guiGameSaveOSDLanguageGlobalConfig(config_set_t *configGame);
+void guiGameSaveOSDLanguageGlobalConfig(void);
 
-void guiGameLoadConfig(item_list_t *support, config_set_t *configSet);
-int guiGameSaveConfig(config_set_t *configSet, item_list_t *support);
-void guiGameTestSettings(int id, item_list_t *support, config_set_t *configSet);
+void guiGameLoadConfig(item_list_t *support, per_game_cfg_t *pg);
+int guiGameSaveConfig(per_game_cfg_t *pg, item_list_t *support);
+void guiGameTestSettings(int id, item_list_t *support, per_game_cfg_t *pg);
 
-void guiGameRemoveSettings(config_set_t *configSet);
-void guiGameRemoveGlobalSettings(config_set_t *configGame);
+void guiGameRemoveSettings(per_game_cfg_t *pg);
+void guiGameRemoveGlobalSettings(void);
+
 #endif

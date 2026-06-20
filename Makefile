@@ -83,7 +83,7 @@ ifneq ($(GIT_TAG),latest)
 endif
 endif
 
-FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o tetris.o \
+FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config_wopl.o config_migration.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o lwnbd.o iosupport.o initializer.o zso.o lz4.o \
 		appsupport.o mmcesupport.o favsupport.o gui.o guigame.o vmc_groups.o textures.o tar.o common.o main.o module.o atlas.o nbns.o sound.o ps2cnf.o
 
@@ -106,10 +106,8 @@ EECORE_OBJS = ee_core.o ioprp.o util.o \
 PNG_ASSETS = load0 load1 load2 load3 load4 load5 load6 load7 usb usb_bd ilk_bd \
 	m4s_bd hdd_bd hdd eth app fav mmce fav_mark cross triangle circle square select start left right \
 	settings_bg info cover cover_app disc screen ELF HDL ISO ZSO UL APPS CD DVD Aspect_s Aspect_w Aspect_w1 \
-	Aspect_w2 Device_1 Device_2 Device_3 Device_4 Device_5 Device_6 Device_all Rating_0 \
-	Rating_1 Rating_2 Rating_3 Rating_4 Rating_5 Scan_240p Scan_240p1 Scan_480i Scan_480p \
-	Scan_480p1 Scan_480p2 Scan_480p3 Scan_480p4 Scan_480p5 Scan_576i Scan_576p Scan_720p \
-	Scan_1080i Scan_1080i2 Scan_1080p Vmode_multi Vmode_ntsc Vmode_pal pademu_on pademu_off gsm_off gsm_on cht_off cht_on \
+	Aspect_w2 Rating_0 Rating_1 Rating_2 Rating_3 Rating_4 Rating_5 \
+	Region_pal Region_ntsc pademu_on pademu_off gsm_off gsm_on cht_off cht_on \
 	logo_01 logo_02 logo_03 logo_04 logo_05 logo_06 logo_07 logo_08 logo_09 logo_10 \
 	logo_11 logo_12 logo_13 logo_14 logo_15 logo_16 logo_17 logo_18 logo_19 logo_20 logo_21 \
 	case apps_case \
@@ -142,7 +140,7 @@ PNG_ASSETS_DIR = gfx/
 MAPFILE = wopl.map
 EE_LDFLAGS += -Wl,-Map,$(MAPFILE)
 
-EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc -lkernel -lbz2_static
+EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lconfig -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc -lkernel -lbz2_static
 EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/freetype2 -I$(GSKIT)/include -I$(GSKIT)/ee/dma/include -I$(GSKIT)/ee/gs/include -Imodules/iopcore/common -Imodules/network/common -Imodules/hdd/common -Iinclude
 BIN2C = $(PS2SDK)/bin/bin2c
 

@@ -44,7 +44,7 @@ void hddSetIdleTimeout(int timeout);
 item_list_t *hddGetObject(int initOnly);
 int hddLoadModules(void);
 void hddLoadSupportModules(void);
-void hddLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
+void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg);
 int hddIsPresent();
 void autoLaunchHDDGame(char *argv[]);
 

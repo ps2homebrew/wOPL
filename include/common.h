@@ -3,6 +3,7 @@
 
 
 #include "include/iosupport.h"
+#include "include/config_wopl.h"
 
 #include <stdio.h>
 #include <stdlib.h>

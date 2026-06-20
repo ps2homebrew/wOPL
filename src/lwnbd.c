@@ -1,7 +1,7 @@
 // this need to be on top since some include miss including some headers
 #include "include/common.h"
 
-#include "include/config.h"
+#include "include/config_wopl.h"
 #include "include/extern_irx.h"
 #include "include/gui.h"   // guiExecDeferredOps
 #include "include/ioman.h" // ioBlockOps

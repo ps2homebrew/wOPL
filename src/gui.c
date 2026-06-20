@@ -13,7 +13,8 @@
 #include "include/themes.h"
 #include "include/pad.h"
 #include "include/util.h"
-#include "include/config.h"
+#include "include/config_wopl.h"
+#include "include/config_migration.h" // DELETE_WITH_MIGRATION
 #include "include/system.h"
 #include "include/ethsupport.h"
 #ifdef GSM
@@ -318,7 +319,8 @@ static void guiShowNotifications(void)
         }
 
         if (showCfgPopup) {
-            snprintf(notification, sizeof(notification), _l(_STR_CFG_NOTIFICATION), configGetDir());
+            const char *cfgDir = wOPLGetDir();
+            snprintf(notification, sizeof(notification), _l(_STR_CFG_NOTIFICATION), cfgDir ? cfgDir : "?");
             if ((col_pos = strchr(notification, ':')) != NULL)
                 *(col_pos + 1) = '\0';
 
@@ -835,28 +837,26 @@ void guiShowNetConfig(void)
 void guiShowParentalLockConfig(void)
 {
     int result;
-    char password[CONFIG_KEY_VALUE_LEN];
-    config_set_t *configOPL = configGetByType(CONFIG_OPL);
+    char password[sizeof(gParentalLockPassword)];
 
-    // Set current values
-    configGetStrCopy(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password, CONFIG_KEY_VALUE_LEN); // This will return the current password, or a blank string if it is not set.
+    strncpy(password, gParentalLockPassword, sizeof(password));
     diaSetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password);
 
     result = diaExecuteDialog(diaParentalLockConfig, -1, 1, NULL);
     if (result) {
-        diaGetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password, CONFIG_KEY_VALUE_LEN);
+        diaGetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password, sizeof(password));
 
         if (strlen(password) > 0) {
-            if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
+            if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, sizeof(password)) != 0) {
                 // Store password
-                configSetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password);
+                strncpy(gParentalLockPassword, password, sizeof(gParentalLockPassword) - 1);
+                gParentalLockPassword[sizeof(gParentalLockPassword) - 1] = '\0';
             } else {
                 // Password not acceptable (i.e. master password entered).
                 guiMsgBox(_l(_STR_PARENLOCK_INVALID_PASSWORD), 0, NULL);
             }
         } else {
-            configRemoveKey(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD);
-
+            gParentalLockPassword[0] = '\0';
             guiMsgBox(_l(_STR_PARENLOCK_DISABLE_WARNING), 0, diaParentalLockConfig);
         }
 
@@ -987,6 +987,82 @@ void guiShowCoverflowConfig(void)
         diaGetInt(diaCoverflowConfig, CFG_COVERFLOW_DIM, &gCoverflowDimCovers);
     }
 }
+
+// DELETE_WITH_MIGRATION v
+static int migStatus = 0;
+static int migDone = 0;
+static int migTotal = 0;
+static int migResult = 0;
+static const char *migInput = NULL;
+static const char *migOutput = NULL;
+static int migKeep = 0;
+
+static void migProgressCb(int done, int total)
+{
+    migDone = done;
+    migTotal = total;
+}
+
+static void _runBatchMigration(void)
+{
+    migResult = cfgBatchMigratePerGame(migInput, migOutput, migKeep, migProgressCb);
+    migStatus = 0;
+}
+
+void guiShowCfgMigration(void)
+{
+#define CFG_MIG_MAX_DEVICES 8
+    static char pathStorage[CFG_MIG_MAX_DEVICES][64];
+    static char labelStorage[CFG_MIG_MAX_DEVICES][80];
+    static const char *labelEnum[CFG_MIG_MAX_DEVICES + 1];
+
+    int count = menuGetDevicePaths(pathStorage, labelStorage, CFG_MIG_MAX_DEVICES);
+    if (count == 0) {
+        guiMsgBox("No accessible devices found.", 0, NULL);
+        return;
+    }
+
+    for (int i = 0; i < count; i++)
+        labelEnum[i] = labelStorage[i];
+    labelEnum[count] = NULL;
+
+    diaSetEnum(diaCfgMigration, CFG_MIG_INPUT, labelEnum);
+    diaSetEnum(diaCfgMigration, CFG_MIG_OUTPUT, labelEnum);
+    diaSetInt(diaCfgMigration, CFG_MIG_INPUT, 0);
+    diaSetInt(diaCfgMigration, CFG_MIG_OUTPUT, 0);
+    diaSetInt(diaCfgMigration, CFG_MIG_KEEP_ORIGINALS, 1);
+
+    int ret;
+    while ((ret = diaExecuteDialog(diaCfgMigration, -1, 1, NULL)) == CFG_MIG_CONVERT) {
+        int inputIdx = 0, outputIdx = 0, keepOriginals = 1;
+        diaGetInt(diaCfgMigration, CFG_MIG_INPUT, &inputIdx);
+        diaGetInt(diaCfgMigration, CFG_MIG_OUTPUT, &outputIdx);
+        diaGetInt(diaCfgMigration, CFG_MIG_KEEP_ORIGINALS, &keepOriginals);
+
+        migInput = pathStorage[inputIdx];
+        migOutput = pathStorage[outputIdx];
+        migKeep = keepOriginals;
+        migDone = 0;
+        migTotal = 0;
+        migStatus = 1;
+
+        ioPutRequest(IO_CUSTOM_SIMPLEACTION, &_runBatchMigration);
+
+        char progMsg[64];
+        while (migStatus) {
+            if (migTotal > 0)
+                snprintf(progMsg, sizeof(progMsg), "Converting %d / %d..", migDone, migTotal);
+            else
+                snprintf(progMsg, sizeof(progMsg), "Scanning..");
+            guiRenderTextScreen(progMsg);
+        }
+
+        char msg[64];
+        snprintf(msg, sizeof(msg), "Converted %d / %d cfg file(s).", migResult, migTotal);
+        guiMsgBox(msg, 0, NULL);
+    }
+}
+// DELETE_WITH_MIGRATION ^
 
 int guiShowKeyboard(char *value, int maxLength)
 {
@@ -1839,7 +1915,7 @@ int guiConfirmVideoMode(void)
     return terminate - 1;
 }
 
-int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
+int guiGameShowRemoveSettings(per_game_cfg_t *pgcfg)
 {
     int terminate = 0;
     char message[256];
@@ -1881,14 +1957,14 @@ int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame)
         sfxPlay(SFX_CANCEL);
         return 0;
     } else if (terminate == 2) {
-        guiGameRemoveSettings(configSet);
+        guiGameRemoveSettings(pgcfg);
         snprintf(message, sizeof(message), _l(_STR_GAME_SETTINGS_REMOVED), _l(_STR_PERGAME_SETTINGS));
     } else if (terminate == 3) {
-        guiGameRemoveGlobalSettings(configGame);
+        guiGameRemoveGlobalSettings();
         snprintf(message, sizeof(message), _l(_STR_GAME_SETTINGS_REMOVED), _l(_STR_GLOBAL_SETTINGS));
     } else if (terminate == 4) {
-        guiGameRemoveSettings(configSet);
-        guiGameRemoveGlobalSettings(configGame);
+        guiGameRemoveSettings(pgcfg);
+        guiGameRemoveGlobalSettings();
         snprintf(message, sizeof(message), _l(_STR_GAME_SETTINGS_REMOVED), _l(_STR_ALL_SETTINGS));
     }
     sfxPlay(SFX_CONFIRM);

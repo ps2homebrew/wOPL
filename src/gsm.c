@@ -12,7 +12,8 @@
 */
 
 #include "include/common.h"
-#include "include/config.h"
+#include "include/config_wopl.h"
+#include "include/guigame.h"
 #include "include/util.h"
 #include "include/system.h"
 #include "include/ioman.h"
@@ -25,20 +26,16 @@
 #include <stdio.h>
 #include <unistd.h>
 
-int gEnableGSM;          // Enables GSM - 0 for Off, 1 for On
-static int gGSMVMode;    // See the related predef_vmode
-static int gGSMXOffset;  // 0 - Off, Any other positive or negative value - Relative position for X Offset
-static int gGSMYOffset;  // 0 - Off, Any other positive or negative value - Relative position for Y Offset
-static int gGSMFIELDFix; // Enables/disables the FIELD flipping emulation option. 0 for Off, 1 for On.
-
+int gEnableGSM;   // Enables GSM - 0 for Off, 1 for On
+int gGSMVMode;    // See the related predef_vmode
+int gGSMXOffset;  // 0 - Off, Any other positive or negative value - Relative position for X Offset
+int gGSMYOffset;  // 0 - Off, Any other positive or negative value - Relative position for Y Offset
+int gGSMFIELDFix; // Enables/disables the FIELD flipping emulation option. 0 for Off, 1 for On.
 
 int gGSMSource;
 
-void InitGSMConfig(config_set_t *configSet)
+void InitGSMConfig(const per_game_cfg_t *pgcfg)
 {
-    config_set_t *configGame = configGetByType(CONFIG_GAME);
-
-    // Default values.
     gGSMSource = 0;
     gEnableGSM = 0;
     gGSMVMode = 0;
@@ -46,21 +43,19 @@ void InitGSMConfig(config_set_t *configSet)
     gGSMYOffset = 0;
     gGSMFIELDFix = 0;
 
-    if (configGetInt(configSet, CONFIG_ITEM_GSMSOURCE, &gGSMSource)) {
-        // Load the rest of the per-game GSM configuration, only if GSM is enabled.
-        if (configGetInt(configSet, CONFIG_ITEM_ENABLEGSM, &gEnableGSM) && gEnableGSM) {
-            configGetInt(configSet, CONFIG_ITEM_GSMVMODE, &gGSMVMode);
-            configGetInt(configSet, CONFIG_ITEM_GSMXOFFSET, &gGSMXOffset);
-            configGetInt(configSet, CONFIG_ITEM_GSMYOFFSET, &gGSMYOffset);
-            configGetInt(configSet, CONFIG_ITEM_GSMFIELDFIX, &gGSMFIELDFix);
-        }
+    if (pgcfg && pgcfg->gsm_source == SETTINGS_PERGAME) {
+        gGSMSource = SETTINGS_PERGAME;
+        gEnableGSM = pgcfg->gsm_enable;
+        gGSMVMode = pgcfg->gsm_vmode;
+        gGSMXOffset = pgcfg->gsm_xoffset;
+        gGSMYOffset = pgcfg->gsm_yoffset;
+        gGSMFIELDFix = pgcfg->gsm_fieldfix;
     } else {
-        if (configGetInt(configGame, CONFIG_ITEM_ENABLEGSM, &gEnableGSM) && gEnableGSM) {
-            configGetInt(configGame, CONFIG_ITEM_GSMVMODE, &gGSMVMode);
-            configGetInt(configGame, CONFIG_ITEM_GSMXOFFSET, &gGSMXOffset);
-            configGetInt(configGame, CONFIG_ITEM_GSMYOFFSET, &gGSMYOffset);
-            configGetInt(configGame, CONFIG_ITEM_GSMFIELDFIX, &gGSMFIELDFix);
-        }
+        gEnableGSM = gGlobalGameCfg.gsm_enable;
+        gGSMVMode = gGlobalGameCfg.gsm_vmode;
+        gGSMXOffset = gGlobalGameCfg.gsm_xoffset;
+        gGSMYOffset = gGlobalGameCfg.gsm_yoffset;
+        gGSMFIELDFix = gGlobalGameCfg.gsm_fieldfix;
     }
 }
 
@@ -69,7 +64,7 @@ int GetGSMEnabled(void)
     return gEnableGSM;
 }
 
-void PrepareGSM(char *cmdline, struct GsmConfig_t *config)
+void PrepareGSM(char *cmdline, struct GsmConfig_t *config, int vmode, int xoff, int yoff, int fieldfix)
 {
     /* Preparing GSM */
     LOG("Preparing GSM...\n");
@@ -114,8 +109,8 @@ void PrepareGSM(char *cmdline, struct GsmConfig_t *config)
     char romver[16], romverNum[5], *pROMDate;
 
 #ifdef _DTL_T10000
-    if (predef_vmode[gGSMVMode].mode == GS_MODE_DTV_576P) // There is no 576P code implemented for development TOOLs.
-        gGSMVMode = 2;                                    // Change to PAL instead.
+    if (predef_vmode[vmode].mode == GS_MODE_DTV_576P) // There is no 576P code implemented for development TOOLs.
+        vmode = 2;                                    // Change to PAL instead.
 #endif
 
     k576p_fix = 0;
@@ -144,31 +139,31 @@ void PrepareGSM(char *cmdline, struct GsmConfig_t *config)
         kGsDxDyOffsetSupported = (strtoul(pROMDate, NULL, 10) > 20010608);
     }
 
-    FIELD_fix = gGSMFIELDFix != 0 ? 1 : 0;
+    FIELD_fix = fieldfix != 0 ? 1 : 0;
 
     if (cmdline) {
-        sprintf(cmdline, "%hhu %hhu %hhu %llu %llu %hu %u %u %d %d %d", predef_vmode[gGSMVMode].interlace,
-                predef_vmode[gGSMVMode].mode,
-                predef_vmode[gGSMVMode].ffmd,
-                predef_vmode[gGSMVMode].display,
-                predef_vmode[gGSMVMode].syncv,
-                ((predef_vmode[gGSMVMode].ffmd) << 1) | (predef_vmode[gGSMVMode].interlace),
-                (u32)gGSMXOffset,
-                (u32)gGSMYOffset,
+        sprintf(cmdline, "%hhu %hhu %hhu %llu %llu %hu %u %u %d %d %d", predef_vmode[vmode].interlace,
+                predef_vmode[vmode].mode,
+                predef_vmode[vmode].ffmd,
+                predef_vmode[vmode].display,
+                predef_vmode[vmode].syncv,
+                ((predef_vmode[vmode].ffmd) << 1) | (predef_vmode[vmode].interlace),
+                (u32)xoff,
+                (u32)yoff,
                 k576p_fix,
                 kGsDxDyOffsetSupported,
                 FIELD_fix);
     }
 
     if (config) {
-        config->interlace = predef_vmode[gGSMVMode].interlace;
-        config->mode = predef_vmode[gGSMVMode].mode;
-        config->ffmd = predef_vmode[gGSMVMode].ffmd;
-        config->display = predef_vmode[gGSMVMode].display;
-        config->syncv = predef_vmode[gGSMVMode].syncv;
-        config->smode2 = ((predef_vmode[gGSMVMode].ffmd) << 1) | (predef_vmode[gGSMVMode].interlace);
-        config->dx_offset = (u32)gGSMXOffset;
-        config->dy_offset = (u32)gGSMYOffset;
+        config->interlace = predef_vmode[vmode].interlace;
+        config->mode = predef_vmode[vmode].mode;
+        config->ffmd = predef_vmode[vmode].ffmd;
+        config->display = predef_vmode[vmode].display;
+        config->syncv = predef_vmode[vmode].syncv;
+        config->smode2 = ((predef_vmode[vmode].ffmd) << 1) | (predef_vmode[vmode].interlace);
+        config->dx_offset = (u32)xoff;
+        config->dy_offset = (u32)yoff;
         config->k576P_fix = k576p_fix;
         config->kGsDxDyOffsetSupported = kGsDxDyOffsetSupported;
         config->FIELD_fix = FIELD_fix;
