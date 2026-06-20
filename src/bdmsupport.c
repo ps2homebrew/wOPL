@@ -44,7 +44,8 @@ typedef struct
     vmc_spec_t specs; /* Card specifications */
 } bdm_vmc_infos_t;
 
-// static int usbModLoaded = 0;
+static int bdmModulesLoaded = 0;
+//static int usbModLoaded = 0;
 static int iLinkModLoaded = 0;
 static int mx4sioModLoaded = 0;
 static int hddModLoaded = 0;
@@ -63,7 +64,6 @@ int gEnableMX4SIO;
 int gEnableBdmHDD;
 base_game_info_t *gAutoLaunchBDMGame;
 bdm_device_data_t *gAutoLaunchDeviceData;
-
 
 void bdmInitDevicesData();
 int bdmUpdateDeviceData(item_list_t *itemList);
@@ -160,30 +160,34 @@ void bdmLoadModules(void)
 {
     LOG("BDMSUPPORT LoadModules\n");
 
-    guiSetBootStatusIfActive("Loading block device modules...");
+    if (!bdmModulesLoaded) {
+        guiSetBootStatusIfActive("Loading block device modules...");
 
-    // Load Block Device Manager (BDM)
-    LOG("[BDM]:\n");
-    sysLoadModuleBuffer(&bdm_irx, size_bdm_irx, 0, NULL);
+        // Load Block Device Manager (BDM)
+        LOG("[BDM]:\n");
+        sysLoadModuleBuffer(&bdm_irx, size_bdm_irx, 0, NULL);
 
-    // Load FATFS (mass:) driver
-    LOG("[BDMFS_FATFS]:\n");
-    sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
+        // Load FATFS (mass:) driver
+        LOG("[BDMFS_FATFS]:\n");
+        sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
 
-    guiSetBootStatusIfActive("Loading USB modules...");
+        guiSetBootStatusIfActive("Loading USB modules...");
 
-    LOG("[USBD]:\n");
-    sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
+        LOG("[USBD]:\n");
+        sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
 
-    LOG("[USBMASS_BD]:\n");
-    sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
+        LOG("[USBMASS_BD]:\n");
+        sysLoadModuleBuffer(&usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL);
+
+        LOG("[BDMEVENT]:\n");
+        sysLoadModuleBuffer(&bdmevent_irx, size_bdmevent_irx, 0, NULL);
+        SifAddCmdHandler(0, &bdmEventHandler, NULL);
+
+        bdmModulesLoaded = 1;
+    }
 
     // Load Optional Block Device drivers
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &bdmLoadBlockDeviceModules);
-
-    LOG("[BDMEVENT]:\n");
-    sysLoadModuleBuffer(&bdmevent_irx, size_bdmevent_irx, 0, NULL);
-    SifAddCmdHandler(0, &bdmEventHandler, NULL);
 
     LOG("BDMSUPPORT Modules loaded\n");
 }
@@ -1165,45 +1169,33 @@ static int bdmGetATADeviceId()
 
 int bdmHDDIsPresent(u32 timeoutMs)
 {
-    int hdd_id = -1;
-    int timedout = 0;
+    const int RETRY_DELAY = 100; // ms
+    u32 start;
 
     if (!hddIsPresent())
         return 0;
 
-    // 1. scan via normal methods first...
-    hdd_id = bdmGetATADeviceId();
-    if (hdd_id >= 0)
+    if (bdmGetATADeviceId() >= 0)
         return 1;
 
-    // 2. try to scan as fast as possible if the previous scan fails...
-    hdd_id = 0;
+    if (timeoutMs == 0)
+        return 0;
 
-    for (int i = 0; i < MAX_BDM_DEVICES; i++) {
-        // find the first inaccessible device - this one should be the HDD once it's mounted (we don't have access to device data at this point yet!)
-        if (!bdmDeviceIsPresent(i)) {
-            hdd_id = i;
+    start = GetTimerSystemTime();
+
+    while (1) {
+        u32 elapsed_ms = (GetTimerSystemTime() - start) / (kBUSCLK / 1000);
+
+        if (elapsed_ms >= timeoutMs)
             break;
-        }
-    }
 
-    if (bdmWaitForDevice(hdd_id, timeoutMs)) {
-        // double-check to see if this indeed is the HDD, and if it is, we can exit early without stalling any further
-        if (bdmDeviceIsATA(hdd_id)) {
+        DelayThread(RETRY_DELAY * 1000);
+
+        if (bdmGetATADeviceId() >= 0)
             return 1;
-        } else
-            LOG("bdmHDDIsPresent: device at id %d is not an ATA HDD...\n", hdd_id);
-    } else {
-        timedout = 1;
-        LOG("bdmHDDIsPresent: waiting for hdd at id %d timed out...\n", hdd_id);
     }
 
-    // 3. last resort - time out (if needed) and scan again...
-    if (!timedout) {
-        // if we haven't timed out already, then we need to wait for the devices to wake up... wait for the timeout...
-        LOG("bdmHDDIsPresent: waiting for timeout before scanning again...\n", hdd_id);
-        DelayThread(timeoutMs * 1000);
-    }
+    LOG("bdmHDDIsPresent: waiting for BDM ATA device timed out.\n");
 
-    return bdmGetATADeviceId() >= 0;
+    return 0;
 }
