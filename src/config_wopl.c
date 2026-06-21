@@ -1525,7 +1525,6 @@ void configApply(int themeID, int langID, int skipDeviceRefresh)
     int changed = rmSetMode(0);
     guiUnlock();
     if (changed) {
-        bgmMute();
         // reinit the graphics...
         thmReloadScreenExtents();
         guiReloadScreenExtents();
@@ -1555,8 +1554,6 @@ void configApply(int themeID, int langID, int skipDeviceRefresh)
             }
         }
     }
-
-    bgmUnMute();
 
 #ifdef __DEBUG
     debugApplyConfig();
