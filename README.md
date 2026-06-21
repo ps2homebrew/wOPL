@@ -66,6 +66,9 @@ v1.2
 * Pademu fixes on frontend thanks to krahjohilito
 * BDM USB fixes
 * Fix send game id on mmce thanks to mystq
+* Add unimplmemented icons for pademu, gsm and cheats
+* Migrated from old internal config api to libconfig thanks to krahjohilito
+* Added splash boot notifications and version text thanks to krahjohilito
 
 ### ART/CFG/CHT .tar compact support
 
