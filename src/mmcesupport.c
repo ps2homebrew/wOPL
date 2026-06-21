@@ -69,6 +69,8 @@ void mmceSetPrefix(void)
 void mmceLoadModules(void)
 {
     LOG("MMCESUPPORT LoadModules\n");
+    guiSetBootStatusIfActive("Loading MMCE modules...");
+
     LOG("[MMCEMAN]:\n");
     sysLoadModuleBuffer(&mmceman_irx, size_mmceman_irx, 0, NULL);
 }
@@ -91,8 +93,10 @@ void mmceInit(item_list_t *itemList)
         sprintf(mmcePrefix, "mmce0:/");
     else if (gMMCESlot == 1)
         sprintf(mmcePrefix, "mmce1:/");
-    else if (gMMCESlot == 2)
+    else if (gMMCESlot == 2) {
+        guiSetBootStatusIfActive("Detecting MMCE slot...");
         mmceDetectSlot();
+    }
 
     mmceGameList.enabled = 1;
 }
@@ -176,6 +180,8 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 
     // update Themes
     if (!ThemesLoaded) {
+        guiSetBootStatusIfActive("Loading MMCE themes...");
+
         sprintf(path, "%sTHM", mmcePrefix);
         if (thmAddElements(path, "/", 1) > 0)
             ThemesLoaded = 1;
@@ -183,11 +189,14 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 
     // update Languages
     if (!LanguagesLoaded) {
+        guiSetBootStatusIfActive("Loading MMCE languages...");
+
         sprintf(path, "%sLNG", mmcePrefix);
         if (lngAddLanguages(path, "/", mmceGameList.mode) > 0)
             LanguagesLoaded = 1;
     }
 
+    guiSetBootStatusIfActive("Checking MMCE folders...");
     sbCreateFolders(mmcePrefix, 1);
 
     return result;
@@ -195,6 +204,8 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 
 static int mmceUpdateGameList(item_list_t *itemList)
 {
+    guiSetBootStatusIfActive("Scanning MMCE games...");
+
     sbReadList(&mmceGames, mmcePrefix, &mmceULSizePrev, &mmceGameCount);
     return mmceGameCount;
 }

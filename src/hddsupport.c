@@ -499,17 +499,24 @@ static int hddGetFileBlockInfo(const char *name, const apa_sub_t *subs, pfs_bloc
 
 static void hddInitModules(void)
 {
+    guiSetBootStatusIfActive("Loading HDD modules...");
     hddLoadModules();
+
+    guiSetBootStatusIfActive("Mounting HDD...");
     hddLoadSupportModules();
 
     // update Themes
     char path[256];
+
+    guiSetBootStatusIfActive("Loading HDD themes...");
     sprintf(path, "%sTHM", gHDDPrefix);
     thmAddElements(path, "/", 1);
 
+    guiSetBootStatusIfActive("Loading HDD languages...");
     sprintf(path, "%sLNG", gHDDPrefix);
     lngAddLanguages(path, "/", hddGameList.mode);
 
+    guiSetBootStatusIfActive("Checking HDD folders...");
     sbCreateFolders(gHDDPrefix, 0);
 }
 
@@ -864,11 +871,15 @@ static int hddUpdateGameList(item_list_t *itemList)
     hdl_games_list_t hddGamesNew;
     int ret;
 
+    guiSetBootStatusIfActive("Loading HDD game cache...");
     if (((ret = hddLoadGameListCache(&hddGames)) != 0) || (hddForceUpdate)) {
+        guiSetBootStatusIfActive("Scanning HDD games...");
+
         hddGamesNew.count = 0;
         hddGamesNew.games = NULL;
         ret = hddGetHDLGamelist(&hddGamesNew);
         if (ret == 0) {
+            guiSetBootStatusIfActive("Updating HDD game cache...");
             hddUpdateGameListCache(&hddGames, &hddGamesNew);
             hddFreeHDLGamelist(&hddGames);
             hddGames = hddGamesNew;

@@ -122,6 +122,8 @@ static void bdmLoadBlockDeviceModules(void)
     }*/
 
     if (gEnableILK && !iLinkModLoaded) {
+        guiSetBootStatusIfActive("Loading iLink modules...");
+
         // Load iLink Block Device drivers
         LOG("[ILINKMAN]:\n");
         sysLoadModuleBuffer(&iLinkman_irx, size_iLinkman_irx, 0, NULL);
@@ -132,6 +134,8 @@ static void bdmLoadBlockDeviceModules(void)
     }
 
     if (gEnableMX4SIO && !mx4sioModLoaded) {
+        guiSetBootStatusIfActive("Loading MX4SIO modules...");
+
         // Load MX4SIO Block Device drivers
         LOG("[MX4SIO_BD]:\n");
         sysLoadModuleBuffer(&mx4sio_bd_irx, size_mx4sio_bd_irx, 0, NULL);
@@ -140,6 +144,8 @@ static void bdmLoadBlockDeviceModules(void)
     }
 
     if (gEnableBdmHDD && !hddModLoaded) {
+        guiSetBootStatusIfActive("Loading BDM HDD modules...");
+
         // Load dev9 and atad device drivers.
         LOG("bdmLoadBlockDeviceModules loading hdd drivers...\n");
         hddLoadModules();
@@ -154,6 +160,8 @@ void bdmLoadModules(void)
 {
     LOG("BDMSUPPORT LoadModules\n");
 
+    guiSetBootStatusIfActive("Loading block device modules...");
+
     // Load Block Device Manager (BDM)
     LOG("[BDM]:\n");
     sysLoadModuleBuffer(&bdm_irx, size_bdm_irx, 0, NULL);
@@ -161,6 +169,8 @@ void bdmLoadModules(void)
     // Load FATFS (mass:) driver
     LOG("[BDMFS_FATFS]:\n");
     sysLoadModuleBuffer(&bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL);
+
+    guiSetBootStatusIfActive("Loading USB modules...");
 
     LOG("[USBD]:\n");
     sysLoadModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL);
@@ -280,6 +290,8 @@ static int bdmNeedsUpdate(item_list_t *itemList)
 
     // update Themes
     if (!pDeviceData->ThemesLoaded) {
+        guiSetBootStatusIfActive("Loading block device themes...");
+
         sprintf(path, "%sTHM", pDeviceData->bdmPrefix);
         if (thmAddElements(path, "/", 1) > 0)
             pDeviceData->ThemesLoaded = 1;
@@ -287,11 +299,14 @@ static int bdmNeedsUpdate(item_list_t *itemList)
 
     // update Languages
     if (!pDeviceData->LanguagesLoaded) {
+        guiSetBootStatusIfActive("Loading block device languages...");
+
         sprintf(path, "%sLNG", pDeviceData->bdmPrefix);
         if (lngAddLanguages(path, "/", itemList->mode) > 0)
             pDeviceData->LanguagesLoaded = 1;
     }
 
+    guiSetBootStatusIfActive("Checking block device folders...");
     sbCreateFolders(pDeviceData->bdmPrefix, 1);
 
     return result;
@@ -300,6 +315,8 @@ static int bdmNeedsUpdate(item_list_t *itemList)
 static int bdmUpdateGameList(item_list_t *itemList)
 {
     bdm_device_data_t *pDeviceData = (bdm_device_data_t *)itemList->priv;
+
+    guiSetBootStatusIfActive("Scanning block device games...");
 
     sbReadList(&pDeviceData->bdmGames, pDeviceData->bdmPrefix, &pDeviceData->bdmULSizePrev, &pDeviceData->bdmGameCount);
     return pDeviceData->bdmGameCount;

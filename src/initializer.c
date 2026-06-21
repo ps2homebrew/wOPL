@@ -58,7 +58,6 @@ static void initMenuForListSupport(opl_io_module_t *mod)
     guiDeferUpdate(mc);
 }
 
-
 void initSupport(item_list_t *itemList, int mode, int force_reinit)
 {
     opl_io_module_t *mod = &list_support[mode];
@@ -100,6 +99,7 @@ void initSupport(item_list_t *itemList, int mode, int force_reinit)
 void initAllSupport(int force_reinit)
 {
     bdmEnumerateDevices();
+
     initSupport(ethGetObject(0), ETH_MODE, force_reinit || (gNetworkStartup >= ERROR_ETH_SMB_CONN));
     initSupport(hddGetObject(0), HDD_MODE, force_reinit);
     initSupport(appGetObject(0), APP_MODE, force_reinit);
@@ -244,15 +244,23 @@ void init(void)
     lngInit();
     thmInit();
     guiInit();
+    guiShowBootStatus("Starting wOPL...");
+
+    guiShowBootStatus("Initializing I/O...");
     ioInit();
+
+    guiShowBootStatus("Loading menus...");
     menuInit();
 
+    guiShowBootStatus("Starting pads...");
     startPads();
 
     bdmInitSemaphore();
 
     // handler for deffered menu updates
     ioRegisterHandler(IO_MENU_UPDATE_DEFFERED, &menuDeferredUpdate);
+
+    guiShowBootStatus("Loading cache...");
     cacheInit();
 
     gSelectButton = (InitConsoleRegionData() == CONSOLE_REGION_JAPAN) ? KEY_CIRCLE : KEY_CROSS;
@@ -261,12 +269,13 @@ void init(void)
         padStatus = startPads();
     readPads();
     if (!getKeyPressed(KEY_START)) {
+        guiShowBootStatus("Loading settings...");
         _loadConfig(); // only try to restore config if emergency key is not being pressed
     } else {
+        guiShowBootStatus("Skipping settings...");
         LOG("--- SKIPPING OPL CONFIG LOADING\n");
         configApply(-1, -1, 0);
     }
-
 
     // queue deffered init of sound effects, which will take place after the preceding initialization steps within the queue are complete.
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredAudioInit);
@@ -299,6 +308,7 @@ void deinit(int exception, int modeSelected)
 
 void deferredInit(void)
 {
+    guiSetBootStatusIfActive("Ready.");
 
     // inform GUI main init part is over
     struct gui_update_t *id = guiOpCreate(GUI_INIT_DONE);
@@ -314,6 +324,8 @@ void deferredInit(void)
 void deferredAudioInit(void)
 {
     int ret;
+
+    guiSetBootStatusIfActive("Loading audio...");
 
     audioInit();
     ret = sfxInit(1);

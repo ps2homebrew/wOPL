@@ -39,7 +39,6 @@
 // Last Played Auto Start
 #include <time.h>
 
-
 static int gScheduledOps;
 static int gCompletedOps;
 static int gTerminate;
@@ -81,8 +80,24 @@ static float fps = 0.0f;
 extern GSGLOBAL *gsGlobal;
 #endif
 
-
 #define VMODE_CHANGE_CONFIRMATION_TIMEOUT_MS 10000
+
+#define BOOT_TEXT_FONT_SIZE   14
+#define BOOT_ANIM_START_LOGO  LOGO_01
+#define BOOT_ANIM_END_LOGO    LOGO_21
+#define BOOT_FADE_LOGO        LOGO_17
+#define BOOT_LOGO_FRAME_DELAY 6
+#define BOOT_LOGO_FRAME_COUNT (BOOT_ANIM_END_LOGO - BOOT_ANIM_START_LOGO + 1)
+
+static int gBootLogoFrame = BOOT_ANIM_START_LOGO;
+static int gBootLogoFrameDelay = 0;
+static int gBootLogoFadeCountdown = -1;
+static int gBootLogoReadyToFade = 0;
+
+static int gBootTextFont = FNT_ERROR;
+static int gBootTextFontLoaded = 0;
+static int gBootStatusActive = 0;
+static char gBootStatus[256];
 
 // Global data
 int guiInactiveFrames;
@@ -150,6 +165,12 @@ void guiInit(void)
     gInitComplete = 0;
     gScheduledOps = 0;
     gCompletedOps = 0;
+    gBootStatusActive = 1;
+    gBootStatus[0] = '\0';
+    gBootLogoFrame = BOOT_ANIM_START_LOGO;
+    gBootLogoFrameDelay = 0;
+    gBootLogoFadeCountdown = -1;
+    gBootLogoReadyToFade = 0;
 
     gUpdateList = NULL;
     gUpdateEnd = NULL;
@@ -190,6 +211,15 @@ void guiInit(void)
 
 void guiEnd()
 {
+    gBootStatusActive = 0;
+    gBootStatus[0] = '\0';
+
+    if (gBootTextFontLoaded && gBootTextFont != FNT_ERROR)
+        fntRelease(gBootTextFont);
+
+    gBootTextFont = FNT_ERROR;
+    gBootTextFontLoaded = 0;
+
     if (gBackgroundTex.Mem)
         free(gBackgroundTex.Mem);
 
@@ -1213,16 +1243,142 @@ static void guiDrawBusy(int alpha)
     }
 }
 
-static void guiRenderGreeting(int alpha)
+static int guiGetBootTextFont(void)
+{
+    if (gBootTextFont == FNT_ERROR) {
+        gBootTextFont = fntLoadFile(NULL, BOOT_TEXT_FONT_SIZE);
+
+        if (gBootTextFont != FNT_ERROR) {
+            gBootTextFontLoaded = 1;
+        } else {
+            gBootTextFont = gTheme->fonts[0];
+            gBootTextFontLoaded = 0;
+        }
+    }
+
+    return gBootTextFont;
+}
+
+void guiSetBootStatusIfActive(const char *status)
+{
+    if (gBootStatusActive) {
+        if (status) {
+            strncpy(gBootStatus, status, sizeof(gBootStatus) - 1);
+            gBootStatus[sizeof(gBootStatus) - 1] = '\0';
+        } else
+            gBootStatus[0] = '\0';
+    }
+}
+
+static void guiDrawBootStatus(int alpha)
+{
+    int font;
+    int y;
+
+    if (!gBootStatus[0])
+        return;
+
+    font = guiGetBootTextFont();
+    y = (gTheme->usedHeight >> 1) + 90;
+
+    fntRenderString(font, screenWidth >> 1, y, ALIGN_CENTER, 0, 0, gBootStatus, GS_SETREG_RGBA(0x70, 0x70, 0x70, alpha));
+}
+
+static void guiDrawBootVersion(int alpha)
+{
+    char version[96];
+    int font;
+    int width;
+    int x;
+    int y;
+
+    snprintf(version, sizeof(version), "wOPL %s", WOPL_VERSION);
+
+    font = guiGetBootTextFont();
+
+    width = rmUnScaleX(fntCalcDimensions(font, version));
+    x = screenWidth - width - 16;
+    y = gTheme->usedHeight - 20;
+
+    fntRenderString(font, x, y, ALIGN_NONE, 0, 0, version, GS_SETREG_RGBA(0x50, 0x50, 0x50, alpha));
+}
+
+static int guiGetBootLogoFrameDistance(int from, int to)
+{
+    int distance = to - from;
+
+    if (distance < 0)
+        distance += BOOT_LOGO_FRAME_COUNT;
+
+    return distance;
+}
+
+static void guiAdvanceBootLogoFrame(void)
+{
+    if (gBootLogoFrame < BOOT_ANIM_END_LOGO)
+        gBootLogoFrame++;
+    else
+        gBootLogoFrame = BOOT_ANIM_START_LOGO;
+}
+
+static GSTEXTURE *guiGetGreetingLogo(void)
+{
+    GSTEXTURE *logo = thmGetTexture(gBootLogoFrame);
+
+    if (!logo)
+        logo = thmGetTexture(LOGO_01);
+
+    if (!gBootLogoReadyToFade) {
+        gBootLogoFrameDelay++;
+
+        if (gBootLogoFrameDelay >= BOOT_LOGO_FRAME_DELAY) {
+            gBootLogoFrameDelay = 0;
+
+            guiAdvanceBootLogoFrame();
+
+            if (gBootLogoFadeCountdown > 0) {
+                gBootLogoFadeCountdown--;
+
+                if (gBootLogoFadeCountdown == 0) {
+                    gBootLogoFrame = BOOT_FADE_LOGO;
+                    gBootLogoReadyToFade = 1;
+
+                    logo = thmGetTexture(gBootLogoFrame);
+                    if (!logo)
+                        logo = thmGetTexture(LOGO_01);
+                }
+            }
+        }
+    }
+
+    return logo;
+}
+
+static void guiRenderGreetingFrame(int alpha, GSTEXTURE *logo)
 {
     u64 mycolor = GS_SETREG_RGBA(0x00, 0x00, 0x00, alpha);
     rmDrawRect(0, 0, screenWidth, screenHeight, mycolor);
 
-    GSTEXTURE *logo = thmGetTexture(LOGO_01 + (guiFrameId / 6) % (LOGO_21 - LOGO_01 + 1));
     if (logo) {
         mycolor = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
         rmDrawPixmap(logo, screenWidth >> 1, gTheme->usedHeight >> 1, ALIGN_CENTER, logo->Width, logo->Height, SCALING_RATIO, mycolor, 0);
     }
+
+    guiDrawBootStatus(alpha);
+    guiDrawBootVersion(alpha);
+}
+
+// For early boot only.. before guiIntroLoop() is running
+void guiShowBootStatus(const char *status)
+{
+    if (!gBootStatusActive)
+        return;
+
+    guiSetBootStatusIfActive(status);
+
+    guiStartFrame();
+    guiRenderGreetingFrame(0x80, NULL);
+    guiEndFrame();
 }
 
 static float mix(float a, float b, float t)
@@ -1649,26 +1805,58 @@ void guiIntroLoop(void)
     int greetingAlpha = 0x80;
     const int fadeFrameCount = 0x80 / 2;
     const int fadeDuration = (fadeFrameCount * 1000) / 55; // Average between 50 and 60 fps
+    const int frameDuration = (BOOT_LOGO_FRAME_DELAY * 1000) / 55;
+    int bootFinalizeStarted = 0;
+    int bootSoundStarted = 0;
+    int bootSoundLeadFrames = 0;
+    int bootSoundDelayDuration = 0;
     clock_t tFadeDelayEnd = 0;
 
     while (!endIntro) {
         guiStartFrame();
 
+        if (gInitComplete && !bootFinalizeStarted) {
+            bootFinalizeStarted = 1;
+
+            guiSetBootStatusIfActive(NULL);
+
+            gBootLogoFadeCountdown = guiGetBootLogoFrameDistance(gBootLogoFrame, BOOT_FADE_LOGO);
+
+            if (gBootLogoFadeCountdown <= 0) {
+                gBootLogoFrame = BOOT_FADE_LOGO;
+                gBootLogoReadyToFade = 1;
+            }
+
+            if (gEnableBootSND) {
+                bootSoundDelayDuration = sfxGetSoundDuration(SFX_BOOT) - fadeDuration;
+
+                if (bootSoundDelayDuration < 0)
+                    bootSoundDelayDuration = 0;
+
+                bootSoundLeadFrames = bootSoundDelayDuration / frameDuration;
+
+                if (bootSoundDelayDuration > 0 && bootSoundLeadFrames <= 0)
+                    bootSoundLeadFrames = 1;
+            } else {
+                bootSoundStarted = 1;
+                tFadeDelayEnd = clock();
+            }
+        }
+
+        if (bootFinalizeStarted && gEnableBootSND && !bootSoundStarted && gBootLogoFadeCountdown <= bootSoundLeadFrames) {
+            bootSoundStarted = 1;
+
+            sfxPlay(SFX_BOOT);
+            tFadeDelayEnd = clock() + bootSoundDelayDuration * (CLOCKS_PER_SEC / 1000);
+        }
+
         if (greetingAlpha < 0x80)
             guiShow();
 
         if (greetingAlpha > 0)
-            guiRenderGreeting(greetingAlpha);
+            guiRenderGreetingFrame(greetingAlpha, guiGetGreetingLogo());
 
-        // Initialize boot sound
-        if (gInitComplete && !tFadeDelayEnd && gEnableBootSND) {
-            // Start playing sound
-            sfxPlay(SFX_BOOT);
-            // Calculate transition delay
-            tFadeDelayEnd = clock() + (sfxGetSoundDuration(SFX_BOOT) - fadeDuration) * (CLOCKS_PER_SEC / 1000);
-        }
-
-        if (gInitComplete && clock() >= tFadeDelayEnd)
+        if (gBootLogoReadyToFade && bootSoundStarted && clock() >= tFadeDelayEnd)
             greetingAlpha -= 2;
 
         if (greetingAlpha <= 0)
@@ -1687,6 +1875,9 @@ void guiIntroLoop(void)
 
 void guiMainLoop(void)
 {
+    gBootStatusActive = 0;
+    gBootStatus[0] = '\0';
+
     guiResetNotifications();
     guiCheckNotifications(1, 1);
 

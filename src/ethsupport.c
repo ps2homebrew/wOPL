@@ -113,6 +113,8 @@ static void ethSMBConnect(void)
 
     // open tcp connection with the server / logon to SMB server
     if (gPCShareAddressIsNetBIOS) {
+        guiSetBootStatusIfActive("Resolving SMB server...");
+
         if (nbnsFindName(gPCShareNBAddress, share_ip_address) != 0) {
             gNetworkStartup = ERROR_ETH_SMB_CONN;
             return;
@@ -154,6 +156,8 @@ static void ethSMBConnect(void)
         openshare.PasswordType = NO_PASSWORD;
     }
 
+    guiSetBootStatusIfActive("Connecting to SMB server...");
+
     if ((result = fileXioDevctl(ethBase, SMB_DEVCTL_LOGON, (void *)&logon, sizeof(logon), NULL, 0)) >= 0) {
         // SMB server alive test
         strcpy(echo.echo, "ALIVE ECHO TEST");
@@ -167,10 +171,14 @@ static void ethSMBConnect(void)
             pc_ip[3] = share_ip_address[3];
         }
 
+        guiSetBootStatusIfActive("Checking SMB connection...");
+
         if (fileXioDevctl(ethBase, SMB_DEVCTL_ECHO, (void *)&echo, sizeof(echo), NULL, 0) >= 0) {
             gNetworkStartup = ERROR_ETH_SMB_OPENSHARE;
 
             if (gPCShareName[0]) {
+                guiSetBootStatusIfActive("Opening SMB share...");
+
                 // connect to the share
                 strncpy(openshare.ShareName, gPCShareName, sizeof(openshare.ShareName) - 1);
 
@@ -250,12 +258,18 @@ static int ethInitApplyConfig(void)
 {
     LOG("ETHSUPPORT ApplyConfig\n");
 
+    guiSetBootStatusIfActive("Waiting for network link...");
+
     do {
         if (ethWaitValidNetIFLinkState() != 0) {
             gNetworkStartup = ERROR_ETH_LINK_FAIL;
             return ERROR_ETH_LINK_FAIL;
         }
+
+        guiSetBootStatusIfActive("Applying network settings...");
     } while (ethApplyNetIFConfig() != 0);
+
+    guiSetBootStatusIfActive("Checking network link...");
 
     // Before the network configuration is applied, wait for a valid link status.
     if (ethWaitValidNetIFLinkState() != 0) {
@@ -263,12 +277,17 @@ static int ethInitApplyConfig(void)
         return ERROR_ETH_LINK_FAIL;
     }
 
+    guiSetBootStatusIfActive("Configuring IP address...");
     ethApplyIPConfig();
 
     // Wait for DHCP to initialize, if DHCP is enabled.
-    if (ps2_ip_use_dhcp && (ethWaitValidDHCPState() != 0)) {
-        gNetworkStartup = ERROR_ETH_DHCP_FAIL;
-        return ERROR_ETH_DHCP_FAIL;
+    if (ps2_ip_use_dhcp) {
+        guiSetBootStatusIfActive("Waiting for DHCP...");
+
+        if (ethWaitValidDHCPState() != 0) {
+            gNetworkStartup = ERROR_ETH_DHCP_FAIL;
+            return ERROR_ETH_DHCP_FAIL;
+        }
     }
 
     return 0;
@@ -304,16 +323,19 @@ static void ethInitSMB(void)
     if (gNetworkStartup == 0) {
         // update Themes
         char path[256];
+
+        guiSetBootStatusIfActive("Loading network themes...");
         sprintf(path, "%sTHM", ethPrefix);
         thmAddElements(path, "\\", 1);
 
+        guiSetBootStatusIfActive("Loading network languages...");
         sprintf(path, "%sLNG", ethPrefix);
         lngAddLanguages(path, "\\", ethGameList.mode);
 
+        guiSetBootStatusIfActive("Checking network folders...");
         sbCreateFolders(ethPrefix, 1);
-    } else if (gPCShareName[0] || !(gNetworkStartup >= ERROR_ETH_SMB_OPENSHARE)) {
+    } else if (gPCShareName[0] || !(gNetworkStartup >= ERROR_ETH_SMB_OPENSHARE))
         ethDisplayErrorStatus();
-    }
 }
 
 static int ethLoadModules(void)
@@ -321,6 +343,7 @@ static int ethLoadModules(void)
     LOG("ETHSUPPORT LoadModules\n");
 
     if (!ethModulesLoaded) {
+        guiSetBootStatusIfActive("Loading network modules...");
         ethModulesLoaded = 1;
 
         sysInitDev9();
@@ -433,6 +456,7 @@ static void smbLoadModules(void)
     int ret;
 
     LOG("SMBSUPPORT LoadModules\n");
+    guiSetBootStatusIfActive("Loading SMB modules...");
 
     WaitSema(ethInitSemaID);
     ret = ethLoadModules();
@@ -531,6 +555,8 @@ static int ethUpdateGameList(item_list_t *itemList)
         if (gNetworkStartup != 0)
             return 0;
 
+        guiSetBootStatusIfActive("Scanning network games...");
+
         if ((sbReadList(&ethGames, ethPrefix, &ethULSizePrev, &ethGameCount)) < 0) {
             gNetworkStartup = ERROR_ETH_SMB_LISTGAMES;
             ethDisplayErrorStatus();
@@ -545,6 +571,8 @@ static int ethUpdateGameList(item_list_t *itemList)
 
         getsharelist.EE_addr = (void *)&sharelist[0];
         getsharelist.maxent = 128;
+
+        guiSetBootStatusIfActive("Listing SMB shares...");
 
         count = fileXioDevctl(ethBase, SMB_DEVCTL_GETSHARELIST, (void *)&getsharelist, sizeof(getsharelist), NULL, 0);
         if (count > 0) {

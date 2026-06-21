@@ -189,6 +189,8 @@ static int appUpdateItemList(item_list_t *itemList)
 {
     struct app_info_linked *appsLinkedList, *appNext;
 
+    guiSetBootStatusIfActive("Scanning apps...");
+
     appFreeList();
     appsLinkedList = NULL;
 
