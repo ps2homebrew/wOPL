@@ -272,7 +272,6 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     int selectedCore = pgcfg->core_loader == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
 
     neutrino_path_t neutrinoPath;
-    const char *neutrinoElf = NULL;
     char neutrinoVmc0[256];
     char neutrinoVmc1[256];
 
@@ -286,8 +285,7 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
             guiWarning("Neutrino does not support this file format, launching with <wOPL> core", 6);
             selectedCore = CORE_LOADER_WOPL;
         } else {
-            neutrinoElf = sbFindNeutrino(&neutrinoPath, mmcePrefix);
-            if (neutrinoElf == NULL) {
+            if (!sbFindNeutrino(&neutrinoPath, mmcePrefix)) {
                 guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
                 selectedCore = CORE_LOADER_WOPL;
             }
@@ -444,13 +442,27 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     // mcReset();
     // mcInit(MC_TYPE_XMC);
 
-    mmceSendGameId(game->startup);
+    int elfMode = -1;
 
-    deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
+    if (selectedCore == CORE_LOADER_NEUTRINO)
+        elfMode = sbGetPathMode(neutrinoPath.elf);
+
+    if (!(selectedCore == CORE_LOADER_NEUTRINO && sbPathIsMC(neutrinoPath.elf)))
+        mmceSendGameId(game->startup);
+
+    int deinitException = NO_EXCEPTION;
+    int deinitMode = MMCE_MODE;
+
+    if (selectedCore == CORE_LOADER_NEUTRINO && elfMode >= 0) {
+        deinitException = UNMOUNT_EXCEPTION;
+        deinitMode = elfMode;
+    }
+
+    deinit(deinitException, deinitMode); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
 
     /* No autolaunch yet
     if (gAutoLaunchMMCEGame == NULL)
-        deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
+        deinit(deinitException, deinitMode); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
     else {
         miniDeinit();
 
@@ -459,7 +471,7 @@ void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     }*/
 
     if (selectedCore == CORE_LOADER_NEUTRINO) {
-        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
+        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoPath.elf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
         return;
     }
 

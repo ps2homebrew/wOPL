@@ -952,7 +952,6 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     int size_mcemu_irx = 0;
 
     neutrino_path_t neutrinoPath;
-    const char *neutrinoElf = NULL;
     char neutrinoVmc0[256];
     char neutrinoVmc1[256];
 
@@ -962,8 +961,7 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     neutrinoVmc1[0] = '\0';
 
     if (selectedCore == CORE_LOADER_NEUTRINO) {
-        neutrinoElf = sbFindNeutrino(&neutrinoPath, gOPLPart);
-        if (neutrinoElf == NULL) {
+        if (!sbFindNeutrino(&neutrinoPath, gOPLPart)) {
             guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
             selectedCore = CORE_LOADER_WOPL;
         }
@@ -1157,10 +1155,23 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         sbCreateNeutrinoVMCPath(neutrinoVmc1, sizeof(neutrinoVmc1), gOPLPart, pgcfg->vmc2);
     }
 
-    sbMMCESendGameId(game->startup);
+    if (!(selectedCore == CORE_LOADER_NEUTRINO && sbPathIsMC(neutrinoPath.elf)))
+        sbMMCESendGameId(game->startup);
+
+    int deinitException = NO_EXCEPTION;
+    int deinitMode = HDD_MODE;
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        int elfMode = sbGetPathMode(neutrinoPath.elf);
+
+        if (elfMode >= 0) {
+            deinitException = UNMOUNT_EXCEPTION;
+            deinitMode = elfMode;
+        }
+    }
 
     if (gAutoLaunchGame == NULL)
-        deinit(NO_EXCEPTION, HDD_MODE); // CAREFUL: deinit will call hddCleanUp, so hddGames/game will be freed
+        deinit(deinitException, deinitMode); // CAREFUL: deinit will call hddCleanUp, so hddGames/game will be freed
     else {
         miniDeinit();
 
@@ -1173,7 +1184,7 @@ void hddLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 
     if (selectedCore == CORE_LOADER_NEUTRINO) {
         LOG("partition_name=[%s]\n", partitionName);
-        sysLaunchNeutrino("apa", partitionName, compatMode, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
+        sysLaunchNeutrino("apa", partitionName, compatMode, EnablePS2Logo, neutrinoPath.elf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
         return;
     }
 

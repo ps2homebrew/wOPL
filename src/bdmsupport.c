@@ -403,7 +403,6 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     int selectedCore = pgcfg->core_loader == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
 
     neutrino_path_t neutrinoPath;
-    const char *neutrinoElf = NULL;
     char neutrinoVmc0[256];
     char neutrinoVmc1[256];
 
@@ -417,8 +416,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
             guiWarning("Neutrino does not support this file format, launching with <wOPL> core", 6);
             selectedCore = CORE_LOADER_WOPL;
         } else {
-            neutrinoElf = sbFindNeutrino(&neutrinoPath, pDeviceData->bdmPrefix);
-            if (neutrinoElf == NULL) {
+            if (!sbFindNeutrino(&neutrinoPath, pDeviceData->bdmPrefix)) {
                 guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
                 selectedCore = CORE_LOADER_WOPL;
             }
@@ -651,10 +649,23 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         sbCreateNeutrinoVMCPath(neutrinoVmc1, sizeof(neutrinoVmc1), pDeviceData->bdmPrefix, pgcfg->vmc2);
     }
 
-    sbMMCESendGameId(game->startup);
+    if (!(selectedCore == CORE_LOADER_NEUTRINO && sbPathIsMC(neutrinoPath.elf)))
+        sbMMCESendGameId(game->startup);
+
+    int deinitException = NO_EXCEPTION;
+    int deinitMode = itemList->mode;
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        int elfMode = sbGetPathMode(neutrinoPath.elf);
+
+        if (elfMode >= 0) {
+            deinitException = UNMOUNT_EXCEPTION;
+            deinitMode = elfMode;
+        }
+    }
 
     if (gAutoLaunchBDMGame == NULL)
-        deinit(NO_EXCEPTION, itemList->mode); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
+        deinit(deinitException, deinitMode); // CAREFUL: deinit will call bdmCleanUp, so bdmGames/game will be freed
     else {
         miniDeinit();
 
@@ -668,7 +679,7 @@ void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
     LOG("bdm pre sysLaunchLoaderElf\n");
 
     if (selectedCore == CORE_LOADER_NEUTRINO) {
-        sysLaunchNeutrino(bdmCurrentDriver, partname, compatmask, EnablePS2Logo, neutrinoElf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
+        sysLaunchNeutrino(bdmCurrentDriver, partname, compatmask, EnablePS2Logo, neutrinoPath.elf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
         return;
     }
 

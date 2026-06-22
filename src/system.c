@@ -1215,13 +1215,6 @@ void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int
     int argc = 0;
     const char *deviceName = getDeviceName(driver);
 
-    argv[argc++] = (char *)neutrinoPath;
-
-    if (neutrinoCwd && neutrinoCwd[0]) {
-        snprintf(cwd, sizeof(cwd), "-cwd=%s", neutrinoCwd);
-        argv[argc++] = cwd;
-    }
-
     if (!strncmp(deviceName, "apa", 3)) {
         snprintf(device, sizeof(device), "-bsd=ata");
         argv[argc++] = device;
@@ -1237,6 +1230,11 @@ void sysLaunchNeutrino(const char *driver, const char *path, int compatmask, int
 
         snprintf(filePath, sizeof(filePath), "-dvd=%s", path);
         argv[argc++] = filePath;
+    }
+
+    if (neutrinoCwd && neutrinoCwd[0]) {
+        snprintf(cwd, sizeof(cwd), "-cwd=%s", neutrinoCwd);
+        argv[argc++] = cwd;
     }
 
     if (vmc0 && vmc0[0]) {
