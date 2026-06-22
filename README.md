@@ -61,7 +61,7 @@ v1.2
 * Added a hint to hide R3 while is being selected
 * Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
 * Coverflow improvements thanks to KrahJohlito
-* Support grayscale and grayscale+alpha images(DarkMokus)
+* Support grayscale and grayscale+alpha images(DarthMotzkus)
 * App support to the favourites tab
 * Pademu fixes on frontend thanks to krahjohilito
 * BDM USB fixes
