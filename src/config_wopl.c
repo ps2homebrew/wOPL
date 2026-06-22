@@ -19,8 +19,10 @@
 #include "include/supportbase.h"
 #include "include/bdmsupport.h"
 #include "include/hddsupport.h"
+#include "include/mmcesupport.h"
 #include "include/config_migration.h" // DELETE_WITH_MIGRATION
 #include "include/module.h"
+#include "include/pathsupport.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -52,8 +54,10 @@
 #define GAME_FILENAME_OLD "conf_game.cfg" // DELETE_WITH_MIGRATION
 
 #define LAST_FILENAME "wopl_last_played.cfg"
+#define BOOT_FILENAME "wopl_boot.cfg"
 
 static char config_dir[128] = {0};
+static char boot_dir[128] = {0};
 static char last_played[256] = {0};
 
 static char s_theme_name[128] = {0};
@@ -352,161 +356,260 @@ static void sanitize_pad_sensitivity(void)
 {
     if (gXSensitivity < 0 || gXSensitivity > 2)
         gXSensitivity = 0;
-
     if (gYSensitivity < 0 || gYSensitivity > 2)
         gYSensitivity = 0;
 }
 
+static int config_path_has_device_prefix(const char *path, const char *prefix)
+{
+    size_t len;
+
+    if (!path || !prefix)
+        return 0;
+
+    len = strlen(prefix);
+
+    if (strncmp(path, prefix, len))
+        return 0;
+
+    path += len;
+
+    while (*path >= '0' && *path <= '9')
+        path++;
+
+    return *path == ':';
+}
+
+static void prepare_config_root_modules(const char *path)
+{
+    if (!path || !path[0])
+        return;
+
+    // BDM/FAT roots: usbN:, mx4sioN:, ilinkN:, ataN:
+    bdmLoadModulesForPath(path);
+
+    // APA/PFS internal HDD root: hddN:
+    if (config_path_has_device_prefix(path, "hdd")) {
+        guiSetBootStatusIfActive("Loading HDD config root...");
+        LOG("CONFIG: loading HDD modules for config root '%s'\n", path);
+        hddLoadModules();
+        hddLoadSupportModules();
+        return;
+    }
+
+    // MMCE root: mmceN:
+    if (config_path_has_device_prefix(path, "mmce")) {
+        guiSetBootStatusIfActive("Loading MMCE config root...");
+        LOG("CONFIG: loading MMCE modules for config root '%s'\n", path);
+        mmceLoadModules();
+        return;
+    }
+}
+
+#define CONFIG_ROOT_READY_RETRIES 10
+#define CONFIG_ROOT_READY_DELAY   3
+
+static int wait_for_config_root_ready(const char *path)
+{
+    int i;
+
+    for (i = 0; i < CONFIG_ROOT_READY_RETRIES; i++) {
+        if (path_exists(path)) {
+            if (i > 0)
+                LOG("CONFIG: config root ready after %d retries '%s'\n", i, path);
+
+            return 1;
+        }
+
+        delay(CONFIG_ROOT_READY_DELAY);
+    }
+
+    return 0;
+}
+
+static int normalise_true_config_dir(char *out, size_t out_len, const char *dir, int allowLegacyMass)
+{
+    int legacyLaunchPath;
+
+    if (!out || !out_len || !dir || !dir[0]) {
+        LOG("CONFIG: normalise failed invalid dir='%s'\n", dir ? dir : "(null)");
+        return 0;
+    }
+
+    legacyLaunchPath = pathIsLegacyMassPath(dir);
+
+    LOG("CONFIG: normalise dir='%s' allowLegacyMass=%d legacy=%d\n", dir, allowLegacyMass, legacyLaunchPath);
+
+    if (legacyLaunchPath) {
+        if (!allowLegacyMass) {
+            LOG("CONFIG: rejecting legacy mass path '%s'\n", dir);
+            return 0;
+        }
+
+        guiSetBootStatusIfActive("Loading legacy mass support...");
+        bdmLoadModulesForLegacyMass();
+
+        delay(8);
+
+        copy_str(out, dir, out_len);
+        pathNormaliseDir(out, out_len);
+
+        LOG("CONFIG: using legacy launch config dir '%s'\n", out);
+
+        return 1;
+    } else {
+        if (!pathResolveToTrue(out, out_len, dir)) {
+            LOG("CONFIG: failed to resolve true config dir '%s'\n", dir);
+            return 0;
+        }
+
+        LOG("CONFIG: resolved true config dir '%s' -> '%s'\n", dir, out);
+    }
+
+    pathNormaliseDir(out, out_len);
+
+    LOG("CONFIG: normalised config dir='%s'\n", out);
+
+    if (!pathIsDevicePath(out)) {
+        LOG("CONFIG: rejected non-device config dir '%s'\n", out);
+        return 0;
+    }
+
+    // Load only the modules required by this selected boot/config root before probing it.
+    prepare_config_root_modules(out);
+
+    // BDM modules may be loaded but the filesystem/device might not be ready..
+    if (!wait_for_config_root_ready(out)) {
+        LOG("CONFIG: config root not ready '%s'\n", out);
+        return 0;
+    }
+
+    LOG("CONFIG: config root ready '%s'\n", out);
+
+    return 1;
+}
+
+static int load_boot_config_from_dir(const char *launch_dir)
+{
+    char boot_root[128];
+    char boot_path[256];
+    char resolved_dir[128];
+    const char *value;
+    config_t cfg;
+    int have_config_dir = 0;
+    int legacy_boot_root = 0;
+
+    if (!launch_dir || !launch_dir[0])
+        return 0;
+
+    // Prepare the boot/cwd root before trying to read wopl_boot.cfg from it
+    // Legacy massN: is allowed here only because this path came from argv0/cwd
+    if (!normalise_true_config_dir(boot_root, sizeof(boot_root), launch_dir, 1))
+        return 0;
+
+    copy_str(boot_dir, boot_root, sizeof(boot_dir));
+    legacy_boot_root = pathIsLegacyMassPath(boot_root);
+
+    if (!pathJoin(boot_path, sizeof(boot_path), boot_root, BOOT_FILENAME)) {
+        LOG("CONFIG: failed to build boot cfg path from '%s'\n", boot_root);
+        return 0;
+    }
+
+    LOG("CONFIG: boot root='%s' boot cfg='%s'\n", boot_root, boot_path);
+
+    if (!file_exists(boot_path)) {
+        LOG("CONFIG: no boot cfg at '%s', using boot root\n", boot_path);
+        copy_str(config_dir, boot_root, sizeof(config_dir));
+        return 1;
+    }
+
+    config_init(&cfg);
+
+    if (!config_read_file(&cfg, boot_path)) {
+        log_config_error(boot_path, &cfg);
+        config_destroy(&cfg);
+        return 0;
+    }
+
+    cfgValidateBegin(boot_path);
+
+    if (!legacy_boot_root && cfgGetStr(&cfg, "boot.config_dir", &value)) {
+        // boot.config_dir is user selected config root.. Do not accept legacy massN: here
+        if (normalise_true_config_dir(resolved_dir, sizeof(resolved_dir), value, 0)) {
+            copy_str(config_dir, resolved_dir, sizeof(config_dir));
+            have_config_dir = 1;
+        } else
+            LOG("CONFIG: ignoring invalid boot.config_dir '%s'\n", value);
+    } else if (legacy_boot_root)
+        LOG("CONFIG: ignoring boot.config_dir while using legacy launch root '%s'\n", boot_root);
+
+    if (!have_config_dir) {
+        copy_str(config_dir, boot_root, sizeof(config_dir));
+        have_config_dir = 1;
+    }
+
+    cfgValidateEnd();
+    config_destroy(&cfg);
+
+    LOG("CONFIG: boot config '%s' config_dir='%s'\n", boot_path, config_dir);
+
+    return have_config_dir;
+}
+
 static int pick_default_config_dir(void)
 {
-    int mc = sysCheckMC();
-
-    // like old tryAlternateDevice().. first launch no config prefers mc..
-    if (mc >= 0) {
-        snprintf(config_dir, sizeof(config_dir), "mc%d:%s/", mc & 1, WOPL_CONFIG_NAME);
-        return 1;
-    }
-
-    // no mc? old logic tried mass0 next..
-    DIR *dir = opendir("mass0:/");
-    if (dir != NULL) {
-        closedir(dir);
-        copy_str(config_dir, "mass0:/", sizeof(config_dir));
-        return 1;
-    }
-
-    // last fallback is HDD..
-    if (gHDDPrefix && gHDDPrefix[0] && path_exists(gHDDPrefix)) {
-        copy_str(config_dir, gHDDPrefix, sizeof(config_dir));
-        return 1;
-    }
-
-    return 0;
-}
-
-static int probe_bdm_config_path(const char *filename, char *dir_out, size_t dir_len, char *path_out, size_t path_len, int for_write)
-{
-    char dir[64];
-    int result;
-
-    result = bdmFindPartition(dir, filename, for_write);
-    if (result == 0) {
-        if (hddLoadModules() >= 0 && bdmHDDIsPresent(5000))
-            result = bdmFindPartition(dir, filename, for_write);
-    }
-
-    if (!result)
-        return 0;
-
-    copy_str(dir_out, dir, dir_len);
-    snprintf(path_out, path_len, "%s%s", dir, filename);
-
-    return 1;
-}
-
-static int probe_hdd_config_path(const char *filename, char *dir_out, size_t dir_len, char *path_out, size_t path_len, int for_write)
-{
-    if (!gHDDPrefix || !gHDDPrefix[0])
-        return 0;
-
-    hddLoadModules();
-
-    if (for_write) {
-        if (hddCheck() != 0)
-            return 0;
-    } else
-        hddLoadSupportModules();
-
-    snprintf(path_out, path_len, "%s%s", gHDDPrefix, filename);
-
-    if (!for_write && !file_exists(path_out))
-        return 0;
-
-    copy_str(dir_out, gHDDPrefix, dir_len);
-
-    return 1;
-}
-
-static int probe_boot_config_path(const char *filename, char *dir_out, size_t dir_len, char *path_out, size_t path_len, int for_write)
-{
-    char pwd[8];
-
-    getcwd(pwd, sizeof(pwd));
-
-    if (!strncmp(pwd, "mass", 4) && (pwd[4] == ':' || pwd[5] == ':'))
-        return probe_bdm_config_path(filename, dir_out, dir_len, path_out, path_len, for_write);
-
-    if (!strncmp(pwd, "hdd", 3) && (pwd[3] == ':' || pwd[4] == ':'))
-        return probe_hdd_config_path(filename, dir_out, dir_len, path_out, path_len, for_write);
-
-    return 0;
-}
-
-static int probe_config_path(const char *filename, char *dir_out, size_t dir_len, char *path_out, size_t path_len, int for_write)
-{
     char dir[128];
-    char path[256];
+    char true_dir[128];
+    int mc;
 
-    // 1. current/default location mc..
-    int mc = sysCheckMC();
-    if (mc >= 0) {
-        snprintf(dir, sizeof(dir), "mc%d:%s/", mc & 1, WOPL_CONFIG_NAME);
-        snprintf(path, sizeof(path), "%s%s", dir, filename);
+    if (pathGetBootDir(dir, sizeof(dir))) {
+        if (load_boot_config_from_dir(dir))
+            return 1;
 
-        if (for_write || file_exists(path)) {
-            copy_str(dir_out, dir, dir_len);
-            copy_str(path_out, path, path_len);
+        if (normalise_true_config_dir(true_dir, sizeof(true_dir), dir, 1)) {
+            copy_str(boot_dir, true_dir, sizeof(boot_dir));
+            copy_str(config_dir, true_dir, sizeof(config_dir));
+            LOG("CONFIG: using boot/cwd config_dir='%s'\n", config_dir);
             return 1;
         }
     }
 
-    // 2. first try the device OPL booted from..
-    if (probe_boot_config_path(filename, dir_out, dir_len, path_out, path_len, for_write))
-        return 1;
+    // Fallback only if no usable boot/cwd root exists
+    // Prefer the MC slot that already has the wOPL config folder
+    mc = sbCheckMC();
 
-    // 3. then try BDM..
-    if (probe_bdm_config_path(filename, dir_out, dir_len, path_out, path_len, for_write))
+    if (mc >= 0) {
+        snprintf(config_dir, sizeof(config_dir), "mc%c:%s/", mc, WOPL_CONFIG_NAME);
+        copy_str(boot_dir, config_dir, sizeof(boot_dir));
+        LOG("CONFIG: falling back to MC config_dir='%s'\n", config_dir);
         return 1;
-
-    // 4. then try HDD..
-    if (probe_hdd_config_path(filename, dir_out, dir_len, path_out, path_len, for_write))
-        return 1;
+    }
 
     return 0;
 }
 
-static int ensure_mc_dir(const char *dir)
-{
-    struct stat st;
-    if (stat(dir, &st) == 0)
-        return 1;
-
-    return mkdir(dir, 0777) == 0 || errno == EEXIST;
-}
-
 static int ensure_config_dir(void)
 {
-    char dir[128];
-    char path[256];
+    const char *launch;
+    char cwd[128];
+    int ok;
 
     if (config_dir[0])
         return 1;
 
-    if (
-        probe_config_path(WOPL_FILENAME, dir, sizeof(dir), path, sizeof(path), 0) ||
-        probe_config_path(NET_FILENAME, dir, sizeof(dir), path, sizeof(path), 0) ||
-        probe_config_path(GAME_FILENAME, dir, sizeof(dir), path, sizeof(path), 0) ||
-        // DELETE_WITH_MIGRATION
-        probe_config_path(WOPL_FILENAME_OLD, dir, sizeof(dir), path, sizeof(path), 0) ||
-        probe_config_path(NET_FILENAME_OLD, dir, sizeof(dir), path, sizeof(path), 0) ||
-        probe_config_path(GAME_FILENAME_OLD, dir, sizeof(dir), path, sizeof(path), 0)
-        // DELETE_WITH_MIGRATION
-    ) {
-        copy_str(config_dir, dir, sizeof(config_dir));
-        return 1;
-    }
+    launch = pathGetLaunchPath();
 
-    return pick_default_config_dir();
+    cwd[0] = '\0';
+    if (getcwd(cwd, sizeof(cwd)) == NULL)
+        copy_str(cwd, "(getcwd failed)", sizeof(cwd));
+
+    LOG("CONFIG: ensure_config_dir launch='%s' cwd='%s'\n", launch ? launch : "(null)", cwd);
+
+    ok = pick_default_config_dir();
+
+    LOG("CONFIG: ensure_config_dir result=%d config_dir='%s' boot_dir='%s'\n", ok, config_dir, boot_dir);
+
+    return ok;
 }
 
 static int do_save_at_dir(const char *dir, const char *filename, void (*build)(config_setting_t *))
@@ -516,21 +619,8 @@ static int do_save_at_dir(const char *dir, const char *filename, void (*build)(c
     if (!dir || !dir[0])
         return 0;
 
-    snprintf(path, sizeof(path), "%s%s", dir, filename);
-
-    if (!strncmp(dir, "mc", 2)) {
-        char mc_dir[128];
-        copy_str(mc_dir, dir, sizeof(mc_dir));
-        size_t len = strlen(mc_dir);
-
-        if (len > 0 && mc_dir[len - 1] == '/')
-            mc_dir[len - 1] = '\0';
-
-        if (!ensure_mc_dir(mc_dir)) {
-            LOG("CONFIG: failed to create MC dir '%s'\n", mc_dir);
-            return 0;
-        }
-    }
+    if (!pathJoin(path, sizeof(path), dir, filename))
+        return 0;
 
     config_t cfg;
     config_init(&cfg);
@@ -558,6 +648,58 @@ static int do_save(const char *filename, void (*build)(config_setting_t *))
         return 0;
 
     return do_save_at_dir(config_dir, filename, build);
+}
+
+// ---------------------------------------------------------------------------
+// Bootstrap config (wopl_boot.cfg)
+// ---------------------------------------------------------------------------
+
+static void build_boot(config_setting_t *root)
+{
+    config_setting_t *group;
+
+    group = add_group(root, "boot");
+    set_str(group, "config_dir", config_dir);
+}
+
+static int save_boot_config(void)
+{
+    char path[256];
+    config_t cfg;
+    config_setting_t *root;
+    int ok;
+
+    if (!boot_dir[0] || !config_dir[0])
+        return 1;
+
+    if (pathIsLegacyMassPath(config_dir)) {
+        LOG("CONFIG: not saving unresolved legacy boot config_dir '%s'\n", config_dir);
+        return 1;
+    }
+
+    if (config_path_has_device_prefix(boot_dir, "mc") && !sbEnsureMCConfigFolder(boot_dir)) {
+        LOG("CONFIG: failed to prepare MC boot folder '%s'\n", boot_dir);
+        return 0;
+    }
+
+    if (!pathJoin(path, sizeof(path), boot_dir, BOOT_FILENAME))
+        return 0;
+
+    config_init(&cfg);
+    root = config_root_setting(&cfg);
+    build_boot(root);
+
+    ok = config_write_file(&cfg, path);
+    config_destroy(&cfg);
+
+    if (!ok) {
+        LOG("CONFIG: failed to write boot config '%s'\n", path);
+        return 0;
+    }
+
+    LOG("CONFIG: saved boot config '%s'\n", path);
+
+    return 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -678,6 +820,7 @@ static void parse_devices(config_t *cfg)
 static void parse_paths(config_t *cfg)
 {
     const char *path;
+
     if ((path = lookup_str(cfg, "paths.bdm_prefix", NULL)))
         copy_str(gBDMPrefix, path, sizeof(gBDMPrefix));
 
@@ -839,8 +982,8 @@ static void parse_opl_cfg(config_t *cfg, int *out_theme_id, int *out_lang_id)
 
 int wOPLLoad(int *out_theme_id, int *out_lang_id)
 {
-    char dir[128];
     char path[256];
+    char old_path[256];
     config_t cfg;
 
     if (out_theme_id)
@@ -848,53 +991,64 @@ int wOPLLoad(int *out_theme_id, int *out_lang_id)
     if (out_lang_id)
         *out_lang_id = 0;
 
+    LOG("CONFIG_WOPL: enter config_dir='%s'\n", config_dir);
+
+    if (!ensure_config_dir())
+        return 0;
+
     // 1. Try new filename
-    if (probe_config_path(WOPL_FILENAME, dir, sizeof(dir), path, sizeof(path), 0)) {
-        config_init(&cfg);
-        if (config_read_file(&cfg, path)) {
-            cfgValidateBegin(path);
-            parse_opl_cfg(&cfg, out_theme_id, out_lang_id);
-            cfgValidateEnd();
-            config_destroy(&cfg);
-            copy_str(config_dir, dir, sizeof(config_dir));
-            LOG("CONFIG_WOPL: loaded from '%s'\n", path);
-            return 1;
-        }
-        log_config_error(path, &cfg);
-        config_destroy(&cfg);
-    }
+    if (!pathJoin(path, sizeof(path), config_dir, WOPL_FILENAME))
+        return 0;
 
-    // DELETE_WITH_MIGRATION
-    // 2. Try old filename.. migrate to new filename and delete old
-    if (probe_config_path(WOPL_FILENAME_OLD, dir, sizeof(dir), path, sizeof(path), 0)) {
-        int ok = 0;
-        config_init(&cfg);
-        if (config_read_file(&cfg, path) && config_lookup(&cfg, "display") != NULL) {
-            parse_opl_cfg(&cfg, out_theme_id, out_lang_id);
-            ok = 1;
-        }
+    LOG("CONFIG_WOPL: trying '%s'\n", path);
+
+    config_init(&cfg);
+    if (config_read_file(&cfg, path)) {
+        cfgValidateBegin(path);
+        parse_opl_cfg(&cfg, out_theme_id, out_lang_id);
+        cfgValidateEnd();
         config_destroy(&cfg);
 
-        if (!ok) {
-            LOG("CONFIG_WOPL: old format detected, attempting legacy migration\n");
-            ok = cfgMigrateLegacyOPL(path, out_theme_id, out_lang_id);
-        }
-
-        if (!ok)
-            return 0;
-
-        copy_str(config_dir, dir, sizeof(config_dir));
-        if (wOPLSave()) {
-            char bak[256];
-            snprintf(bak, sizeof(bak), "%s.bak", path);
-            rename(path, bak);
-            LOG("CONFIG_WOPL: migrated to '%s'\n", WOPL_FILENAME);
-        }
+        LOG("CONFIG_WOPL: loaded from '%s'\n", path);
         return 1;
     }
-    // DELETE_WITH_MIGRATION
 
-    return 0;
+    LOG("CONFIG_WOPL: failed new config '%s'\n", path);
+    log_config_error(path, &cfg);
+    config_destroy(&cfg);
+
+    // DELETE_WITH_MIGRATION
+    // 2. Try old filename from the selected config root only.
+    if (!pathJoin(old_path, sizeof(old_path), config_dir, WOPL_FILENAME_OLD))
+        return 0;
+
+    config_init(&cfg);
+    int ok = 0;
+
+    if (config_read_file(&cfg, old_path) && config_lookup(&cfg, "display") != NULL) {
+        parse_opl_cfg(&cfg, out_theme_id, out_lang_id);
+        ok = 1;
+    }
+    config_destroy(&cfg);
+
+    if (!ok) {
+        LOG("CONFIG_WOPL: old format detected at selected config root, attempting legacy migration\n");
+        ok = cfgMigrateLegacyOPL(old_path, out_theme_id, out_lang_id);
+    }
+
+    if (!ok)
+        return 0;
+
+    if (wOPLSave()) {
+        char bak[256];
+
+        snprintf(bak, sizeof(bak), "%s.bak", old_path);
+        rename(old_path, bak);
+        LOG("CONFIG_WOPL: migrated to '%s'\n", WOPL_FILENAME);
+    }
+
+    return 1;
+    // DELETE_WITH_MIGRATION
 }
 
 int wOPLSave(void)
@@ -968,6 +1122,8 @@ static void build_net(config_setting_t *root)
 
 int wOPLNetLoad(void)
 {
+    LOG("CONFIG_NET: enter config_dir='%s'\n", config_dir);
+
     if (!ensure_config_dir())
         return 0;
 
@@ -975,8 +1131,12 @@ int wOPLNetLoad(void)
     char old_path[256];
     config_t cfg;
 
+    if (!pathJoin(path, sizeof(path), config_dir, NET_FILENAME))
+        return 0;
+
+    LOG("CONFIG_NET: trying '%s'\n", path);
+
     // 1. Try new filename
-    snprintf(path, sizeof(path), "%s%s", config_dir, NET_FILENAME);
     config_init(&cfg);
     if (config_read_file(&cfg, path)) {
         cfgValidateBegin(path);
@@ -991,7 +1151,9 @@ int wOPLNetLoad(void)
 
     // DELETE_WITH_MIGRATION
     // 2. Try old filename.. migrate to new filename and delete old
-    snprintf(old_path, sizeof(old_path), "%s%s", config_dir, NET_FILENAME_OLD);
+    if (!pathJoin(old_path, sizeof(old_path), config_dir, NET_FILENAME_OLD))
+        return 0;
+
     config_init(&cfg);
     int ok = 0;
     if (config_read_file(&cfg, old_path) && config_lookup(&cfg, "ps2") != NULL) {
@@ -1035,7 +1197,9 @@ int wOPLLastLoad(void)
         return 0;
 
     char path[256];
-    snprintf(path, sizeof(path), "%s%s", config_dir, LAST_FILENAME);
+
+    if (!pathJoin(path, sizeof(path), config_dir, LAST_FILENAME))
+        return 0;
 
     config_t cfg;
     config_init(&cfg);
@@ -1063,7 +1227,9 @@ int wOPLLastSave(const char *startup)
         return 0;
 
     char path[256];
-    snprintf(path, sizeof(path), "%s%s", config_dir, LAST_FILENAME);
+
+    if (!pathJoin(path, sizeof(path), config_dir, LAST_FILENAME))
+        return 0;
 
     config_t cfg;
     config_init(&cfg);
@@ -1165,13 +1331,19 @@ static void build_global_game(config_setting_t *root)
 
 int wOPLGlobalGameLoad(void)
 {
+    LOG("CONFIG_GAME: enter config_dir='%s'\n", config_dir);
+
     if (!ensure_config_dir())
         return 0;
 
     char path[256];
     config_t cfg;
 
-    snprintf(path, sizeof(path), "%s%s", config_dir, GAME_FILENAME);
+    if (!pathJoin(path, sizeof(path), config_dir, GAME_FILENAME))
+        return 0;
+
+    LOG("CONFIG_GAME: trying '%s'\n", path);
+
     config_init(&cfg);
     if (config_read_file(&cfg, path)) {
         cfgValidateBegin(path);
@@ -1185,7 +1357,9 @@ int wOPLGlobalGameLoad(void)
     config_destroy(&cfg);
 
     // DELETE_WITH_MIGRATION v
-    snprintf(path, sizeof(path), "%s%s", config_dir, GAME_FILENAME_OLD);
+    if (!pathJoin(path, sizeof(path), config_dir, GAME_FILENAME_OLD))
+        return 0;
+
     if (cfgMigrateLegacyGlobalGame(path)) {
         if (wOPLGlobalGameSave()) {
             char bak[256];
@@ -1503,9 +1677,9 @@ int wOPLGameInfoSave(const char *path, const game_info_t *gi)
     return ok;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------------------
-// Application level config handling.. oof i dont like the old logic.. TODO: split devices to seperate cfg change save/load logic
-// ---------------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Application level config handling
+// ---------------------------------------------------------------------------
 
 char *gBaseMCDir; // used for thm/lang even after migration
 
@@ -1538,12 +1712,12 @@ void configApply(int themeID, int langID, int skipDeviceRefresh)
 
     // Check if we should refresh device support as well.
     if (skipDeviceRefresh == 0) {
-        initAllSupport(0);
+        bdmLoadEnabledDeviceModules();
 
+        initAllSupport(0);
         for (int i = 0; i < MODE_COUNT; i++) {
             if (list_support[i].support == NULL)
                 continue;
-
             moduleUpdateMenuInternal(&list_support[i], changed, langChanged);
         }
     } else {
@@ -1560,10 +1734,42 @@ void configApply(int themeID, int langID, int skipDeviceRefresh)
 #endif
 }
 
+static int resolve_legacy_config_dir(void)
+{
+    char resolved[128];
+
+    if (!pathIsLegacyMassPath(config_dir))
+        return 1;
+
+    LOG("CONFIG: resolving legacy config_dir '%s'\n", config_dir);
+
+    if (!bdmResolveLegacyPathFromDeviceList(resolved, sizeof(resolved), config_dir)) {
+        LOG("CONFIG: could not resolve legacy config_dir '%s'\n", config_dir);
+        return 0;
+    }
+
+    pathNormaliseDir(resolved, sizeof(resolved));
+
+    if (!pathIsDevicePath(resolved) || pathIsLegacyMassPath(resolved)) {
+        LOG("CONFIG: rejected resolved config_dir '%s'\n", resolved);
+        return 0;
+    }
+
+    LOG("CONFIG: resolved config_dir '%s' -> '%s'\n", config_dir, resolved);
+    copy_str(config_dir, resolved, sizeof(config_dir));
+
+    return 1;
+}
+
 void _loadConfig() // called directly by initializer at boot before GUI is ready
 {
     int themeID = -1, langID = -1;
     int result = 0;
+    int have_config_dir;
+
+    have_config_dir = ensure_config_dir();
+
+    LOG("CONFIG: initial config root result=%d config_dir='%s' boot_dir='%s'\n", have_config_dir, config_dir, boot_dir);
 
     if (lscstatus & CONFIG_OPL) {
         if (wOPLLoad(&themeID, &langID))
@@ -1581,7 +1787,11 @@ void _loadConfig() // called directly by initializer at boot before GUI is ready
         if (wOPLGlobalGameLoad())
             result |= CONFIG_GAME;
 
+    LOG("CONFIG: load requested=0x%X result=0x%X config_dir='%s'\n", lscstatus, result, config_dir);
+
     configApply(themeID, langID, 0);
+    resolve_legacy_config_dir();
+
     lscret = result;
     lscstatus = 0;
     if (result)
@@ -1620,13 +1830,22 @@ static int config_type_count(int types)
 static int save_all_to_current_dir(int types) // like the old configWriteMulti()
 {
     int result = 0;
+    int expected = config_type_count(types);
 
-    if (!ensure_config_dir())
+    if (!ensure_config_dir()) {
+        LOG("CONFIG: no config_dir selected for save\n");
+        return 0;
+    }
+
+    if (!resolve_legacy_config_dir())
         return 0;
 
-    const char *path = wOPLGetDir();
-    if (path && !strncmp(path, "mc", 2))
-        sbCheckMCFolder();
+    LOG("CONFIG: saving to config_dir '%s'\n", config_dir);
+
+    if (config_path_has_device_prefix(config_dir, "mc") && !sbEnsureMCConfigFolder(config_dir)) {
+        LOG("CONFIG: failed to prepare MC config folder '%s'\n", config_dir);
+        return 0;
+    }
 
     if (types & CONFIG_OPL)
         result += do_save_at_dir(config_dir, WOPL_FILENAME, build_opl);
@@ -1635,145 +1854,18 @@ static int save_all_to_current_dir(int types) // like the old configWriteMulti()
     if (types & CONFIG_GAME)
         result += do_save_at_dir(config_dir, GAME_FILENAME, build_global_game);
 
-    return result;
-}
+    if (result != expected)
+        return result;
 
-static int save_all_to_dir(const char *dir, int types)
-{
-    int result = 0;
-    char target_dir[128];
-
-    if (!dir || !dir[0])
+    if (!save_boot_config())
         return 0;
 
-    copy_str(target_dir, dir, sizeof(target_dir));
-
-    if (!strncmp(target_dir, "mc", 2))
-        sbCheckMCFolder();
-
-    if (types & CONFIG_OPL)
-        result += do_save_at_dir(target_dir, WOPL_FILENAME, build_opl);
-    if (types & CONFIG_NETWORK)
-        result += do_save_at_dir(target_dir, NET_FILENAME, build_net);
-    if (types & CONFIG_GAME)
-        result += do_save_at_dir(target_dir, GAME_FILENAME, build_global_game);
-
     return result;
-}
-
-static int try_save_all_boot(int types)
-{
-    char dir[128];
-    char path[256];
-
-    if (types & CONFIG_OPL) {
-        if (probe_boot_config_path(WOPL_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    if (types & CONFIG_NETWORK) {
-        if (probe_boot_config_path(NET_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    if (types & CONFIG_GAME) {
-        if (probe_boot_config_path(GAME_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    return 0;
-}
-
-static int try_save_all_mc(int types)
-{
-    int mc = sysCheckMC();
-
-    if (mc < 0)
-        return 0;
-
-    char dir[128];
-    snprintf(dir, sizeof(dir), "mc%d:%s/", mc & 1, WOPL_CONFIG_NAME);
-
-    return save_all_to_dir(dir, types);
-}
-
-static int try_save_all_bdm(int types)
-{
-    char dir[128];
-    char path[256];
-
-    if (types & CONFIG_OPL) {
-        if (probe_bdm_config_path(WOPL_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    if (types & CONFIG_NETWORK) {
-        if (probe_bdm_config_path(NET_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    if (types & CONFIG_GAME) {
-        if (probe_bdm_config_path(GAME_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    return 0;
-}
-
-static int try_save_all_hdd(int types)
-{
-    char dir[128];
-    char path[256];
-
-    if (types & CONFIG_OPL) {
-        if (probe_hdd_config_path(WOPL_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    if (types & CONFIG_NETWORK) {
-        if (probe_hdd_config_path(NET_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    if (types & CONFIG_GAME) {
-        if (probe_hdd_config_path(GAME_FILENAME, dir, sizeof(dir), path, sizeof(path), 1))
-            return save_all_to_dir(dir, types);
-    }
-
-    return 0;
-}
-
-static int save_all_with_fallback(int types)
-{
-    int result;
-    int expected = config_type_count(types);
-
-    result = save_all_to_current_dir(types);
-    if (result == expected)
-        return result;
-
-    result = try_save_all_boot(types);
-    if (result == expected)
-        return result;
-
-    result = try_save_all_mc(types);
-    if (result == expected)
-        return result;
-
-    result = try_save_all_bdm(types);
-    if (result == expected)
-        return result;
-
-    result = try_save_all_hdd(types);
-    if (result == expected)
-        return result;
-
-    return 0;
 }
 
 static void _saveConfig()
 {
-    lscret = save_all_with_fallback(lscstatus);
+    lscret = save_all_to_current_dir(lscstatus);
     lscstatus = 0;
 }
 

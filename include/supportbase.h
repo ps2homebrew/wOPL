@@ -58,8 +58,9 @@ extern int gPadEmuSource;
 
 int isValidIsoName(char *name, int *pNameLen);
 int sbGetmcID(void);
+int sbCheckMC(void);
+int sbEnsureMCConfigFolder(const char *dir);
 int sbGetFileSize(int fd);
-void sbCheckMCFolder(void);
 int sbOpenFile(char *path, int mode);
 void *sbReadFile(char *path, int align, int *size);
 int sbIsSameSize(const char *prefix, int prevSize);

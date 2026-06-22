@@ -74,6 +74,28 @@ int pathIsDevicePath(const char *path)
     return 0;
 }
 
+int pathIsLegacyMassPath(const char *path)
+{
+    const char *p;
+
+    if (!path || strncmp(path, "mass", 4))
+        return 0;
+
+    p = path + 4;
+
+    // wLE seems to use mass: instead of mass0:
+    if (*p == ':')
+        return 1;
+
+    if (*p < '0' || *p > '9')
+        return 0;
+
+    while (*p >= '0' && *p <= '9')
+        p++;
+
+    return *p == ':';
+}
+
 void pathNormaliseDir(char *dir, size_t dir_len)
 {
     size_t len;
@@ -92,14 +114,14 @@ void pathNormaliseDir(char *dir, size_t dir_len)
     }
 }
 
-static int path_get_dirname(const char *path, char *dir_out, size_t dir_len)
+static int path_get_dirname(const char *path, char *dir_out, size_t dir_len, int allowLegacyMass)
 {
     const char *slash;
 
     if (!path || !path[0] || !dir_len)
         return 0;
 
-    if (!pathIsDevicePath(path))
+    if (!pathIsDevicePath(path) && (!allowLegacyMass || !pathIsLegacyMassPath(path)))
         return 0;
 
     slash = strrchr(path, '/');
@@ -126,7 +148,8 @@ int pathGetBootDir(char *dir_out, size_t dir_len)
     if (!dir_out || !dir_len)
         return 0;
 
-    if (path_get_dirname(launchPath, dir_out, dir_len))
+    // argv0/cwd could still be massN: on old launch paths.. accept it only here
+    if (path_get_dirname(launchPath, dir_out, dir_len, 1))
         return 1;
 
     pwd[0] = '\0';
@@ -134,7 +157,7 @@ int pathGetBootDir(char *dir_out, size_t dir_len)
     if (getcwd(pwd, sizeof(pwd)) == NULL)
         return 0;
 
-    if (!pathIsDevicePath(pwd))
+    if (!pathIsDevicePath(pwd) && !pathIsLegacyMassPath(pwd))
         return 0;
 
     copy_str(dir_out, pwd, dir_len);

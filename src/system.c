@@ -1162,19 +1162,22 @@ int sysCheckVMC(const char *prefix, const char *sep, char *name, int createSize,
 
 #include <elf-loader.h>
 
-static const char *getDeviceName(const char *driver)
+static const char *getDeviceName(const char *device)
 {
-    if (!strncmp(driver, "usb", 3))
-        return "usb";
-    else if (!strncmp(driver, "sdc", 3))
+    if (!device || !device[0])
+        return "unsupported";
+
+    if (!strncmp(device, "mx4sio", 6) || !strncmp(device, "sdc", 3))
         return "mx4sio";
-    else if (!strncmp(driver, "sd", 2))
+    else if (!strncmp(device, "ilink", 5) || !strcmp(device, "sd") || !strcmp(device, "sd:"))
         return "ilink";
-    else if (!strncmp(driver, "ata", 3))
+    else if (!strncmp(device, "usb", 3))
+        return "usb";
+    else if (!strncmp(device, "ata", 3))
         return "ata";
-    else if (!strncmp(driver, "apa", 3))
+    else if (!strncmp(device, "apa", 3))
         return "apa";
-    else if (!strncmp(driver, "mmce", 4))
+    else if (!strncmp(device, "mmce", 4))
         return "mmce";
     else
         return "unsupported";

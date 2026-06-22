@@ -167,7 +167,7 @@ static void setDefaults(void)
     gAutosort = 1;
     gAutoRefresh = 0;
     gEnableDebug = 0;
-    gBDMDebug = 0;
+    gBDMDebug = 1;
     gPS2Logo = 1;
     gHDDGameListCache = 0;
     gEnableWrite = 1;
