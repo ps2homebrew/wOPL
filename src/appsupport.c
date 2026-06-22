@@ -67,7 +67,6 @@ static int oplScanApps(int (*callback)(const char *path, config_t *appConfig, vo
 
 static int oplGetAppImage(const char *device, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
 static int oplShouldAppsUpdate(void);
-static int oplPath2Mode(const char *path);
 
 static float appGetELFSize(char *path)
 {
@@ -297,7 +296,7 @@ static void appLaunchItem(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         close(fd);
 
         strcpy(partition, "");
-        mode = oplPath2Mode(filename);
+        mode = sbGetPathMode(filename);
         if (mode < 0)
             mode = APP_MODE;
 
@@ -535,7 +534,7 @@ static int oplGetAppImage(const char *device, char *folder, int isRelative, char
 
     elfbootmode = -1;
     if (device != NULL) {
-        elfbootmode = oplPath2Mode(device);
+        elfbootmode = sbGetPathMode(device);
         if (elfbootmode >= 0) {
             listSupport = list_support[elfbootmode].support;
 
@@ -573,31 +572,4 @@ static int oplShouldAppsUpdate(void)
     shouldAppsUpdate = 0;
 
     return result;
-}
-
-// For resolving the mode, given an app's path
-static int oplPath2Mode(const char *path)
-{
-    char appsPath[64];
-    const char *blkdevnameend;
-    int i, blkdevnamelen;
-    item_list_t *listSupport;
-
-    for (i = 0; i < MODE_COUNT; i++) {
-        listSupport = list_support[i].support;
-        if ((listSupport != NULL) && (listSupport->itemGetPrefix != NULL)) {
-            char *prefix = listSupport->itemGetPrefix(listSupport);
-            snprintf(appsPath, sizeof(appsPath), "%sAPPS", prefix);
-
-            blkdevnameend = strchr(appsPath, ':');
-            if (blkdevnameend != NULL) {
-                blkdevnamelen = (int)(blkdevnameend - appsPath);
-
-                if (strncmp(path, appsPath, blkdevnamelen) == 0)
-                    return listSupport->mode;
-            }
-        }
-    }
-
-    return -1;
 }
