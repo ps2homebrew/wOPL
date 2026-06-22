@@ -83,7 +83,7 @@ ifneq ($(GIT_TAG),latest)
 endif
 endif
 
-FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config_wopl.o config_migration.o dialogs.o tetris.o \
+FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config_wopl.o pathsupport.o config_migration.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o lwnbd.o iosupport.o initializer.o zso.o lz4.o \
 		appsupport.o mmcesupport.o favsupport.o gui.o guigame.o vmc_groups.o textures.o tar.o common.o main.o module.o atlas.o nbns.o sound.o ps2cnf.o
 
