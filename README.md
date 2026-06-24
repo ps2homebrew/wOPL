@@ -69,6 +69,7 @@ v1.2
 * Add unimplmemented icons for pademu, gsm and cheats
 * Migrated from old internal config api to libconfig thanks to krahjohilito
 * Added splash boot notifications and version text thanks to krahjohilito
+* Updated neutrino path support to BDM, MMCE and HDD (APA) thanks to krahjohilito
 
 ### ART/CFG/CHT .tar compact support
 
@@ -94,6 +95,12 @@ You can see game list with both normal art and art.tar
 Image Linker module allows patch files up to 4KiB in size to be linked as the game launches. IMG directory contains the GAMEID.img file the same as PS2RD CHT. This feature can be activated with "Enable Linker" under the game's "Cheat Settings."
 
 The binary format of img file can be discovered in ee_core/src/cheat_api.c LinkImage subroutine.
+
+### Neutrino´s new path support
+
+The folder name needs to be stored with name: `neutrino`(uppercased or lowercased) on the root of `USB` `MX4SIO` `HDD (ATA)` `iLink` `mmce` `HDD (APA)` with the usual setup of `config` and `modules` subfolders.<br>
+In game settings you will find an option `Loader Core` with the options of `<wOPL>` or `Neutrino`<br><br>
+Get [Neutrino](https://github.com/rickgaiser/neutrino/releases)
 
 </p>
 </details>
