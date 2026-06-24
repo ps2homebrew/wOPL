@@ -967,11 +967,20 @@ void guiGameSavePadMacroGlobalConfig(void)
 }
 #endif
 
+static int guiGameNormaliseCoreLoader(int value)
+{
+    return value == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
+}
+
 void guiGameShowCompatConfig(int id, item_list_t *support)
 {
     int i;
 
-    const char *loaders[] = {"<OPL>", "Neutrino", NULL};
+    const char *loaders[] = {
+        [CORE_LOADER_WOPL] = "<wOPL>",
+        [CORE_LOADER_NEUTRINO] = "Neutrino",
+        NULL};
+
     diaSetEnum(diaCompatConfig, COMPAT_LOADER, loaders);
 
     if (support->flags & MODE_FLAG_COMPAT_DMA) {
@@ -999,6 +1008,8 @@ void guiGameShowCompatConfig(int id, item_list_t *support)
         }
 
         diaGetInt(diaCompatConfig, COMPAT_LOADER, &coreLoader);
+        coreLoader = guiGameNormaliseCoreLoader(coreLoader);
+
         diaGetInt(diaCompatConfig, COMPAT_DMA, &dmaMode);
         diaGetString(diaCompatConfig, COMPAT_GAMEID, hexid, sizeof(hexid));
         diaGetString(diaCompatConfig, COMPAT_ALTSTARTUP, altStartup, sizeof(altStartup));
@@ -1022,6 +1033,7 @@ int guiGameSaveConfig(per_game_cfg_t *pg, item_list_t *support)
     }
 
     diaGetInt(diaCompatConfig, COMPAT_LOADER, &coreLoader);
+    coreLoader = guiGameNormaliseCoreLoader(coreLoader);
     pg->core_loader = coreLoader;
 
 #ifdef GSM
@@ -1344,7 +1356,7 @@ void guiGameLoadConfig(item_list_t *support, per_game_cfg_t *pg)
     for (int i = 0; i < COMPAT_MODE_COUNT; ++i)
         diaSetInt(diaCompatConfig, COMPAT_MODE_BASE + i, (compatMode & (1 << i)) ? 1 : 0);
 
-    coreLoader = pg ? pg->core_loader : 0;
+    coreLoader = pg ? guiGameNormaliseCoreLoader(pg->core_loader) : CORE_LOADER_WOPL;
     diaSetInt(diaCompatConfig, COMPAT_LOADER, coreLoader);
 
 #ifdef GSM
