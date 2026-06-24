@@ -42,6 +42,12 @@ typedef struct
     short allocResult;
 } file_buffer_t;
 
+typedef struct
+{
+    char elf[256];
+    char cwd[256];
+} neutrino_path_t;
+
 #ifdef PADEMU
 extern int gEnablePadEmu;
 extern int gPadEmuSettings;
@@ -88,5 +94,12 @@ int sbProbeISO9660_64(const char *path, base_game_info_t *game, u32 layer1_offse
 int sbLoadCheats(const char *path, const char *file);
 int sbLoadImage(const char *path, const char *file);
 #endif
+
+int sbFindNeutrino(neutrino_path_t *path, const char *preferredPrefix);
+void sbCreateNeutrinoVMCPath(char *path, int length, const char *prefix, const char *vmc);
+
+int sbGetPathModeAndDevice(const char *path, int *device);
+int sbGetPathMode(const char *path);
+int sbPathIsMC(const char *path);
 
 #endif

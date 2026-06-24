@@ -1,4 +1,3 @@
-
 #include "include/common.h"
 #include "include/lang.h"
 #include "include/util.h"
@@ -1389,3 +1388,266 @@ int sbLoadImage(const char *path, const char *file)
     return result;
 }
 #endif
+
+static int sbTryNeutrinoPath(neutrino_path_t *path, const char *cwd)
+{
+    int i;
+    int length;
+    const char *elfNames[] = {
+        "neutrino.elf",
+        "neutrino.ELF",
+        "NEUTRINO.elf",
+        "NEUTRINO.ELF",
+    };
+
+    if (!path || !cwd || !cwd[0])
+        return 0;
+
+    snprintf(path->cwd, sizeof(path->cwd), "%s", cwd);
+
+    length = strlen(path->cwd);
+    if (length <= 0 || length >= sizeof(path->cwd) - 1)
+        return 0;
+
+    if (path->cwd[length - 1] != '/') {
+        path->cwd[length++] = '/';
+        path->cwd[length] = '\0';
+    }
+
+    for (i = 0; i < (int)(sizeof(elfNames) / sizeof(elfNames[0])); i++) {
+        snprintf(path->elf, sizeof(path->elf), "%s%s", path->cwd, elfNames[i]);
+        LOG("SUPPORTBASE: Checking Neutrino ELF '%s'\n", path->elf);
+
+        if (sbFileExists(path->elf)) {
+            LOG("SUPPORTBASE: Neutrino ELF found at '%s'\n", path->elf);
+            return 1;
+        }
+    }
+
+    path->elf[0] = '\0';
+    path->cwd[0] = '\0';
+
+    return 0;
+}
+
+/*
+ * HDD path must not use pfs0: because hddLaunchGame() deinitializes/unmounts it before launching Neutrino
+ * For +wOPL: hdd0:+wOPL/neutrino/neutrino.elf
+ * For __common: hdd0:__common/wOPL/neutrino/neutrino.elf
+ */
+int sbFindNeutrino(neutrino_path_t *path, const char *preferredPrefix)
+{
+    int i;
+    char cwd[256];
+    const char *mcPaths[] = {
+        "mc0:NEUTRINO",
+        "mc1:NEUTRINO",
+        "mc0:/NEUTRINO",
+        "mc1:/NEUTRINO",
+        "mc0:neutrino",
+        "mc1:neutrino",
+        "mc0:/neutrino",
+        "mc1:/neutrino",
+        "mc0:/APPS/neutrino",
+        "mc1:/APPS/neutrino",
+        "mc0:/APPS/NEUTRINO",
+        "mc1:/APPS/NEUTRINO",
+    };
+
+    if (!path)
+        return 0;
+
+    path->elf[0] = '\0';
+    path->cwd[0] = '\0';
+
+    if (preferredPrefix && preferredPrefix[0]) {
+        if (!strncmp(preferredPrefix, "hdd0:", 5)) {
+            if (preferredPrefix[5] != '+') {
+                snprintf(cwd, sizeof(cwd), "%s/%s/neutrino", preferredPrefix, WOPL_CONFIG_NAME);
+                if (sbTryNeutrinoPath(path, cwd))
+                    return 1;
+
+                snprintf(cwd, sizeof(cwd), "%s/%s/NEUTRINO", preferredPrefix, WOPL_CONFIG_NAME);
+                if (sbTryNeutrinoPath(path, cwd))
+                    return 1;
+            }
+
+            snprintf(cwd, sizeof(cwd), "%s/neutrino", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+
+            snprintf(cwd, sizeof(cwd), "%s/NEUTRINO", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+        } else {
+            snprintf(cwd, sizeof(cwd), "%sneutrino", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+
+            snprintf(cwd, sizeof(cwd), "%sNEUTRINO", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+        }
+    }
+
+    for (i = 0; i < MAX_BDM_DEVICES; i++) {
+        snprintf(cwd, sizeof(cwd), "mass%d:/neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:/NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+    }
+
+    for (i = 0; i < 2; i++) {
+        snprintf(cwd, sizeof(cwd), "mmce%d:/neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:/NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+    }
+
+    for (i = 0; i < (int)(sizeof(mcPaths) / sizeof(mcPaths[0])); i++) {
+        if (sbTryNeutrinoPath(path, mcPaths[i]))
+            return 1;
+    }
+
+    return 0;
+}
+
+void sbCreateNeutrinoVMCPath(char *path, int length, const char *prefix, const char *vmc)
+{
+    if (!path || length <= 0)
+        return;
+
+    path[0] = '\0';
+
+    if (!prefix || !prefix[0] || !vmc || !vmc[0])
+        return;
+
+    if (!strncmp(prefix, "hdd0:", 5)) {
+        if (prefix[5] != '+')
+            snprintf(path, length, "%s/%s/VMC/%s.bin", prefix, WOPL_CONFIG_NAME, vmc);
+        else
+            snprintf(path, length, "%s/VMC/%s.bin", prefix, vmc);
+    } else
+        snprintf(path, length, "%sVMC/%s.bin", prefix, vmc);
+}
+
+static int sbParsePathDeviceIndex(const char *path, const char *prefix, int *device)
+{
+    const char *p;
+    int dev = 0;
+    int haveDigit = 0;
+    int prefixLen = strlen(prefix);
+
+    if (!path || strncmp(path, prefix, prefixLen))
+        return 0;
+
+    p = path + prefixLen;
+
+    while (*p >= '0' && *p <= '9') {
+        haveDigit = 1;
+        dev = dev * 10 + (*p - '0');
+        p++;
+    }
+
+    if (*p != ':')
+        return 0;
+
+    if (!haveDigit)
+        dev = 0;
+
+    if (device)
+        *device = dev;
+
+    return 1;
+}
+
+int sbGetPathModeAndDevice(const char *path, int *device)
+{
+    const char *blkdevnameend;
+    const char *prefixend;
+    int i, blkdevnamelen, prefixlen;
+    int dev;
+    item_list_t *listSupport;
+
+    if (device)
+        *device = -1;
+
+    if (!path || !path[0])
+        return -1;
+
+    if (!strncmp(path, "hdd0:", 5) || !strncmp(path, "pfs0:", 5))
+        return HDD_MODE;
+
+    if (sbParsePathDeviceIndex(path, "mass", &dev)) {
+        if (dev < 0 || dev >= MAX_BDM_DEVICES)
+            return -1;
+
+        if (device)
+            *device = dev;
+
+        return BDM_MODE + dev;
+    }
+
+    if (sbParsePathDeviceIndex(path, "mmce", &dev)) {
+        if (device)
+            *device = dev;
+
+        return MMCE_MODE;
+    }
+
+    blkdevnameend = strchr(path, ':');
+    if (blkdevnameend == NULL)
+        return -1;
+
+    blkdevnamelen = (int)(blkdevnameend - path);
+
+    for (i = 0; i < MODE_COUNT; i++) {
+        listSupport = list_support[i].support;
+        if ((listSupport != NULL) && (listSupport->itemGetPrefix != NULL)) {
+            char *prefix = listSupport->itemGetPrefix(listSupport);
+            if (prefix != NULL) {
+                prefixend = strchr(prefix, ':');
+                if (prefixend != NULL) {
+                    prefixlen = (int)(prefixend - prefix);
+
+                    if (blkdevnamelen == prefixlen && strncmp(path, prefix, blkdevnamelen) == 0)
+                        return listSupport->mode;
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+int sbGetPathMode(const char *path)
+{
+    return sbGetPathModeAndDevice(path, NULL);
+}
+
+int sbPathIsMC(const char *path)
+{
+    return path && (!strncmp(path, "mc0:", 4) || !strncmp(path, "mc1:", 4));
+}

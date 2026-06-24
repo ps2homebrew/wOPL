@@ -101,7 +101,7 @@ EECORE_OBJS = ee_core.o ioprp.o util.o \
 		udnl.o imgdrv.o eesync.o \
 		bdm_cdvdman.o bdm_ata_cdvdman.o IOPRP_img.o smb_cdvdman.o \
 		hdd_cdvdman.o hdd_gamestar_cdvdman.o mmce_cdvdman.o hdd_hdpro_cdvdman.o cdvdfsv.o \
-		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o
+		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o neutrino_loader.o
 
 PNG_ASSETS = load0 load1 load2 load3 load4 load5 load6 load7 usb usb_bd ilk_bd \
 	m4s_bd hdd_bd hdd eth app fav mmce fav_mark cross triangle circle square select start left right \
@@ -295,6 +295,8 @@ clean:	download_lwNBD
 	rm -fr $(MAPFILE) $(EE_BIN) $(EE_BIN_PACKED) $(EE_BIN_STRIPPED) $(EE_VPKD).* $(EE_OBJS_DIR) $(EE_ASM_DIR)
 	echo "-EE core"
 	$(MAKE) -C ee_core clean
+	echo "-NEUTRINO LOADER"
+	$(MAKE) -C neutrino_loader clean
 	echo "-IOP core"
 	echo " -imgdrv"
 	$(MAKE) -C modules/iopcore/imgdrv clean
@@ -419,6 +421,12 @@ ee_core/ee_core.elf: ee_core
 
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
+
+neutrino_loader/loader.elf: neutrino_loader/loader.c neutrino_loader/linkfile
+	$(MAKE) -C neutrino_loader
+
+$(EE_ASM_DIR)neutrino_loader.c: neutrino_loader/loader.elf | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ neutrino_loader_elf
 
 $(EE_ASM_DIR)udnl.c: $(UDNL_OUT) | $(EE_ASM_DIR)
 	$(BIN2C) $(UDNL_OUT) $@ udnl_irx

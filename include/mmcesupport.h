@@ -25,6 +25,7 @@ extern char gMMCEPrefix[32];
 void mmceInit(item_list_t *itemList);
 item_list_t *mmceGetObject(int initOnly);
 void mmceSendGameId(const char *gameId);
+void mmceSendGameIdToDevice(int device, const char *gameId);
 void mmceLoadModules(void);
 void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg);
 
