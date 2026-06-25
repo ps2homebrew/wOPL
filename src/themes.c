@@ -769,6 +769,8 @@ static void drawGameImage(struct menu_list *menu, struct submenu_list *item, ren
         item_list_t *sourceList = thmGetItemSource(menu, item);
         theme_element_t *drawElem = thmGetElemForItem(elem, menu, item);
         mutable_image_t *img = (mutable_image_t *)drawElem->extended;
+        if (!gDiscEnableArt && img && img->cache && img->cache->suffix && !strcmp(img->cache->suffix, "ICO"))
+            return;
 
         GSTEXTURE *texture = getGameImageTexture(img->cache, sourceList, &item->item);
         if (!texture || !texture->Mem) {
@@ -1536,7 +1538,7 @@ static int addGUIElem(const char *themePath, config_t *themeConfig, theme_t *the
                     initItemsList(themePath, themeConfig, theme, elem, name, NULL);
                     theme->favsItemsList = elem;
                 }
-            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_ICON], type) && gDiscEnableArt) {
+            } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_ICON], type)) {
                 elem = initBasic(themePath, themeConfig, theme, name, ELEM_TYPE_GAME_IMAGE, 0, 0, ALIGN_CENTER, 64, 64, SCALING_RATIO, gDefaultCol, theme->fonts[0]);
                 initGameImage(themePath, themeConfig, theme, elem, name, "ICO", 20, NULL, NULL);
             } else if (!strcmp(elementsType[ELEM_TYPE_ITEM_COVER], type)) {
