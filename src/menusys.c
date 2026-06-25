@@ -276,24 +276,42 @@ static item_list_t *menuGetCurrentConfigOwner(void)
 
 static void _menuLoadConfig()
 {
+    item_list_t *list;
+    int id;
+    game_info_t gi;
+    per_game_cfg_t pg;
+
     WaitSema(menuSemaId);
-    if (!itemConfigPtr) {
-        item_list_t *list = itemConfigOwner ? itemConfigOwner : selected_item->item->userdata;
+    if (itemConfigPtr) {
+        actionStatus = 0;
+        SignalSema(menuSemaId);
+        return;
+    }
 
-        memset(&itemGameInfo, 0, sizeof(itemGameInfo));
-        memset(&itemPgCfg, 0, sizeof(itemPgCfg));
+    list = itemConfigOwner ? itemConfigOwner : selected_item->item->userdata;
+    id = itemConfigId;
+    SignalSema(menuSemaId);
 
-        if (list->itemGetInfo)
-            list->itemGetInfo(list, itemConfigId, &itemGameInfo);
+    memset(&gi, 0, sizeof(gi));
+    memset(&pg, 0, sizeof(pg));
 
-        if (list->itemGetPgCfg)
-            list->itemGetPgCfg(list, itemConfigId, &itemPgCfg);
+    if (list->itemGetInfo)
+        list->itemGetInfo(list, id, &gi);
+
+    if (list->itemGetPgCfg)
+        list->itemGetPgCfg(list, id, &pg);
+
+    WaitSema(menuSemaId);
+    if (!itemConfigPtr && itemConfigId == id && itemConfigOwner == list) {
+        memcpy(&itemGameInfo, &gi, sizeof(itemGameInfo));
+        memcpy(&itemPgCfg, &pg, sizeof(itemPgCfg));
 
         itemConfig.gi = &itemGameInfo;
         itemConfig.pg = &itemPgCfg;
         itemConfig.uid++;
         itemConfigPtr = &itemConfig;
     }
+
     actionStatus = 0;
     SignalSema(menuSemaId);
 }
