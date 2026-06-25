@@ -337,19 +337,16 @@ static void _menuRequestConfig()
 {
     WaitSema(menuSemaId);
     if (selected_item->item->current != NULL) {
-        item_list_t *list = selected_item->item->userdata;
         item_list_t *owner = menuGetCurrentConfigOwner();
         int id = selected_item->item->current->item.id;
 
-        if (itemConfigId != id || itemConfigOwner != owner) {
+        if (itemConfigId != id || itemConfigOwner != owner || actionStatus) {
             if (itemConfigPtr)
                 itemConfigPtr = NULL;
 
-            if (itemConfigId == -1 || itemConfigOwner != owner || actionStatus || guiInactiveFrames >= list->delay) {
-                itemConfigId = id;
-                itemConfigOwner = owner;
-                ioPutRequest(IO_CUSTOM_SIMPLEACTION, &_menuLoadConfig);
-            }
+            itemConfigId = id;
+            itemConfigOwner = owner;
+            ioPutRequest(IO_CUSTOM_SIMPLEACTION, &_menuLoadConfig);
         } else if (itemConfigPtr)
             actionStatus = 0;
     }
@@ -805,8 +802,6 @@ static void menuNextH()
     // If we found a valid menu transition to it.
     if (next != NULL) {
         selected_item = next;
-        itemConfigId = -1;
-        itemConfigOwner = NULL;
         sfxPlay(SFX_CURSOR);
     }
 }
@@ -819,8 +814,6 @@ static void menuPrevH()
 
     if (prev != NULL) {
         selected_item = prev;
-        itemConfigId = -1;
-        itemConfigOwner = NULL;
         sfxPlay(SFX_CURSOR);
     }
 }
@@ -1158,19 +1151,24 @@ void menuHandleInputMenu()
     }
 }
 
-static void menuRenderElements(theme_element_t *elem)
+static void menuRenderElements(theme_element_t *elem, int requestConfig)
 {
-    // selected_item can't be NULL here as we only allow to switch to "Main" rendering when there is at least one device activated
-    _menuRequestConfig();
+    render_ctx_t *ctx;
+
+    if (requestConfig)
+        _menuRequestConfig();
 
     WaitSema(menuSemaId);
 
+    ctx = requestConfig ? itemConfigPtr : NULL;
+
     while (elem) {
         if (elem->drawElem)
-            elem->drawElem(selected_item, selected_item->item->current, itemConfigPtr, elem);
+            elem->drawElem(selected_item, selected_item->item->current, ctx, elem);
 
         elem = elem->next;
     }
+
     SignalSema(menuSemaId);
 }
 
@@ -1179,13 +1177,13 @@ void menuRenderMain(void)
     item_list_t *list = selected_item->item->userdata;
 
     if (list->mode == APP_MODE) {
-        menuRenderElements(gTheme->appsMainElems.first);
+        menuRenderElements(gTheme->appsMainElems.first, 0);
         gTheme->itemsList = gTheme->appsItemsList;
     } else if (list->mode == FAV_MODE) {
-        menuRenderElements(gTheme->favsMainElems.first);
+        menuRenderElements(gTheme->favsMainElems.first, 0);
         gTheme->itemsList = gTheme->favsItemsList;
     } else {
-        menuRenderElements(gTheme->mainElems.first);
+        menuRenderElements(gTheme->mainElems.first, 0);
         gTheme->itemsList = gTheme->gamesItemsList;
     }
 }
@@ -1252,11 +1250,11 @@ void menuRenderInfo(void)
         gTheme->itemsList = gTheme->gamesItemsList;
 
     if (source->mode == APP_MODE)
-        menuRenderElements(gTheme->appsInfoElems.first);
+        menuRenderElements(gTheme->appsInfoElems.first, 1);
     else if (list->mode == FAV_MODE)
-        menuRenderElements(gTheme->favsInfoElems.first);
+        menuRenderElements(gTheme->favsInfoElems.first, 1);
     else
-        menuRenderElements(gTheme->infoElems.first);
+        menuRenderElements(gTheme->infoElems.first, 1);
 }
 
 void menuHandleInputInfo()
