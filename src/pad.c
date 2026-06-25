@@ -40,9 +40,10 @@ struct pad_data_t
     int actuators;
 };
 
-/// current time in miliseconds (last update time)
+/// current CPU tick count from the last pad poll
 static u32 curtime = 0;
 static u32 time_since_last = 0;
+static int curtime_initialized = 0;
 
 static unsigned short pad_count;
 static struct pad_data_t pad_data[MAX_PADS];
@@ -339,9 +340,13 @@ int readPads()
     oldpaddata = paddata;
     paddata = 0;
 
-    // in ms.
-    u32 newtime = cpu_ticks() / CLOCKS_PER_MILISEC;
-    time_since_last = newtime - curtime;
+    u32 newtime = cpu_ticks();
+    if (!curtime_initialized) {
+        time_since_last = 0;
+        curtime_initialized = 1;
+    } else
+        time_since_last = (newtime - curtime) / CLOCKS_PER_MILISEC;
+
     curtime = newtime;
 
     int rslt = 0;
