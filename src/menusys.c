@@ -1259,39 +1259,16 @@ void menuRenderInfo(void)
 
 void menuHandleInputInfo()
 {
-    int navPrev;
-    int navNext;
-
-    if (gTheme->coverflow == NULL) {
-        navPrev = KEY_UP;
-        navNext = KEY_DOWN;
-    } else {
-        navPrev = KEY_LEFT;
-        navNext = KEY_RIGHT;
-    }
-
     if (getKeyOn(KEY_CROSS)) {
         if (gSelectButton == KEY_CIRCLE)
             guiSwitchScreen(GUI_SCREEN_MAIN);
         else
             selected_item->item->execCross(selected_item->item);
-    } else if (getKey(navPrev)) {
-        menuPrevV();
-    } else if (getKey(navNext)) {
-        menuNextV();
     } else if (getKeyOn(KEY_CIRCLE)) {
         if (gSelectButton == KEY_CROSS)
             guiSwitchScreen(GUI_SCREEN_MAIN);
         else
             selected_item->item->execCircle(selected_item->item);
-    } else if (getKey(KEY_L1)) {
-        menuPrevPage();
-    } else if (getKey(KEY_R1)) {
-        menuNextPage();
-    } else if (getKeyOn(KEY_L2)) {
-        menuFirstPage();
-    } else if (getKeyOn(KEY_R2)) {
-        menuLastPage();
     }
 }
 
