@@ -334,17 +334,17 @@ static void copy_str(char *dst, const char *src, size_t size)
 
 static void sanitize_frame_delays(void)
 {
-    if (gBDMFramesDelay <= 0)
+    if (gBDMFramesDelay < 0)
         gBDMFramesDelay = MENU_MIN_INACTIVE_FRAMES;
-    if (gETHFramesDelay <= 0)
+    if (gETHFramesDelay < 0)
         gETHFramesDelay = MENU_MIN_INACTIVE_FRAMES;
-    if (gHDDFramesDelay <= 0)
+    if (gHDDFramesDelay < 0)
         gHDDFramesDelay = MENU_MIN_INACTIVE_FRAMES;
-    if (gMMCEFramesDelay <= 0)
+    if (gMMCEFramesDelay < 0)
         gMMCEFramesDelay = MENU_MIN_INACTIVE_FRAMES;
-    if (gAPPFramesDelay <= 0)
+    if (gAPPFramesDelay < 0)
         gAPPFramesDelay = MENU_MIN_INACTIVE_FRAMES;
-    if (gFAVFramesDelay <= 0)
+    if (gFAVFramesDelay < 0)
         gFAVFramesDelay = MENU_MIN_INACTIVE_FRAMES;
 }
 
