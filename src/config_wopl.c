@@ -438,8 +438,6 @@ static int normalise_true_config_dir(char *out, size_t out_len, const char *dir,
 
     legacyLaunchPath = pathIsLegacyMassPath(dir);
 
-    LOG("CONFIG: normalise dir='%s' allowLegacyMass=%d legacy=%d\n", dir, allowLegacyMass, legacyLaunchPath);
-
     if (legacyLaunchPath) {
         if (!allowLegacyMass) {
             LOG("CONFIG: rejecting legacy mass path '%s'\n", dir);
@@ -467,8 +465,6 @@ static int normalise_true_config_dir(char *out, size_t out_len, const char *dir,
     }
 
     pathNormaliseDir(out, out_len);
-
-    LOG("CONFIG: normalised config dir='%s'\n", out);
 
     if (!pathIsDevicePath(out)) {
         LOG("CONFIG: rejected non-device config dir '%s'\n", out);
@@ -533,15 +529,16 @@ static int load_boot_config_from_dir(const char *launch_dir)
 
     cfgValidateBegin(boot_path);
 
-    if (!legacy_boot_root && cfgGetStr(&cfg, "boot.config_dir", &value)) {
+    if (cfgGetStr(&cfg, "boot.config_dir", &value) && value[0]) {
         // boot.config_dir is user selected config root.. Do not accept legacy massN: here
-        if (normalise_true_config_dir(resolved_dir, sizeof(resolved_dir), value, 0)) {
+        if (pathIsLegacyMassPath(value)) {
+            LOG("CONFIG: ignoring legacy boot.config_dir '%s'\n", value);
+        } else if (normalise_true_config_dir(resolved_dir, sizeof(resolved_dir), value, 0)) {
             copy_str(config_dir, resolved_dir, sizeof(config_dir));
             have_config_dir = 1;
         } else
             LOG("CONFIG: ignoring invalid boot.config_dir '%s'\n", value);
-    } else if (legacy_boot_root)
-        LOG("CONFIG: ignoring boot.config_dir while using legacy launch root '%s'\n", boot_root);
+    }
 
     if (!have_config_dir) {
         copy_str(config_dir, boot_root, sizeof(config_dir));
@@ -603,11 +600,7 @@ static int ensure_config_dir(void)
     if (getcwd(cwd, sizeof(cwd)) == NULL)
         copy_str(cwd, "(getcwd failed)", sizeof(cwd));
 
-    LOG("CONFIG: ensure_config_dir launch='%s' cwd='%s'\n", launch ? launch : "(null)", cwd);
-
     ok = pick_default_config_dir();
-
-    LOG("CONFIG: ensure_config_dir result=%d config_dir='%s' boot_dir='%s'\n", ok, config_dir, boot_dir);
 
     return ok;
 }
@@ -1000,8 +993,6 @@ int wOPLLoad(int *out_theme_id, int *out_lang_id)
     if (!pathJoin(path, sizeof(path), config_dir, WOPL_FILENAME))
         return 0;
 
-    LOG("CONFIG_WOPL: trying '%s'\n", path);
-
     config_init(&cfg);
     if (config_read_file(&cfg, path)) {
         cfgValidateBegin(path);
@@ -1133,8 +1124,6 @@ int wOPLNetLoad(void)
 
     if (!pathJoin(path, sizeof(path), config_dir, NET_FILENAME))
         return 0;
-
-    LOG("CONFIG_NET: trying '%s'\n", path);
 
     // 1. Try new filename
     config_init(&cfg);
@@ -1341,8 +1330,6 @@ int wOPLGlobalGameLoad(void)
 
     if (!pathJoin(path, sizeof(path), config_dir, GAME_FILENAME))
         return 0;
-
-    LOG("CONFIG_GAME: trying '%s'\n", path);
 
     config_init(&cfg);
     if (config_read_file(&cfg, path)) {
@@ -1734,29 +1721,47 @@ void configApply(int themeID, int langID, int skipDeviceRefresh)
 #endif
 }
 
-static int resolve_legacy_config_dir(void)
+static int resolve_legacy_config_paths(void)
 {
     char resolved[128];
 
-    if (!pathIsLegacyMassPath(config_dir))
-        return 1;
+    if (pathIsLegacyMassPath(config_dir)) {
+        LOG("CONFIG: resolving legacy config_dir '%s'\n", config_dir);
 
-    LOG("CONFIG: resolving legacy config_dir '%s'\n", config_dir);
+        if (!bdmResolveLegacyPath(resolved, sizeof(resolved), config_dir)) {
+            LOG("CONFIG: could not resolve legacy config_dir '%s'\n", config_dir);
+            return 0;
+        }
 
-    if (!bdmResolveLegacyPathFromDeviceList(resolved, sizeof(resolved), config_dir)) {
-        LOG("CONFIG: could not resolve legacy config_dir '%s'\n", config_dir);
-        return 0;
+        pathNormaliseDir(resolved, sizeof(resolved));
+
+        if (!pathIsDevicePath(resolved) || pathIsLegacyMassPath(resolved)) {
+            LOG("CONFIG: rejected resolved config_dir '%s'\n", resolved);
+            return 0;
+        }
+
+        LOG("CONFIG: resolved config_dir '%s' -> '%s'\n", config_dir, resolved);
+        copy_str(config_dir, resolved, sizeof(config_dir));
     }
 
-    pathNormaliseDir(resolved, sizeof(resolved));
+    if (pathIsLegacyMassPath(boot_dir)) {
+        LOG("CONFIG: resolving legacy boot_dir '%s'\n", boot_dir);
 
-    if (!pathIsDevicePath(resolved) || pathIsLegacyMassPath(resolved)) {
-        LOG("CONFIG: rejected resolved config_dir '%s'\n", resolved);
-        return 0;
+        if (!bdmResolveLegacyPath(resolved, sizeof(resolved), boot_dir)) {
+            LOG("CONFIG: could not resolve legacy boot_dir '%s'\n", boot_dir);
+            return 0;
+        }
+
+        pathNormaliseDir(resolved, sizeof(resolved));
+
+        if (!pathIsDevicePath(resolved) || pathIsLegacyMassPath(resolved)) {
+            LOG("CONFIG: rejected resolved boot_dir '%s'\n", resolved);
+            return 0;
+        }
+
+        LOG("CONFIG: resolved boot_dir '%s' -> '%s'\n", boot_dir, resolved);
+        copy_str(boot_dir, resolved, sizeof(boot_dir));
     }
-
-    LOG("CONFIG: resolved config_dir '%s' -> '%s'\n", config_dir, resolved);
-    copy_str(config_dir, resolved, sizeof(config_dir));
 
     return 1;
 }
@@ -1790,7 +1795,7 @@ void _loadConfig() // called directly by initializer at boot before GUI is ready
     LOG("CONFIG: load requested=0x%X result=0x%X config_dir='%s'\n", lscstatus, result, config_dir);
 
     configApply(themeID, langID, 0);
-    resolve_legacy_config_dir();
+    resolve_legacy_config_paths();
 
     lscret = result;
     lscstatus = 0;
@@ -1837,7 +1842,7 @@ static int save_all_to_current_dir(int types) // like the old configWriteMulti()
         return 0;
     }
 
-    if (!resolve_legacy_config_dir())
+    if (!resolve_legacy_config_paths())
         return 0;
 
     LOG("CONFIG: saving to config_dir '%s'\n", config_dir);
