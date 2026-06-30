@@ -48,7 +48,7 @@ extern bdm_device_data_t *gAutoLaunchDeviceData;
 
 void bdmLoadModules(void);
 void bdmLoadModulesForPath(const char *path);
-void bdmLoadModulesForLegacyMass(void);
+void bdmLoadModulesForUsbMassCompat(void);
 void bdmLoadEnabledDeviceModules(void);
 void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg);
 
@@ -60,6 +60,6 @@ int bdmHDDIsPresent(u32 timeoutMs);
 
 void autoLaunchBDMGame(char *argv[]);
 
-int bdmResolveLegacyPath(char *out, size_t out_len, const char *path);
+int bdmResolveUsbMassCompatPath(char *out, size_t out_len, const char *path);
 
 #endif

@@ -18,10 +18,11 @@ static void copy_str(char *dst, const char *src, size_t size)
     dst[size - 1] = '\0';
 }
 
-static int path_starts_with_device(const char *path, const char *device)
+int pathParseDevicePrefix(const char *path, const char *device, int *index, const char **tail, int requireIndex)
 {
     const char *suffix;
     size_t len;
+    int value = -1;
 
     if (!path || !device)
         return 0;
@@ -33,10 +34,36 @@ static int path_starts_with_device(const char *path, const char *device)
 
     suffix = path + len;
 
-    while (*suffix >= '0' && *suffix <= '9')
-        suffix++;
+    if (*suffix != ':') {
+        if (*suffix < '0' || *suffix > '9')
+            return 0;
 
-    return *suffix == ':';
+        value = 0;
+
+        while (*suffix >= '0' && *suffix <= '9') {
+            value = value * 10 + (*suffix - '0');
+            suffix++;
+        }
+    }
+
+    if (*suffix != ':')
+        return 0;
+
+    if (requireIndex && value < 0)
+        return 0;
+
+    if (index)
+        *index = value;
+
+    if (tail)
+        *tail = suffix + 1;
+
+    return 1;
+}
+
+int pathHasDevicePrefix(const char *path, const char *device)
+{
+    return pathParseDevicePrefix(path, device, NULL, NULL, 0);
 }
 
 void pathSetLaunchPath(const char *path)
@@ -67,33 +94,17 @@ int pathIsDevicePath(const char *path)
         return 0;
 
     for (i = 0; devices[i] != NULL; i++) {
-        if (path_starts_with_device(path, devices[i]))
+        if (pathHasDevicePrefix(path, devices[i]))
             return 1;
     }
 
     return 0;
 }
 
-int pathIsLegacyMassPath(const char *path)
+int pathIsUsbMassCompatPath(const char *path)
 {
-    const char *p;
-
-    if (!path || strncmp(path, "mass", 4))
-        return 0;
-
-    p = path + 4;
-
-    // wLE seems to use mass: instead of mass0:
-    if (*p == ':')
-        return 1;
-
-    if (*p < '0' || *p > '9')
-        return 0;
-
-    while (*p >= '0' && *p <= '9')
-        p++;
-
-    return *p == ':';
+    // wLE seems to use mass: instead of mass0:.. pathHasDevicePrefix() intentionally accepts both forms because the devN is optional
+    return pathHasDevicePrefix(path, "mass");
 }
 
 void pathNormaliseDir(char *dir, size_t dir_len)
@@ -114,20 +125,31 @@ void pathNormaliseDir(char *dir, size_t dir_len)
     }
 }
 
-static int path_get_dirname(const char *path, char *dir_out, size_t dir_len, int allowLegacyMass)
+static int path_get_dirname(const char *path, char *dir_out, size_t dir_len, int allowUsbMassCompat)
 {
     const char *slash;
+    const char *colon;
 
     if (!path || !path[0] || !dir_len)
         return 0;
 
-    if (!pathIsDevicePath(path) && (!allowLegacyMass || !pathIsLegacyMassPath(path)))
+    if (!pathIsDevicePath(path) && (!allowUsbMassCompat || !pathIsUsbMassCompatPath(path)))
         return 0;
 
     slash = strrchr(path, '/');
 
     if (!slash) {
-        copy_str(dir_out, path, dir_len);
+        colon = strchr(path, ':');
+
+        if (!colon)
+            return 0;
+
+        if ((size_t)(colon - path + 1) >= dir_len)
+            return 0;
+
+        memcpy(dir_out, path, colon - path + 1);
+        dir_out[colon - path + 1] = '\0';
+
         pathNormaliseDir(dir_out, dir_len);
         return 1;
     }
@@ -152,26 +174,14 @@ int pathGetBootDir(char *dir_out, size_t dir_len)
     if (path_get_dirname(launchPath, dir_out, dir_len, 1))
         return 1;
 
-    pwd[0] = '\0';
-
     if (getcwd(pwd, sizeof(pwd)) == NULL)
         return 0;
 
-    if (!pathIsDevicePath(pwd) && !pathIsLegacyMassPath(pwd))
+    if (!pathIsDevicePath(pwd) && !pathIsUsbMassCompatPath(pwd))
         return 0;
 
     copy_str(dir_out, pwd, dir_len);
     pathNormaliseDir(dir_out, dir_len);
-
-    return 1;
-}
-
-int pathResolveToTrue(char *out, size_t out_len, const char *path)
-{
-    if (!out || !out_len || !path)
-        return 0;
-
-    copy_str(out, path, out_len);
 
     return 1;
 }

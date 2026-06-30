@@ -16,6 +16,7 @@
 #include "include/module.h"
 #include "include/initializer.h"
 #include "include/config_wopl.h"
+#include "include/pathsupport.h"
 #include <fcntl.h>
 #include <stdlib.h>
 #include <ps2sdkapi.h>
@@ -158,35 +159,15 @@ static void bdmLoadBlockDeviceModules(void)
     SignalSema(bdmLoadModuleLock);
 }
 
-static int bdmPathHasDevicePrefix(const char *path, const char *prefix)
-{
-    size_t len;
-
-    if (!path || !prefix)
-        return 0;
-
-    len = strlen(prefix);
-
-    if (strncmp(path, prefix, len))
-        return 0;
-
-    path += len;
-
-    while (*path >= '0' && *path <= '9')
-        path++;
-
-    return *path == ':';
-}
-
 static int bdmGetDeviceTypeFromPath(const char *path)
 {
-    if (bdmPathHasDevicePrefix(path, "usb"))
+    if (pathHasDevicePrefix(path, "usb"))
         return BDM_TYPE_USB;
-    if (bdmPathHasDevicePrefix(path, "ilink"))
+    if (pathHasDevicePrefix(path, "ilink"))
         return BDM_TYPE_ILINK;
-    if (bdmPathHasDevicePrefix(path, "mx4sio"))
+    if (pathHasDevicePrefix(path, "mx4sio"))
         return BDM_TYPE_SDC;
-    if (bdmPathHasDevicePrefix(path, "ata"))
+    if (pathHasDevicePrefix(path, "ata"))
         return BDM_TYPE_ATA;
 
     return BDM_TYPE_UNKNOWN;
@@ -257,17 +238,14 @@ void bdmLoadModulesForPath(const char *path)
     SignalSema(bdmLoadModuleLock);
 }
 
-void bdmLoadModulesForLegacyMass(void)
+void bdmLoadModulesForUsbMassCompat(void)
 {
-    LOG("BDMSUPPORT LoadModulesForLegacyMass\n");
+    LOG("BDMSUPPORT LoadModulesForUsbMassCompat\n");
 
     bdmLoadBaseModules();
 
     WaitSema(bdmLoadModuleLock);
     bdmLoadUSBModules();
-    //bdmLoadiLinkModules();
-    //bdmLoadMX4SIOModules();
-    bdmLoadBdmHDDModules();
     SignalSema(bdmLoadModuleLock);
 }
 
@@ -1138,42 +1116,6 @@ static int bdmOpenTrueDevice(int deviceType, int deviceIndex)
     return fileXioDopen(path);
 }
 
-static int bdmParseLegacyMassPath(const char *path, int *index, const char **tail)
-{
-    const char *p;
-    int value;
-
-    if (!path || strncmp(path, "mass", 4))
-        return 0;
-
-    p = path + 4;
-    value = -1;
-
-    // wLE seems to use mass: instead of mass0:
-    if (*p != ':') {
-        if (*p < '0' || *p > '9')
-            return 0;
-
-        value = 0;
-
-        while (*p >= '0' && *p <= '9') {
-            value = value * 10 + (*p - '0');
-            p++;
-        }
-    }
-
-    if (*p != ':')
-        return 0;
-
-    if (index)
-        *index = value;
-
-    if (tail)
-        *tail = p + 1;
-
-    return 1;
-}
-
 static int bdmSetDeviceTypeAndTruePrefix(bdm_device_data_t *pDeviceData, item_list_t *itemList, int deviceType, int deviceIndex)
 {
     if (!pDeviceData)
@@ -1221,7 +1163,7 @@ static int bdmSetupDeviceData(bdm_device_data_t *pDeviceData, item_list_t *itemL
     return 1;
 }
 
-static int bdmBuildResolvedLegacyCandidate(char *out, size_t out_len, const char *truePrefix, const char *tail)
+static int bdmBuildUsbMassCompatCandidate(char *out, size_t out_len, const char *truePrefix, const char *tail)
 {
     int len;
 
@@ -1241,7 +1183,7 @@ static int bdmBuildResolvedLegacyCandidate(char *out, size_t out_len, const char
     return 1;
 }
 
-static int bdmResolveLegacyPathPass(char *out, size_t out_len, const char *tail, int massIndex, int strictIndex)
+static int bdmResolveUsbMassCompatPathPass(char *out, size_t out_len, const char *tail, int massIndex, int strictIndex)
 {
     int i;
     struct stat st;
@@ -1256,17 +1198,20 @@ static int bdmResolveLegacyPathPass(char *out, size_t out_len, const char *tail,
         if (!pDeviceData || !pDeviceData->bdmTruePrefix[0])
             continue;
 
+        if (pDeviceData->bdmDeviceType != BDM_TYPE_USB)
+            continue;
+
         if (strictIndex && massIndex >= 0 && pDeviceData->massDeviceIndex != massIndex)
             continue;
 
-        if (!bdmBuildResolvedLegacyCandidate(candidate, sizeof(candidate), pDeviceData->bdmTruePrefix, tail))
+        if (!bdmBuildUsbMassCompatCandidate(candidate, sizeof(candidate), pDeviceData->bdmTruePrefix, tail))
             continue;
 
         if (stat(candidate, &st) != 0)
             continue;
 
         snprintf(out, out_len, "%s", candidate);
-        LOG("BDMSUPPORT: resolved legacy path from device list '%s'\n", out);
+        LOG("BDMSUPPORT: resolved USB mass compatibility path '%s'\n", out);
 
         return 1;
     }
@@ -1274,7 +1219,7 @@ static int bdmResolveLegacyPathPass(char *out, size_t out_len, const char *tail,
     return 0;
 }
 
-int bdmResolveLegacyPath(char *out, size_t out_len, const char *path)
+int bdmResolveUsbMassCompatPath(char *out, size_t out_len, const char *path)
 {
     const char *tail;
     int massIndex;
@@ -1282,18 +1227,18 @@ int bdmResolveLegacyPath(char *out, size_t out_len, const char *path)
     if (!out || !out_len || !path)
         return 0;
 
-    if (!bdmParseLegacyMassPath(path, &massIndex, &tail))
+    if (!pathParseDevicePrefix(path, "mass", &massIndex, &tail, 0))
         return 0;
 
     // First try a strict match using the reported BDM device number
-    if (bdmResolveLegacyPathPass(out, out_len, tail, massIndex, 1))
+    if (bdmResolveUsbMassCompatPathPass(out, out_len, tail, massIndex, 1))
         return 1;
 
     // Fallback wLE massN: does not always match the true BDM index
-    if (bdmResolveLegacyPathPass(out, out_len, tail, massIndex, 0))
+    if (bdmResolveUsbMassCompatPathPass(out, out_len, tail, massIndex, 0))
         return 1;
 
-    LOG("BDMSUPPORT: could not resolve legacy path from device list '%s'\n", path);
+    LOG("BDMSUPPORT: could not resolve USB mass compatibility path '%s'\n", path);
 
     return 0;
 }

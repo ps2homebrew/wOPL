@@ -1113,7 +1113,7 @@ void guiGameRemoveGlobalSettings(void)
 {
     if (menuCheckParentalLock() == 0) {
         memset(&gGlobalGameCfg, 0, sizeof(gGlobalGameCfg));
-        wOPLGlobalGameSave();
+        configSave(CONFIG_GAME, 0);
     }
 }
 
