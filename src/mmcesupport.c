@@ -68,11 +68,20 @@ void mmceSetPrefix(void)
 
 void mmceLoadModules(void)
 {
+    static int mmceModulesLoaded = 0;
+
+    if (mmceModulesLoaded)
+        return;
+
     LOG("MMCESUPPORT LoadModules\n");
+
     guiSetBootStatusIfActive("Loading MMCE modules...");
 
     LOG("[MMCEMAN]:\n");
+
     sysLoadModuleBuffer(&mmceman_irx, size_mmceman_irx, 0, NULL);
+
+    mmceModulesLoaded = 1;
 }
 
 void mmceInit(item_list_t *itemList)

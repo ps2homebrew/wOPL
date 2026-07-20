@@ -20,6 +20,7 @@
 #include "include/mmcesupport.h"
 #include "include/tar.h"
 #include "include/config_wopl.h"
+#include "include/pathsupport.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioMount("iso:", ***), fileXioUmount("iso:")
@@ -67,11 +68,6 @@ int gPadMacroSettings;
 int gPadEmuSource;
 #endif
 
-int sbGetmcID(void)
-{
-    return mcID;
-}
-
 int sbGetFileSize(int fd)
 {
     int size = lseek(fd, 0, SEEK_END);
@@ -79,7 +75,12 @@ int sbGetFileSize(int fd)
     return size;
 }
 
-static int checkMC()
+int sbGetmcID(void)
+{
+    return mcID;
+}
+
+int sbCheckMC(void)
 {
     int mc0_is_ps2card, mc1_is_ps2card;
     int mc0_has_folder, mc1_has_folder;
@@ -140,62 +141,135 @@ static int checkMC()
     return mcID;
 }
 
-void sbCheckMCFolder(void)
+static int is_mc_config_path(const char *dir, int *slot)
 {
-    char path[32];
+    if (!dir || strncmp(dir, "mc", 2) != 0)
+        return 0;
+
+    if (dir[2] != '0' && dir[2] != '1')
+        return 0;
+
+    if (dir[3] != ':')
+        return 0;
+
+    if (slot)
+        *slot = dir[2] - '0';
+
+    return 1;
+}
+
+static int mc_slot_is_usable(int slot)
+{
+    char path[8];
+    DIR *root;
+
+    snprintf(path, sizeof(path), "mc%d:/", slot);
+
+    root = opendir(path);
+    if (root == NULL)
+        return 0;
+
+    closedir(root);
+    return 1;
+}
+
+static int normalise_mc_config_dir(char *out, int out_size, const char *dir)
+{
+    int len;
+
+    if (!out || out_size <= 0 || !dir)
+        return 0;
+
+    if (snprintf(out, out_size, "%s", dir) >= out_size)
+        return 0;
+
+    len = strlen(out);
+    if (len <= 0)
+        return 0;
+
+    if (out[len - 1] != '/') {
+        if (len + 1 >= out_size)
+            return 0;
+
+        out[len++] = '/';
+        out[len] = '\0';
+    }
+
+    return 1;
+}
+
+static int ensure_dir_exists(const char *dir)
+{
+    DIR *ldir;
+
+    ldir = opendir(dir);
+    if (ldir != NULL) {
+        closedir(ldir);
+        return 1;
+    }
+
+    if (mkdir(dir, 0777) == 0)
+        return 1;
+
+    ldir = opendir(dir);
+    if (ldir != NULL) {
+        closedir(ldir);
+        return 1;
+    }
+
+    return 0;
+}
+
+static void write_file_if_missing(const char *path, const void *data, int size)
+{
     int fd;
 
-    if (checkMC() < 0) {
+    fd = open(path, O_RDONLY);
+    if (fd >= 0) {
+        close(fd);
         return;
     }
 
-    snprintf(path, sizeof(path), "mc%d:%s/", mcID & 1, WOPL_CONFIG_NAME);
-    mkdir(path, 0777);
-
-    snprintf(path, sizeof(path), "mc%d:%s/list.icn", mcID & 1, WOPL_CONFIG_NAME);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_icn, size_icon_icn);
-            close(fd);
-        }
-    } else
-        close(fd);
-
-    snprintf(path, sizeof(path), "mc%d:%s/copy.icn", mcID & 1, WOPL_CONFIG_NAME);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_cpy_icn, size_icon_cpy_icn);
-            close(fd);
-        }
-    } else
-        close(fd);
-
-    snprintf(path, sizeof(path), "mc%d:%s/del.icn", mcID & 1, WOPL_CONFIG_NAME);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_del_icn, size_icon_del_icn);
-            close(fd);
-        }
-    } else
-        close(fd);
-
-    snprintf(path, sizeof(path), "mc%d:%s/icon.sys", mcID & 1, WOPL_CONFIG_NAME);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_sys, size_icon_sys);
-            close(fd);
-        }
-    } else {
+    fd = sbOpenFile((char *)path, O_WRONLY | O_CREAT | O_TRUNC);
+    if (fd >= 0) {
+        write(fd, data, size);
         close(fd);
     }
+}
+
+int sbEnsureMCConfigFolder(const char *dir)
+{
+    char folder[128];
+    char path[128];
+    int slot;
+
+    if (!is_mc_config_path(dir, &slot))
+        return 0;
+
+    if (!mc_slot_is_usable(slot))
+        return 0;
+
+    if (!normalise_mc_config_dir(folder, sizeof(folder), dir))
+        return 0;
+
+    if (!ensure_dir_exists(folder))
+        return 0;
+
+    mcID = '0' + slot;
+
+    snprintf(path, sizeof(path), "%slist.icn", folder);
+    write_file_if_missing(path, &icon_icn, size_icon_icn);
+
+    snprintf(path, sizeof(path), "%scopy.icn", folder);
+    write_file_if_missing(path, &icon_cpy_icn, size_icon_cpy_icn);
+
+    snprintf(path, sizeof(path), "%sdel.icn", folder);
+    write_file_if_missing(path, &icon_del_icn, size_icon_del_icn);
+
+    snprintf(path, sizeof(path), "%sicon.sys", folder);
+    write_file_if_missing(path, &icon_sys, size_icon_sys);
+
+    return 1;
 }
 
 static int checkFile(char *path, int mode)
@@ -207,7 +281,7 @@ static int checkFile(char *path, int mode)
         if (path[2] == 0x3F) {
 
             // Use default detected card
-            if (checkMC() >= 0)
+            if (sbCheckMC() >= 0)
                 path[2] = mcID;
             else
                 return 0;
@@ -232,7 +306,6 @@ static int checkFile(char *path, int mode)
     }
     return 1;
 }
-
 
 int sbIsSameSize(const char *prefix, int prevSize)
 {
@@ -1553,36 +1626,6 @@ void sbCreateNeutrinoVMCPath(char *path, int length, const char *prefix, const c
         snprintf(path, length, "%sVMC/%s.bin", prefix, vmc);
 }
 
-static int sbParsePathDeviceIndex(const char *path, const char *prefix, int *device)
-{
-    const char *p;
-    int dev = 0;
-    int haveDigit = 0;
-    int prefixLen = strlen(prefix);
-
-    if (!path || strncmp(path, prefix, prefixLen))
-        return 0;
-
-    p = path + prefixLen;
-
-    while (*p >= '0' && *p <= '9') {
-        haveDigit = 1;
-        dev = dev * 10 + (*p - '0');
-        p++;
-    }
-
-    if (*p != ':')
-        return 0;
-
-    if (!haveDigit)
-        dev = 0;
-
-    if (device)
-        *device = dev;
-
-    return 1;
-}
-
 int sbGetPathModeAndDevice(const char *path, int *device)
 {
     const char *blkdevnameend;
@@ -1600,8 +1643,11 @@ int sbGetPathModeAndDevice(const char *path, int *device)
     if (!strncmp(path, "hdd0:", 5) || !strncmp(path, "pfs0:", 5))
         return HDD_MODE;
 
-    if (sbParsePathDeviceIndex(path, "mass", &dev)) {
-        if (dev < 0 || dev >= MAX_BDM_DEVICES)
+    if (pathParseDevicePrefix(path, "mass", &dev, NULL, 0)) {
+        if (dev < 0)
+            dev = 0;
+
+        if (dev >= MAX_BDM_DEVICES)
             return -1;
 
         if (device)
@@ -1610,7 +1656,10 @@ int sbGetPathModeAndDevice(const char *path, int *device)
         return BDM_MODE + dev;
     }
 
-    if (sbParsePathDeviceIndex(path, "mmce", &dev)) {
+    if (pathParseDevicePrefix(path, "mmce", &dev, NULL, 0)) {
+        if (dev < 0)
+            dev = 0;
+
         if (device)
             *device = dev;
 

@@ -1047,7 +1047,7 @@ int menuCheckParentalLock(void)
             } else if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, sizeof(password)) == 0) {
                 guiMsgBox(_l(_STR_PARENLOCK_DISABLE_WARNING), 0, NULL);
                 gParentalLockPassword[0] = '\0';
-                wOPLSave();
+                configSave(CONFIG_OPL, 0);
                 result = 0;
                 parentalLockCheckEnabled = 0; // Stop asking for the password.
             } else {
@@ -1384,7 +1384,7 @@ void menuHandleInputGameMenu()
         } else if (menuID == GAME_SAVE_CHANGES) {
             guiGameSaveConfig(&itemPgCfg, selected_item->item->userdata);
             menuSaveConfig();
-            wOPLGlobalGameSave();
+            configSave(CONFIG_GAME, 0);
             guiMsgBox(_l(_STR_GAME_SETTINGS_SAVED), 0, NULL);
             guiGameLoadConfig(selected_item->item->userdata, gameMenuLoadConfig(NULL));
         } else if (menuID == GAME_TEST_CHANGES) {
