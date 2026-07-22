@@ -994,6 +994,7 @@ void bdmInitDevicesData()
             }
 
             memset(pDeviceData, 0, sizeof(bdm_device_data_t));
+            pDeviceData->bdmDeviceType = BDM_TYPE_UNKNOWN;
             pDeviceSupport->priv = pDeviceData;
         }
     }

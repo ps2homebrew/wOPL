@@ -7,9 +7,6 @@
 #include "include/ioman.h"
 #include "include/util.h"
 #include "include/module.h"
-#include "include/config_wopl.h"
-#include "include/config_migration.h" // DELETE_WITH_MIGRATION
-
 #include "include/bdmsupport.h"
 #include "include/ethsupport.h"
 #include "include/hddsupport.h"
@@ -21,7 +18,6 @@
 #include <stdio.h>
 #include <dirent.h>
 #include <unistd.h>
-#include <libconfig.h>
 
 #define APP_MODE_UPDATE_DELAY 240
 
@@ -63,7 +59,7 @@ unsigned char shouldAppsUpdate;
 
 static void appFreeList(void);
 
-static int oplScanApps(int (*callback)(const char *path, config_t *appConfig, void *arg), void *arg);
+static int oplScanApps(int (*callback)(const char *path, const char *cfgPath, void *arg), void *arg);
 
 static int oplGetAppImage(const char *device, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm);
 static int oplShouldAppsUpdate(void);
@@ -140,48 +136,174 @@ static int appNeedsUpdate(item_list_t *itemList)
     return update;
 }
 
-static int appScanCallback(const char *path, config_t *appConfig, void *arg)
+static void appCopyStr(char *dst, const char *src, size_t size)
 {
-    struct app_info_linked **appsLinkedList = (struct app_info_linked **)arg;
-    struct app_info_linked *app;
-    const char *title = NULL, *boot = NULL, *argv1 = NULL;
+    if (!dst || !size)
+        return;
 
-    if (cfgGetStr(appConfig, "title", &title) == CONFIG_TRUE && cfgGetStr(appConfig, "boot", &boot) == CONFIG_TRUE) {
-        if (*appsLinkedList == NULL) {
-            *appsLinkedList = malloc(sizeof(struct app_info_linked));
-            app = *appsLinkedList;
-            app->next = NULL;
-        } else {
-            app = malloc(sizeof(struct app_info_linked));
-            if (app != NULL) {
-                app->next = *appsLinkedList;
-                *appsLinkedList = app;
+    if (!src)
+        src = "";
+
+    strncpy(dst, src, size - 1);
+    dst[size - 1] = '\0';
+}
+
+static void appStripValue(char *value)
+{
+    char *comment;
+    int len;
+
+    if (!value)
+        return;
+
+    comment = strchr(value, '#');
+    if (comment)
+        *comment = '\0';
+
+    len = strlen(value);
+    while (len > 0 && (value[len - 1] == '\r' || value[len - 1] == '\n' || value[len - 1] == ' ' || value[len - 1] == '\t'))
+        value[--len] = '\0';
+}
+
+typedef struct
+{
+    const char *key;
+    char *out;
+    size_t out_len;
+    int found;
+} app_key_value_t;
+
+static int appReadKeyValueLine(char *line, app_key_value_t *value)
+{
+    size_t key_len;
+    char *text;
+
+    key_len = strlen(value->key);
+    if (strncmp(line, value->key, key_len) != 0 || line[key_len] != '=')
+        return 0;
+
+    text = line + key_len + 1;
+    appStripValue(text);
+    appCopyStr(value->out, text, value->out_len);
+    value->found = 1;
+
+    return 1;
+}
+
+static int appReadKeyValueFile(const char *path, app_key_value_t *values, int count)
+{
+    int fd, size, i, found;
+    char buffer[4096];
+    char *line, *next;
+
+    if (!path || !values || count <= 0)
+        return 0;
+
+    fd = open(path, O_RDONLY);
+    if (fd < 0)
+        return 0;
+
+    size = read(fd, buffer, sizeof(buffer) - 1);
+    close(fd);
+
+    if (size <= 0)
+        return 0;
+
+    buffer[size] = '\0';
+    found = 0;
+    line = buffer;
+
+    // Skip a leading UTF-8 BOM (EF BB BF) if a text editor left one..
+    if (size >= 3 && (unsigned char)line[0] == 0xEF && (unsigned char)line[1] == 0xBB && (unsigned char)line[2] == 0xBF)
+        line += 3;
+
+    while (line && *line) {
+        next = strchr(line, '\n');
+        if (next)
+            *next++ = '\0';
+
+        for (i = 0; i < count; i++) {
+            if (!values[i].found && appReadKeyValueLine(line, &values[i])) {
+                found++;
+                break;
             }
         }
 
-        if (app == NULL) {
-            LOG("APPSUPPORT unable to allocate memory.\n");
-            return -1;
-        }
+        if (found == count)
+            break;
 
-        strncpy(app->app.title, title, APP_TITLE_MAX);
-        app->app.title[APP_TITLE_MAX] = '\0';
-        strncpy(app->app.boot, boot, APP_BOOT_MAX);
-        app->app.boot[APP_BOOT_MAX] = '\0';
-        strncpy(app->app.path, path, APP_PATH_MAX);
-        app->app.path[APP_PATH_MAX] = '\0';
-        app->app.argv1[0] = '\0';
-        if (cfgGetStr(appConfig, "argv1", &argv1) == CONFIG_TRUE) {
-            strncpy(app->app.argv1, argv1, APP_ARGV1_MAX);
-            app->app.argv1[APP_ARGV1_MAX] = '\0';
-        }
-        return 0;
-    } else {
-        LOG("APPSUPPORT item has no boot/title.\n");
-        return 1;
+        line = next;
     }
 
-    return -1;
+    return found;
+}
+
+static int appReadTitleCfg(const char *cfgPath, const char *path, app_info_t *info)
+{
+    app_key_value_t values[3];
+
+    if (!cfgPath || !path || !info)
+        return 0;
+
+    memset(info, 0, sizeof(*info));
+
+    values[0].key = APP_CONFIG_TITLE;
+    values[0].out = info->title;
+    values[0].out_len = sizeof(info->title);
+    values[0].found = 0;
+
+    values[1].key = APP_CONFIG_BOOT;
+    values[1].out = info->boot;
+    values[1].out_len = sizeof(info->boot);
+    values[1].found = 0;
+
+    values[2].key = APP_CONFIG_ARGV1;
+    values[2].out = info->argv1;
+    values[2].out_len = sizeof(info->argv1);
+    values[2].found = 0;
+
+    appReadKeyValueFile(cfgPath, values, 3);
+
+    if (!values[0].found || !values[1].found) {
+        LOG("APPSUPPORT item has no boot/title.\n");
+        return 0;
+    }
+
+    appCopyStr(info->path, path, sizeof(info->path));
+
+    return 1;
+}
+
+static int appScanCallback(const char *path, const char *cfgPath, void *arg)
+{
+    struct app_info_linked **appsLinkedList = (struct app_info_linked **)arg;
+    struct app_info_linked *app;
+    app_info_t info;
+
+    if (!appReadTitleCfg(cfgPath, path, &info))
+        return 1;
+
+    if (*appsLinkedList == NULL) {
+        *appsLinkedList = malloc(sizeof(struct app_info_linked));
+        app = *appsLinkedList;
+        if (app)
+            app->next = NULL;
+    } else {
+        app = malloc(sizeof(struct app_info_linked));
+        if (app != NULL) {
+            app->next = *appsLinkedList;
+            *appsLinkedList = app;
+        }
+    }
+
+    if (app == NULL) {
+        LOG("APPSUPPORT unable to allocate memory.\n");
+        return -1;
+    }
+
+    memcpy(&app->app, &info, sizeof(app_info_t));
+
+    return 0;
 }
 
 static int appUpdateItemList(item_list_t *itemList)
@@ -256,26 +378,103 @@ static void appDeleteItem(item_list_t *itemList, int id)
     appForceUpdate = 1;
 }
 
+static int appAppendText(char *out, size_t out_len, size_t *pos, const char *text)
+{
+    size_t len;
+
+    if (!out || !pos || !text)
+        return 0;
+
+    len = strlen(text);
+    if (*pos + len >= out_len)
+        return 0;
+
+    memcpy(out + *pos, text, len);
+    *pos += len;
+    out[*pos] = '\0';
+
+    return 1;
+}
+
+static int appUpdateTitleCfgTitle(const char *cfgPath, const char *newName)
+{
+    int fd, size, found;
+    char inbuf[1024];
+    char outbuf[1024];
+    char tmpPath[300];
+    char *line, *next;
+    size_t pos;
+
+    if (!cfgPath || !newName)
+        return 0;
+
+    fd = open(cfgPath, O_RDONLY);
+    if (fd >= 0) {
+        size = read(fd, inbuf, sizeof(inbuf) - 1);
+        close(fd);
+        if (size < 0)
+            size = 0;
+    } else
+        size = 0;
+
+    inbuf[size] = '\0';
+    outbuf[0] = '\0';
+    pos = 0;
+    found = 0;
+    line = inbuf;
+
+    while (line && *line) {
+        next = strchr(line, '\n');
+        if (next)
+            *next++ = '\0';
+
+        if (strncmp(line, APP_CONFIG_TITLE "=", sizeof(APP_CONFIG_TITLE)) == 0) {
+            if (!appAppendText(outbuf, sizeof(outbuf), &pos, APP_CONFIG_TITLE "=") || !appAppendText(outbuf, sizeof(outbuf), &pos, newName) || !appAppendText(outbuf, sizeof(outbuf), &pos, "\n"))
+                return 0;
+            found = 1;
+        } else {
+            if (!appAppendText(outbuf, sizeof(outbuf), &pos, line) || !appAppendText(outbuf, sizeof(outbuf), &pos, "\n"))
+                return 0;
+        }
+
+        line = next;
+    }
+
+    if (!found) {
+        if (!appAppendText(outbuf, sizeof(outbuf), &pos, APP_CONFIG_TITLE "=") || !appAppendText(outbuf, sizeof(outbuf), &pos, newName) || !appAppendText(outbuf, sizeof(outbuf), &pos, "\n"))
+            return 0;
+    }
+
+    snprintf(tmpPath, sizeof(tmpPath), "%s.tmp", cfgPath);
+    fd = open(tmpPath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd < 0)
+        return 0;
+
+    if (write(fd, outbuf, pos) != (int)pos) {
+        close(fd);
+        remove(tmpPath);
+        return 0;
+    }
+
+    close(fd);
+
+    if (rename(tmpPath, cfgPath) != 0) {
+        remove(cfgPath);
+        if (rename(tmpPath, cfgPath) != 0) {
+            remove(tmpPath);
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 static void appRenameItem(item_list_t *itemList, int id, char *newName)
 {
     char cfgPath[256];
     snprintf(cfgPath, sizeof(cfgPath), "%s/%s", appsList[id].path, APP_TITLE_CONFIG_FILE);
 
-    config_t cfg;
-    config_init(&cfg);
-    config_read_file(&cfg, cfgPath); // ok if missing.. we just add the key
-
-    config_setting_t *root = config_root_setting(&cfg);
-    config_setting_t *s = config_lookup(&cfg, "title");
-    if (s)
-        config_setting_set_string(s, newName);
-    else {
-        s = config_setting_add(root, "title", CONFIG_TYPE_STRING);
-        if (s)
-            config_setting_set_string(s, newName);
-    }
-    config_write_file(&cfg, cfgPath);
-    config_destroy(&cfg);
+    appUpdateTitleCfgTitle(cfgPath, newName);
 
     appForceUpdate = 1;
 }
@@ -295,7 +494,8 @@ static void appLaunchItem(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
         char *argv[1];
         close(fd);
 
-        strcpy(partition, "");
+        partition[0] = '\0';
+
         mode = sbGetPathMode(filename);
         if (mode < 0)
             mode = APP_MODE;
@@ -316,49 +516,49 @@ static void appLaunchItem(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 
 static void appGetInfo(item_list_t *itemList, int id, game_info_t *gi)
 {
+    char cfgPath[256];
+    app_key_value_t values[7];
+
     memset(gi, 0, sizeof(*gi));
 
-    char cfgPath[256];
     snprintf(cfgPath, sizeof(cfgPath), "%s/%s", appsList[id].path, APP_TITLE_CONFIG_FILE);
 
-    config_t cfg;
-    config_init(&cfg);
-    if (config_read_file(&cfg, cfgPath)) {
-        cfgValidateBegin(cfgPath);
-        const char *str;
-        if (cfgGetStr(&cfg, "Title", &str)) {
-            strncpy(gi->title, str, sizeof(gi->title) - 1);
-            gi->title[sizeof(gi->title) - 1] = '\0';
-        }
-        if (cfgGetStr(&cfg, "Description", &str)) {
-            strncpy(gi->description, str, sizeof(gi->description) - 1);
-            gi->description[sizeof(gi->description) - 1] = '\0';
-        }
-        if (cfgGetStr(&cfg, "Developer", &str)) {
-            strncpy(gi->developer, str, sizeof(gi->developer) - 1);
-            gi->developer[sizeof(gi->developer) - 1] = '\0';
-        }
-        if (cfgGetStr(&cfg, "Release", &str)) {
-            strncpy(gi->release, str, sizeof(gi->release) - 1);
-            gi->release[sizeof(gi->release) - 1] = '\0';
-        }
-        if (cfgGetStr(&cfg, "Version", &str)) {
-            strncpy(gi->version, str, sizeof(gi->version) - 1);
-            gi->version[sizeof(gi->version) - 1] = '\0';
-        }
-        if (cfgGetStr(&cfg, "Package", &str)) {
-            strncpy(gi->package, str, sizeof(gi->package) - 1);
-            gi->package[sizeof(gi->package) - 1] = '\0';
-        }
-        if (cfgGetStr(&cfg, "Source", &str)) {
-            strncpy(gi->source, str, sizeof(gi->source) - 1);
-            gi->source[sizeof(gi->source) - 1] = '\0';
-        }
-        cfgValidateEnd();
-    } else
-        log_config_error(cfgPath, &cfg);
+    values[0].key = "Title";
+    values[0].out = gi->title;
+    values[0].out_len = sizeof(gi->title);
+    values[0].found = 0;
 
-    config_destroy(&cfg);
+    values[1].key = "Description";
+    values[1].out = gi->description;
+    values[1].out_len = sizeof(gi->description);
+    values[1].found = 0;
+
+    values[2].key = "Developer";
+    values[2].out = gi->developer;
+    values[2].out_len = sizeof(gi->developer);
+    values[2].found = 0;
+
+    values[3].key = "Release";
+    values[3].out = gi->release;
+    values[3].out_len = sizeof(gi->release);
+    values[3].found = 0;
+
+    values[4].key = "Version";
+    values[4].out = gi->version;
+    values[4].out_len = sizeof(gi->version);
+    values[4].found = 0;
+
+    values[5].key = "Package";
+    values[5].out = gi->package;
+    values[5].out_len = sizeof(gi->package);
+    values[5].found = 0;
+
+    values[6].key = "Source";
+    values[6].out = gi->source;
+    values[6].out_len = sizeof(gi->source);
+    values[6].found = 0;
+
+    appReadKeyValueFile(cfgPath, values, 7);
 
     // fall back to menu title if no display Title set
     if (!gi->title[0]) {
@@ -442,7 +642,7 @@ static item_list_t appItemList = {
     &appGetItemCount, NULL, &appGetItemName, &appGetItemNameLength, &appGetItemStartup, &appDeleteItem, &appRenameItem, &appLaunchItem,
     &appGetInfo, &appGetPgCfg, &appSavePgCfg, &appGetImage, &appGetArchivedImage, &appCleanUp, &appShutdown, NULL, &appGetIconId};
 
-static int scanApps(int (*callback)(const char *path, config_t *appConfig, void *arg), void *arg, char *appsPath, int exception)
+static int scanApps(int (*callback)(const char *path, const char *cfgPath, void *arg), void *arg, char *appsPath, int exception)
 {
     struct dirent *pdirent;
     DIR *pdir;
@@ -464,30 +664,7 @@ static int scanApps(int (*callback)(const char *path, config_t *appConfig, void 
                 continue;
 
             snprintf(path, sizeof(path), "%s/%s", dir, APP_TITLE_CONFIG_FILE);
-
-            config_t lcfg;
-            config_init(&lcfg);
-
-            if (!config_read_file(&lcfg, path)) {
-                config_destroy(&lcfg);
-
-                // DELETE_WITH_MIGRATION v
-                if (!cfgMigrateLegacyAppTitleCfg(path))
-                    continue; // not found or not parseable at all
-
-                // re read the now migrated file
-                config_init(&lcfg);
-                if (!config_read_file(&lcfg, path)) {
-                    config_destroy(&lcfg);
-                    continue;
-                }
-            }
-            // DELETE_WITH_MIGRATION ^
-
-            cfgValidateBegin(path);
-            ret = callback(dir, &lcfg, arg);
-            cfgValidateEnd();
-            config_destroy(&lcfg);
+            ret = callback(dir, path, arg);
 
             if (ret == 0)
                 count++;
@@ -502,7 +679,7 @@ static int scanApps(int (*callback)(const char *path, config_t *appConfig, void 
     return count;
 }
 
-static int oplScanApps(int (*callback)(const char *path, config_t *appConfig, void *arg), void *arg)
+static int oplScanApps(int (*callback)(const char *path, const char *cfgPath, void *arg), void *arg)
 {
     int i, count;
     item_list_t *listSupport;
