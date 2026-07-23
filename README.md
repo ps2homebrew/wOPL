@@ -13,6 +13,7 @@ Review the LICENSE file for further details.
 [![CI](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-base)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/8ee1eccd035c464eb0a985486b3f71bd)](https://app.codacy.com/gh/ps2homebrew/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
+[![Mega](https://img.shields.io/badge/Mega-%23D90007.svg?style=flat&logo=Mega&logoColor=white)](https://mega.nz/folder/bCplmQSZ#jbsgYTkqpsPiBQ23DDnSbw)
 [![Downloads](https://img.shields.io/github/downloads/ps2homebrew/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/releases)
 
 ## Introduction
@@ -428,6 +429,17 @@ cmake --build build
 ```
 
 Useful CMake targets: `release`, `clean`, `rebuild`, `debug`, `iopcore_debug`, `ingame_debug`.
+
+</p>
+</details>
+
+<details>
+  <summary> <b> wOPL Archive </b> </summary>
+<p>
+
+Every wOPL build published through this repository is also uploaded to the [MEGA archive](https://mega.nz/folder/bCplmQSZ#jbsgYTkqpsPiBQ23DDnSbw).
+
+The archive contains historical beta builds and permanent releases. You can also access it by clicking the MEGA badge at the top of this README.
 
 </p>
 </details>
