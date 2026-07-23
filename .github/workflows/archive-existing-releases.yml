@@ -149,7 +149,7 @@ jobs:
                     assets: [.assets[] | {
                       id,
                       name,
-                      label,
+                      label: .label,
                       content_type,
                       size,
                       download_count,
