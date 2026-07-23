@@ -360,10 +360,6 @@ int cfgMigrateLegacyTheme(const char *oldPath, const char *newPath)
     if (config_read_file(&cfg, oldPath)) {
         ok = cfgWriteLibconfig(&cfg, newPath, 1);
         config_destroy(&cfg);
-
-        if (ok && strcmp(oldPath, newPath) != 0)
-            unlink(oldPath);
-
         return ok;
     }
     config_destroy(&cfg);
@@ -376,13 +372,12 @@ int cfgMigrateLegacyTheme(const char *oldPath, const char *newPath)
     fseek(f, 0, SEEK_END);
     long sz = ftell(f);
     rewind(f);
-
     if (sz <= 0) {
         fclose(f);
         return 0;
     }
 
-    char *buf = malloc(sz);
+    char *buf = malloc(sz + 1);
     if (!buf) {
         fclose(f);
         return 0;
@@ -394,95 +389,93 @@ int cfgMigrateLegacyTheme(const char *oldPath, const char *newPath)
         return 0;
     }
     fclose(f);
+    buf[sz] = '\0';
 
     config_init(&cfg);
     config_setting_t *root = config_root_setting(&cfg);
     config_setting_t *section = NULL;
-    const char *p = buf;
-    const char *end = buf + sz;
+    char *p = buf;
+    char *end = buf + sz;
+    int imported = 0;
 
     while (p < end) {
-        const char *lend = p;
-        while (lend < end && *lend != '\n')
-            lend++;
+        char *line = p;
+        while (p < end && *p != '\n')
+            p++;
+        if (p < end)
+            *p++ = '\0';
 
-        int len = (int)(lend - p);
-        char line[512];
+        char *lineEnd = line + strlen(line);
+        while (lineEnd > line && (lineEnd[-1] == '\r' || lineEnd[-1] == ' ' || lineEnd[-1] == '\t'))
+            *--lineEnd = '\0';
 
-        if (len >= (int)sizeof(line))
-            len = sizeof(line) - 1;
+        char *text = line;
+        while (*text == ' ' || *text == '\t')
+            text++;
 
-        memcpy(line, p, len);
-
-        while (len > 0 && (line[len - 1] == '\r' || line[len - 1] == '\n'))
-            len--;
-
-        line[len] = '\0';
-        p = (lend < end) ? lend + 1 : end;
-
-        if (!line[0] || line[0] == '#')
+        int indented = text != line;
+        if (!text[0] || text[0] == '#')
             continue;
 
-        if (line[0] == '\t') {
-            if (!section)
-                continue;
+        char *textEnd = text + strlen(text);
+        if (!indented && textEnd > text && textEnd[-1] == ':') {
+            *--textEnd = '\0';
+            while (textEnd > text && (textEnd[-1] == ' ' || textEnd[-1] == '\t'))
+                *--textEnd = '\0';
 
-            char *eq = strchr(line + 1, '=');
-            if (!eq)
-                continue;
-
-            *eq = '\0';
-
-            char *key = line + 1;
-            char *val = eq + 1;
-            char *endp;
-            long ival = strtol(val, &endp, 10);
-
-            if (endp != val && *endp == '\0') {
-                config_setting_t *s = config_setting_add(section, key, CONFIG_TYPE_INT);
-                if (s)
-                    config_setting_set_int(s, (int)ival);
-            } else {
-                config_setting_t *s = config_setting_add(section, key, CONFIG_TYPE_STRING);
-                if (s)
-                    config_setting_set_string(s, val);
-            }
-        } else {
-            if (len > 0 && line[len - 1] == ':') {
-                line[len - 1] = '\0';
-                section = config_setting_add(root, line, CONFIG_TYPE_GROUP);
-            } else {
-                char *eq = strchr(line, '=');
-                if (!eq)
-                    continue;
-
-                *eq = '\0';
-
-                char *key = line;
-                char *val = eq + 1;
-                char *endp;
-                long ival = strtol(val, &endp, 10);
-
-                if (endp != val && *endp == '\0') {
-                    config_setting_t *s = config_setting_add(root, key, CONFIG_TYPE_INT);
-                    if (s)
-                        config_setting_set_int(s, (int)ival);
-                } else {
-                    config_setting_t *s = config_setting_add(root, key, CONFIG_TYPE_STRING);
-                    if (s)
-                        config_setting_set_string(s, val);
-                }
-            }
+            section = text[0] ? config_setting_add(root, text, CONFIG_TYPE_GROUP) : NULL;
+            continue;
         }
+
+        char *eq = strchr(text, '=');
+        if (!eq)
+            continue;
+
+        *eq = '\0';
+        char *key = text;
+        char *keyEnd = eq;
+        while (keyEnd > key && (keyEnd[-1] == ' ' || keyEnd[-1] == '\t'))
+            *--keyEnd = '\0';
+
+        char *val = eq + 1;
+        while (*val == ' ' || *val == '\t')
+            val++;
+
+        char *valEnd = val + strlen(val);
+        while (valEnd > val && (valEnd[-1] == '\r' || valEnd[-1] == ' ' || valEnd[-1] == '\t'))
+            *--valEnd = '\0';
+
+        config_setting_t *parent = indented ? section : root;
+        if (!parent || !key[0])
+            continue;
+
+        char *endp;
+        long ival = strtol(val, &endp, 10);
+        config_setting_t *setting;
+
+        if (endp != val && *endp == '\0') {
+            setting = config_setting_add(parent, key, CONFIG_TYPE_INT);
+            if (setting)
+                config_setting_set_int(setting, (int)ival);
+        } else {
+            setting = config_setting_add(parent, key, CONFIG_TYPE_STRING);
+            if (setting)
+                config_setting_set_string(setting, val);
+        }
+
+        if (setting)
+            imported++;
     }
 
     free(buf);
 
+    if (imported == 0) {
+        config_destroy(&cfg);
+        return 0;
+    }
+
     ok = cfgWriteLibconfig(&cfg, newPath, 1);
     config_destroy(&cfg);
-
-    if (ok && strcmp(oldPath, newPath) != 0)
-        unlink(oldPath);
 
     return ok;
 }
