@@ -33,13 +33,14 @@ static const TarDevice gDevices[] = {
 static const TarKindInfo gTarInfo[TAR_KIND_MAX] = {
     {"ART/art.tar", "art_cache.bin", sizeof(TarEntryArt)},
     {"CFG/cfg.tar", "cfg_cache.bin", sizeof(TarEntryCfg)},
-    {"CHT/cht.tar", "cht_cache.bin", sizeof(TarEntryCht)}};
+    {"CHT/cht.tar", "cht_cache.bin", sizeof(TarEntryCht)},
+    {"THM/thm.tar", "thm_cache.bin", sizeof(TarEntryThm)}};
 
-static void *s_index[TAR_KIND_MAX] = {NULL, NULL, NULL};
-static u32 s_count[TAR_KIND_MAX] = {0, 0, 0};
-static u32 s_cap[TAR_KIND_MAX] = {0, 0, 0};
-static const TarDevice *s_dev[TAR_KIND_MAX] = {NULL, NULL, NULL};
-static int s_inactive[TAR_KIND_MAX] = {0, 0, 0};
+static void *s_index[TAR_KIND_MAX] = {NULL, NULL, NULL, NULL};
+static u32 s_count[TAR_KIND_MAX] = {0, 0, 0, 0};
+static u32 s_cap[TAR_KIND_MAX] = {0, 0, 0, 0};
+static const TarDevice *s_dev[TAR_KIND_MAX] = {NULL, NULL, NULL, NULL};
+static int s_inactive[TAR_KIND_MAX] = {0, 0, 0, 0};
 
 static const unsigned char s_zeroBlock[TAR_BLOCK_SIZE] __attribute__((aligned(64))) = {0};
 
@@ -215,27 +216,31 @@ static int tarParseFile(TarKind kind, const char *path)
         goto fail;
 
     u32 nameMax = entrySize - sizeof(TarEntryBase) - 1;
-    u32 copyLen = (nameMax < 100) ? nameMax : 100;
 
     while (1) {
         unsigned char header[TAR_BLOCK_SIZE] __attribute__((aligned(64)));
         int r = read(fd, header, TAR_BLOCK_SIZE);
         if (r == 0)
             break;
-
-        if (r < 0)
-            goto fail;
-        if (r != TAR_BLOCK_SIZE)
+        if (r < 0 || r != TAR_BLOCK_SIZE)
             goto fail;
 
         if (isZeroBlock(header))
             break;
 
+        char typeflag = (char)header[156];
         u64 rawSize = parseOctal((char *)header + 124, 12);
         if (rawSize > MAX_FILE_SIZE)
             rawSize = MAX_FILE_SIZE;
 
         u64 paddedSize = ((rawSize + 511) / 512) * 512;
+
+        if (typeflag != '\0' && typeflag != '0') {
+            // Skip directory or non‑file entry
+            if (lseek64(fd, paddedSize, SEEK_CUR) == (u64)-1)
+                goto fail;
+            continue;
+        }
 
         u64 dataOffset = lseek64(fd, 0, SEEK_CUR);
         if (dataOffset == (u64)-1)
@@ -256,9 +261,47 @@ static int tarParseFile(TarKind kind, const char *path)
         base->rawSize = rawSize;
         base->paddedSize = paddedSize;
 
+        char nameBuf[256];
+        memset(nameBuf, 0, sizeof(nameBuf));
+
+        memcpy(nameBuf, header, 100);
+        nameBuf[100] = '\0';
+
+        for (int i = 99; i >= 0; i--) {
+            if (nameBuf[i] == '\0' || nameBuf[i] == ' ')
+                nameBuf[i] = '\0';
+            else
+                break;
+        }
+
+        char prefix[156];
+        memcpy(prefix, header + 345, 155);
+        prefix[155] = '\0';
+
+        for (int i = 154; i >= 0; i--) {
+            if (prefix[i] == '\0' || prefix[i] == ' ')
+                prefix[i] = '\0';
+            else
+                break;
+        }
+
+        if (prefix[0] != '\0') {
+            char full[256];
+            snprintf(full, sizeof(full), "%s/%s", prefix, nameBuf);
+            strncpy(nameBuf, full, sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+        }
+
+        for (int i = (int)strlen(nameBuf) - 1; i >= 0; i--) {
+            if (nameBuf[i] == '\0' || nameBuf[i] == ' ')
+                nameBuf[i] = '\0';
+            else
+                break;
+        }
+
         char *fname = entry + sizeof(TarEntryBase);
-        memcpy(fname, header, copyLen);
-        fname[copyLen] = '\0';
+        strncpy(fname, nameBuf, nameMax);
+        fname[nameMax - 1] = '\0';
 
         s_count[kind]++;
 
