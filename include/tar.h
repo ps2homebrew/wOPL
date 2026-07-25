@@ -39,10 +39,17 @@ typedef struct
     char filename[20]; // CHT: "SLUS_203.70.cht"
 } TarEntryCht;
 
+typedef struct
+{
+    TarEntryBase base;
+    char filename[128]; // THM: "OPL Master/aspect/s_Aspect.png", "OPL Master/case.png", etc.
+} TarEntryThm;
+
 typedef enum {
     TAR_KIND_ART = 0,
     TAR_KIND_CFG = 1,
     TAR_KIND_CHT = 2,
+    TAR_KIND_THM = 3,
     TAR_KIND_MAX
 } TarKind;
 
