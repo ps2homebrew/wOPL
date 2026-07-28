@@ -10,6 +10,7 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#include "include/tar.h"
 #include "include/cheatman.h"
 #include "include/sound.h"
 #include "modules/iopcore/common/cdvd_config.h"
@@ -377,6 +378,9 @@ static int bdmNeedsUpdate(item_list_t *itemList)
     // update Themes
     if (!pDeviceData->ThemesLoaded) {
         guiSetBootStatusIfActive("Loading block device themes...");
+
+        snprintf(path, sizeof(path), "%sTHM/thm.tar", pDeviceData->bdmPrefix);
+        tarLoadFile(TAR_KIND_THM, path);
 
         snprintf(path, sizeof(path), "%sTHM", pDeviceData->bdmPrefix);
         if (thmAddElements(path, "/", 1) > 0)
@@ -844,7 +848,7 @@ static int bdmGetImage(item_list_t *itemList, char *folder, int isRelative, char
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 0);
+    return texDiscoverLoad(resultTex, path, -1, RES_FILESYSTEM);
 }
 
 static int bdmGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -853,7 +857,7 @@ static int bdmGetArchivedImage(item_list_t *itemList, char *folder, char *value,
 
     snprintf(path, sizeof(path), "%s_%s", value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 1);
+    return texDiscoverLoad(resultTex, path, -1, RES_TAR_ART);
 }
 
 static int bdmGetTextId(item_list_t *itemList)

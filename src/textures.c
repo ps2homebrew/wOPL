@@ -437,7 +437,7 @@ static void texReadData(GSTEXTURE *texture, png_structp pngPtr, png_infop infoPt
     png_read_end(pngPtr, NULL);
 }
 
-static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int archived)
+static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int resourceType)
 {
     texPrepare(texture);
     png_structp pngPtr = NULL;
@@ -446,8 +446,16 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
     png_rw_ptr readFunction = NULL;
     void *PngFileBufferPtr;
     void *pFileBuffer = NULL;
-    if (archived) {
+    if (resourceType == RES_TAR_ART) {
         pFileBuffer = tarGet(TAR_KIND_ART, filePath);
+        if (!pFileBuffer) {
+            return ERR_BAD_FILE;
+        }
+        PngFileBufferPtr = pFileBuffer;
+        readData = &PngFileBufferPtr;
+        readFunction = &texReadMemFunction;
+    } else if (resourceType == RES_TAR_THM) {
+        pFileBuffer = tarGet(TAR_KIND_THM, filePath);
         if (!pFileBuffer) {
             return ERR_BAD_FILE;
         }
@@ -579,9 +587,9 @@ static int texLoadAll(GSTEXTURE *texture, const char *filePath, int texId, int a
     return texEnd(pngPtr, infoPtr, pFileBuffer, 0);
 }
 
-static int texLoad(GSTEXTURE *texture, const char *filePath, int archived)
+static int texLoad(GSTEXTURE *texture, const char *filePath, int resourceType)
 {
-    return texLoadAll(texture, filePath, -1, archived);
+    return texLoadAll(texture, filePath, -1, resourceType);
 }
 
 int texLoadInternal(GSTEXTURE *texture, int texId)
@@ -589,7 +597,7 @@ int texLoadInternal(GSTEXTURE *texture, int texId)
     return texLoadAll(texture, NULL, texId, 0);
 }
 
-int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archived)
+int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int resourceType)
 {
     char filePath[256];
 
@@ -600,17 +608,23 @@ int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archive
     else
         snprintf(filePath, sizeof(filePath), "%s.%s", path, "png");
 
-    if (archived) {
-        TarEntryBase *entry = tarFind(TAR_KIND_ART, filePath);
+    TarEntryBase *entry = NULL;
+    if (resourceType == RES_TAR_ART) {
+        entry = tarFind(TAR_KIND_ART, filePath);
         if (entry) {
-            return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
+            return (texLoad(texture, filePath, RES_TAR_ART) >= 0) ? 0 : ERR_BAD_FILE;
+        }
+    } else if (resourceType == RES_TAR_THM) {
+        entry = tarFind(TAR_KIND_THM, filePath);
+        if (entry) {
+            return (texLoad(texture, filePath, RES_TAR_THM) >= 0) ? 0 : ERR_BAD_FILE;
         }
     } else {
         int fd = open(filePath, O_RDONLY);
         if (fd > 0) {
             // File found, load it
             close(fd);
-            return (texLoad(texture, filePath, archived) >= 0) ? 0 : ERR_BAD_FILE;
+            return (texLoad(texture, filePath, RES_FILESYSTEM) >= 0) ? 0 : ERR_BAD_FILE;
         }
     }
 

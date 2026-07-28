@@ -22,10 +22,12 @@ typedef struct
 static const TarDevice gDevices[] = {
     {"mmce0:", "mmce0:/"},
     {"mmce1:", "mmce1:/"},
-    {"mass0:", "mass0:/"},
-    {"mass1:", "mass1:/"},
+    {"usb0:", "usb0:/"},
+    {"usb1:", "usb1:/"},
     {"hdd0:", "hdd0:/"},
-    {"xhdd0:", "xhdd0:/"},
+    {"hdd1:", "hdd1:/"},
+    {"ata0:", "ata0:/"},
+    {"ata1:", "ata1:/"},
     {"pfs0:", "pfs0:/"},
     {"smb0:", "smb0:/"},
     {NULL, NULL}};
@@ -322,10 +324,27 @@ fail:
     return -1;
 }
 
+static const TarDevice *detectDevice(const char *path)
+{
+    for (int i = 0; gDevices[i].prefix; i++) {
+        const char *prefix = gDevices[i].prefix;
+        int len = strlen(prefix);
+
+        if (!strncasecmp(path, prefix, len))
+            return &gDevices[i];
+    }
+    return NULL;
+}
+
 int tarLoadFile(TarKind kind, const char *path)
 {
-    s_dev[kind] = NULL;
-    return tarParseFile(kind, path);
+    const TarDevice *dev = detectDevice(path);
+
+    int r = tarParseFile(kind, path);
+    if (r == 0)
+        s_dev[kind] = dev;
+
+    return r;
 }
 
 int tarLoadFromAnyDevice(TarKind kind)
@@ -482,4 +501,52 @@ void tarInvalidate(TarKind kind)
 const char *tarGetDevicePrefix(TarKind kind)
 {
     return s_dev[kind] ? s_dev[kind]->prefix : NULL;
+}
+
+char **tarGetThemeNames(int *count)
+{
+    *count = 0;
+
+    u32 entrySize = gTarInfo[TAR_KIND_THM].entrySize;
+    char *base = (char *)s_index[TAR_KIND_THM];
+
+    char **names = NULL;
+    int n = 0;
+
+    for (u32 i = 0; i < s_count[TAR_KIND_THM]; i++) {
+        char *entry = base + entrySize * i;
+        char *fname = entry + sizeof(TarEntryBase);
+
+        char *slash = strchr(fname, '/');
+        if (!slash)
+            continue;
+
+        int len = slash - fname;
+        if (len <= 0)
+            continue;
+
+        int exists = 0;
+        for (int j = 0; j < n; j++) {
+            if (strncmp(names[j], fname, len) == 0 && names[j][len] == '\0')
+                exists = 1;
+        }
+        if (exists)
+            continue;
+
+        char *name = malloc(len + 1);
+        memcpy(name, fname, len);
+        name[len] = '\0';
+
+        char **newNames = realloc(names, sizeof(char *) * (n + 1));
+        if (!newNames) {
+            free(name);
+            continue;
+        }
+        names = newNames;
+        names[n] = name;
+        n++;
+    }
+
+    *count = n;
+    return names;
 }

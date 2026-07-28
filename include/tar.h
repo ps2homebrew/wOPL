@@ -65,5 +65,6 @@ int tarEnsureLoaded(TarKind kind);
 void tarInvalidate(TarKind kind);
 
 const char *tarGetDevicePrefix(TarKind kind);
+char **tarGetThemeNames(int *count);
 
 #endif

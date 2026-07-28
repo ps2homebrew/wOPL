@@ -108,6 +108,10 @@ enum INTERNAL_TEXTURE {
 #define ERR_MISSING_ALPHA -6
 #define ERR_BAD_DEPTH     -7
 
+#define RES_FILESYSTEM 0
+#define RES_TAR_ART    1
+#define RES_TAR_THM    2
+
 int texLookupInternalTexId(const char *name);
 int texLoadInternal(GSTEXTURE *texture, int texId);
 int texDiscoverLoad(GSTEXTURE *texture, const char *path, int texId, int archived);

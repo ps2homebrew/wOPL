@@ -8,6 +8,7 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#include "include/tar.h"
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
@@ -200,6 +201,9 @@ static int mmceNeedsUpdate(item_list_t *itemList)
     // update Themes
     if (!ThemesLoaded) {
         guiSetBootStatusIfActive("Loading MMCE themes...");
+
+        sprintf(path, "%sTHM/thm.tar", mmcePrefix);
+        tarLoadFile(TAR_KIND_THM, path);
 
         sprintf(path, "%sTHM", mmcePrefix);
         if (thmAddElements(path, "/", 1) > 0)
@@ -526,7 +530,7 @@ static int mmceGetImage(item_list_t *itemList, char *folder, int isRelative, cha
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 0);
+    return texDiscoverLoad(resultTex, path, -1, RES_FILESYSTEM);
 }
 
 static int mmceGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -535,7 +539,7 @@ static int mmceGetArchivedImage(item_list_t *itemList, char *folder, char *value
 
     snprintf(path, sizeof(path), "%s_%s", value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 1);
+    return texDiscoverLoad(resultTex, path, -1, RES_TAR_ART);
 }
 
 static int mmceGetTextId(item_list_t *itemList)

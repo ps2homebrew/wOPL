@@ -12,6 +12,7 @@
 #include "include/supportbase.h"
 #include "include/module.h"
 #include "include/guigame.h"
+#include "include/tar.h"
 #include "include/config_wopl.h"
 #include "include/config_migration.h" // DELETE_WITH_MIGRATION
 #include <libconfig.h>
@@ -568,8 +569,20 @@ static image_texture_t *initImageTexture(const char *themePath, config_t *themeC
 
     if (themePath) {
         char path[256];
+        char tarLookup[256];
+
         snprintf(path, sizeof(path), "%s%s", themePath, imgName);
-        result = texDiscoverLoad(&texture->source, path, texId, 0) >= 0;
+
+        snprintf(tarLookup, sizeof(tarLookup), "%s.png", path);
+        const TarEntryBase *entry = NULL;
+        entry = tarFind(TAR_KIND_THM, tarLookup);
+
+        if (entry) {
+            result = texDiscoverLoad(&texture->source, path, texId, RES_TAR_THM) >= 0;
+        }
+        if (!result) {
+            result = texDiscoverLoad(&texture->source, path, texId, RES_FILESYSTEM) >= 0;
+        }
     } else {
         texId = texLookupInternalTexId(imgName);
         result = (texId >= 0 && texLoadInternal(&texture->source, texId) >= 0);
@@ -1667,8 +1680,10 @@ static int thmLoadResource(GSTEXTURE *texture, int texId, const char *themePath,
 {
     int success = -1;
 
-    if (themePath != NULL)
-        success = texDiscoverLoad(texture, themePath, texId, 0); // only set success here
+    if (themePath != NULL) {
+        int fromTar = (strchr(themePath, ':') == NULL);                                               // no device -> tar theme
+        success = texDiscoverLoad(texture, themePath, texId, fromTar ? RES_TAR_THM : RES_FILESYSTEM); // only set success here
+    }
 
     if ((success < 0) && useDefault)
         texLoadInternal(texture, texId); // we don't mind the result of "default"
@@ -1723,7 +1738,15 @@ static void thmLoadFonts(config_t *themeConfig, const char *themePath, theme_t *
 
             if (themePath) {
                 snprintf(fullPath, sizeof(fullPath), "%s%s", themePath, fntFile);
-                fntHandle = fntLoadFile(fullPath, fontSize);
+                const TarEntryBase *entry = tarFind(TAR_KIND_THM, fullPath);
+                if (entry) {
+                    void *buf = tarGet(TAR_KIND_THM, fullPath);
+                    if (buf) {
+                        fntHandle = fntLoadFromBuffer(buf, entry->rawSize, fontSize);
+                        // do not free
+                    }
+                } else
+                    fntHandle = fntLoadFile(fullPath, fontSize);
             } else
                 fntHandle = fntLoadFile(NULL, fontSize);
 
@@ -1787,21 +1810,30 @@ static void thmLoad(const char *themePath, int themeID)
         }
     } else {
         snprintf(path, sizeof(path), "%swopl_theme.cfg", themePath);
-        if (!config_read_file(&themeConfig, path)) {
-            log_config_error(path, &themeConfig);
-
-            // DELETE_WITH_MIGRATION v
-            config_destroy(&themeConfig);
-            config_init(&themeConfig);
-
-            char oldPath[256];
-            snprintf(oldPath, sizeof(oldPath), "%sconf_theme.cfg", themePath);
-
-            if (cfgMigrateLegacyTheme(oldPath, path)) {
-                if (!config_read_file(&themeConfig, path))
-                    log_config_error(path, &themeConfig);
+        const TarEntryBase *entry = tarFind(TAR_KIND_THM, path);
+        if (entry) {
+            void *buf = tarGet(TAR_KIND_THM, path);
+            if (buf) {
+                config_read_string(&themeConfig, buf);
+                free(buf);
             }
-            // DELETE_WITH_MIGRATION ^
+        } else {
+            if (!config_read_file(&themeConfig, path)) {
+                log_config_error(path, &themeConfig);
+
+                // DELETE_WITH_MIGRATION v
+                config_destroy(&themeConfig);
+                config_init(&themeConfig);
+
+                char oldPath[256];
+                snprintf(oldPath, sizeof(oldPath), "%sconf_theme.cfg", themePath);
+
+                if (cfgMigrateLegacyTheme(oldPath, path)) {
+                    if (!config_read_file(&themeConfig, path))
+                        log_config_error(path, &themeConfig);
+                }
+                // DELETE_WITH_MIGRATION ^
+            }
         }
     }
 
@@ -1973,6 +2005,42 @@ int thmAddElements(char *path, const char *separator, int forceRefresh)
 
     result = sbListDir(path, separator, THM_MAX_FILES - nThemes, &thmReadEntry);
     nThemes += result;
+
+    int tarCount = 0;
+    char **tarNames = tarGetThemeNames(&tarCount);
+
+    if (tarNames && tarCount > 0) {
+        for (i = 0; i < tarCount; i++) {
+            int exists = 0;
+            for (int j = 0; j < nThemes; j++) {
+                if (strcmp(themes[j].name, tarNames[i]) == 0) {
+                    exists = 1;
+                    break;
+                }
+            }
+            if (exists)
+                continue;
+
+            if (nThemes >= THM_MAX_FILES)
+                break;
+
+            theme_file_t *currTheme = &themes[nThemes];
+            memset(currTheme, 0, sizeof(theme_file_t));
+
+            currTheme->name = strdup(tarNames[i]);
+
+            int len = strlen(currTheme->name);
+            currTheme->filePath = malloc(len + 2);
+            snprintf(currTheme->filePath, len + 2, "%s/", currTheme->name);
+
+            nThemes++;
+        }
+
+        for (i = 0; i < tarCount; i++)
+            free(tarNames[i]);
+        free(tarNames);
+    }
+
     thmRebuildGuiNames();
 
     const char *temp = wOPLGetThemeName();
@@ -1984,7 +2052,7 @@ int thmAddElements(char *path, const char *separator, int forceRefresh)
         }
     }
 
-    return result;
+    return (result + tarCount);
 }
 
 void thmInit(void)
