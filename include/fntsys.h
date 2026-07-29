@@ -19,6 +19,13 @@ void fntEnd();
  * @return font slot id (negative value means error happened) */
 int fntLoadFile(char *path, int fontSize);
 
+/** Loads a font from a memory buffer
+ * @param buf The buffer containing the font data
+ * @param bufSize The size of the buffer
+ * @param fontSize The font size to load
+ * @return font slot id (negative value means error happened) */
+int fntLoadFromBuffer(void *buf, int bufSize, int fontSize);
+
 /** Reloads the default font */
 int fntLoadDefault(char *path);
 

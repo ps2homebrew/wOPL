@@ -9,6 +9,7 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#include "include/tar.h"
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
@@ -509,6 +510,10 @@ static void hddInitModules(void)
     char path[256];
 
     guiSetBootStatusIfActive("Loading HDD themes...");
+
+    sprintf(path, "%sTHM/thm.tar", gHDDPrefix);
+    tarLoadFile(TAR_KIND_THM, path);
+
     sprintf(path, "%sTHM", gHDDPrefix);
     thmAddElements(path, "/", 1);
 
@@ -1263,7 +1268,7 @@ static int hddGetImage(item_list_t *itemList, char *folder, int isRelative, char
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 0);
+    return texDiscoverLoad(resultTex, path, -1, RES_FILESYSTEM);
 }
 
 static int hddGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -1272,7 +1277,7 @@ static int hddGetArchivedImage(item_list_t *itemList, char *folder, char *value,
 
     snprintf(path, sizeof(path), "%s_%s", value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 1);
+    return texDiscoverLoad(resultTex, path, -1, RES_TAR_ART);
 }
 
 static int hddGetTextId(item_list_t *itemList)

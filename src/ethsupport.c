@@ -10,6 +10,7 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#include "include/tar.h"
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
@@ -325,6 +326,10 @@ static void ethInitSMB(void)
         char path[256];
 
         guiSetBootStatusIfActive("Loading network themes...");
+
+        sprintf(path, "%sTHM/thm.tar", ethPrefix);
+        tarLoadFile(TAR_KIND_THM, path);
+
         sprintf(path, "%sTHM", ethPrefix);
         thmAddElements(path, "\\", 1);
 
@@ -819,7 +824,7 @@ static int ethGetImage(item_list_t *itemList, char *folder, int isRelative, char
         snprintf(path, sizeof(path), "%s%s\\%s_%s", ethPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1, 0);
+    return texDiscoverLoad(resultTex, path, -1, RES_FILESYSTEM);
 }
 
 static int ethGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -828,7 +833,7 @@ static int ethGetArchivedImage(item_list_t *itemList, char *folder, char *value,
 
     snprintf(path, sizeof(path), "%s_%s", value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 1);
+    return texDiscoverLoad(resultTex, path, -1, RES_TAR_ART);
 }
 
 static int ethGetTextId(item_list_t *itemList)
