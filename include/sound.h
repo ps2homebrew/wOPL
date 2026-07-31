@@ -5,6 +5,7 @@ enum SFX {
     SFX_BOOT = 0,
     SFX_CANCEL,
     SFX_CONFIRM,
+    SFX_COVERFLOW,
     SFX_CURSOR,
     SFX_MESSAGE,
     SFX_TRANSITION,
@@ -33,7 +34,5 @@ void sfxPlay(int id);
 void bgmStart(void);
 void bgmStop(void);
 int isBgmPlaying(void);
-void bgmMute(void);
-void bgmUnMute(void);
 
 #endif

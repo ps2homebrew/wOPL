@@ -8,6 +8,8 @@
 
 #include "include/common.h"
 
+#include "include/pathsupport.h"
+
 #include "include/sound.h"
 #include "include/tetris.h"
 #include "include/xparam.h"
@@ -23,6 +25,7 @@ int main(int argc, char *argv[])
 #endif
 
     LOG_INIT();
+    pathSetLaunchPath(argc > 0 ? argv[0] : NULL);
     PREINIT_LOG("OPL GUI start!\n");
 
     ChangeThreadPriority(GetThreadId(), 31);

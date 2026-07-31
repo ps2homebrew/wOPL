@@ -3,6 +3,7 @@
 
 
 #include "include/iosupport.h"
+#include "include/config_wopl.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,5 +81,7 @@ BLURT output char blurttext[128];
 #endif
 #endif
 
+
+#define WOPL_CONFIG_NAME WOPL_CONFIG_STRING // String to indicate what version of opl is used to avoid conflicts
 
 #endif

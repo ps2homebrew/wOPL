@@ -4,10 +4,13 @@
 #include "include/supportbase.h"
 #include "include/iosupport.h"
 
+#include <time.h>
+
 typedef struct
 {
-    int massDeviceIndex; // Underlying device index backing the mass fs partition, ex: usb0 = 0, usb1 = 1, etc.
-    char bdmPrefix[40];  // Contains the full path to the folder where all the games are.
+    int massDeviceIndex;    // Underlying BDM device index, ex: usb0 = 0, usb1 = 1, etc.
+    char bdmPrefix[40];     // Contains the full path to the folder where all the games are.
+    char bdmTruePrefix[16]; // Stable device identity.. ex: usb0:, mx4sio0:, ilink0:, ata0:
     int bdmULSizePrev;
     time_t bdmModifiedCDPrev;
     time_t bdmModifiedDVDPrev;
@@ -20,7 +23,6 @@ typedef struct
     int ataHighestUDMAMode; // Highest UDMA mode supported by the HDD
     unsigned char ThemesLoaded;
     unsigned char LanguagesLoaded;
-    unsigned char ArtArchivedLoaded;
     unsigned char ForceRefresh;
 } bdm_device_data_t;
 
@@ -44,10 +46,11 @@ extern int gEnableBdmHDD;
 extern base_game_info_t *gAutoLaunchBDMGame;
 extern bdm_device_data_t *gAutoLaunchDeviceData;
 
-
-int bdmFindPartition(char *target, const char *name, int write);
 void bdmLoadModules(void);
-void bdmLaunchGame(item_list_t *itemList, int id, config_set_t *configSet);
+void bdmLoadModulesForPath(const char *path);
+void bdmLoadModulesForUsbMassCompat(void);
+void bdmLoadEnabledDeviceModules(void);
+void bdmLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg);
 
 void bdmInitSemaphore();
 void bdmEnumerateDevices();
@@ -56,5 +59,7 @@ void bdmResolveLBA_UDMA(bdm_device_data_t *pDeviceData);
 int bdmHDDIsPresent(u32 timeoutMs);
 
 void autoLaunchBDMGame(char *argv[]);
+
+int bdmResolveUsbMassCompatPath(char *out, size_t out_len, const char *path);
 
 #endif

@@ -26,8 +26,6 @@
 #define _CHEATMAN_H_
 
 #include <tamtypes.h>
-#include "config.h"
-
 
 #define CHEAT_VERSION "0.5.3.7"
 
@@ -35,6 +33,7 @@
 #define MAX_CODES      250
 #define MAX_CHEATLIST  (MAX_HOOKS * 2 + MAX_CODES * 2)
 #define CHEAT_NAME_MAX 128
+#define MAX_IMAGEWORDS 1024
 
 /* Some character defines */
 #define NUL         0x00
@@ -64,11 +63,16 @@ typedef struct
 
 extern cheat_entry_t gCheats[MAX_CODES];
 extern int gCheatSource;
+extern int gEnableCheat; // Enables PS2RD Cheat Engine - 0 for Off, 1 for On
 
-void InitCheatsConfig(config_set_t *configSet);
+void InitCheatsConfig(int enable, int mode, int enable_image);
 int GetCheatsEnabled(void);
 u32 *GetCheatsList(void);
 int load_cheats(const char *cheatfile);
+int load_cheats_buf(const char *buf, int size);
 void set_cheats_list(void);
+int GetImageEnabled(void);
+const u32 *GetImage(void);
+int LoadImage(const char *filename);
 
 #endif /* _CHEATMAN_H_ */

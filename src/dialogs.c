@@ -342,6 +342,8 @@ struct UIItem diaUIConfig[] = {
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_THEME}}},
     {UI_SPACER},
     {UI_ENUM, UICFG_THEME, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_SPACER},
+    {UI_BUTTON, UICFG_COVERFLOW_BUTTON, 1, 1, -1, 0, 0, {.label = {"Coverflow Settings", -1}}},
     {UI_BREAK},
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_LANGUAGE}}},
@@ -361,7 +363,7 @@ struct UIItem diaUIConfig[] = {
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_DISCART}}},
     {UI_SPACER},
-    {UI_BOOL, UICFG_DISCART, 1, 1, _STR_HINT_DISCART, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BOOL, UICFG_DISCART, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
     {UI_BREAK},
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_ENABLE_NOTIFICATIONS}}},
@@ -413,6 +415,38 @@ struct UIItem diaUIConfig[] = {
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_WIDE_SCREEN}}},
     {UI_SPACER},
     {UI_BOOL, UICFG_WIDESCREEN, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    // buttons
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    // end of dialog
+    {UI_TERMINATOR}};
+
+// Coverflow Settings Menu
+struct UIItem diaCoverflowConfig[] = {
+    {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {"Coverflow Settings", -1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Cover Count", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_COVERFLOW_COUNT, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Center Scale", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_COVERFLOW_SCALE, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Animation Speed", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_COVERFLOW_ANIM, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Dim Side Covers", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_COVERFLOW_DIM, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
     {UI_BREAK},
 
     // buttons
@@ -617,6 +651,12 @@ struct UIItem diaCheatConfig[] = {
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_CHEATMODE}}},
     {UI_SPACER},
     {UI_ENUM, CHTCFG_CHEATMODE, 1, 1, _STR_HINT_CHEATMODE, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_BREAK},
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_ENABLEIMAGE}}},
+    {UI_SPACER},
+    {UI_BOOL, CHTCFG_ENABLEIMAGE, 1, 1, _STR_HINT_ENABLEIMAGE, 0, 0, {.intvalue = {1, 1}}},
     {UI_BREAK},
 
     // buttons
@@ -935,19 +975,19 @@ struct UIItem diaAbout[] = {
     {UI_BREAK},
 
     {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"BatRastard - belek666 - crazyc - dlanor - doctorxyz", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"BatRastard - belek666 - Chase Bo Camp - crazyc - dlanor", -1}}},
     {UI_BREAK},
 
     {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"Ripto - Wolf3s - Chase Bo Camp", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"doctorxyz - hominem.te.esse - ifcaro - izdubar - jimmikaelkael", -1}}},
     {UI_BREAK},
 
     {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"hominem.te.esse - ifcaro - izdubar - jimmikaelkael - KrahJohlito", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"KrahJohlito - kr_ps2 - Maximus32 - misfire - Polo35", -1}}},
     {UI_BREAK},
 
     {UI_SPACER},
-    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"kr_ps2 - Maximus32 - misfire - Polo35 - reprep - SP193 - volca", -1}}},
+    {UI_LABEL, 0, 1, 1, -1, 0, 15, {.label = {"reprep - Ripto - SP193 - volca - Wolf3s", -1}}},
     {UI_BREAK},
 
     {UI_SPACER},
@@ -1120,3 +1160,33 @@ struct UIItem diaOSDConfig[] = {
     {UI_BREAK},
     // end of dialog
     {UI_TERMINATOR}};
+
+// DELETE_WITH_MIGRATION v
+struct UIItem diaCfgMigration[] = {
+    {UI_HEADER, 0, 1, 1, -1, 0, 0, {.label = {"Config Migration", -1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Input Folder", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MIG_INPUT, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Output Folder", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_MIG_OUTPUT, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Keep Originals", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, CFG_MIG_KEEP_ORIGINALS, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_BREAK},
+    {UI_BUTTON, CFG_MIG_CONVERT, 1, 1, -1, 0, 0, {.label = {"Convert", -1}}},
+    {UI_BREAK},
+
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    {UI_TERMINATOR}};
+// DELETE_WITH_MIGRATION ^

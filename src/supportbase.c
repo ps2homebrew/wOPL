@@ -1,4 +1,3 @@
-
 #include "include/common.h"
 #include "include/lang.h"
 #include "include/util.h"
@@ -15,8 +14,13 @@
 #endif
 #include "include/ps2cnf.h"
 #include "include/gui.h"
+#include "include/guigame.h"
 #include "include/bdmsupport.h"
 #include "include/hddsupport.h"
+#include "include/mmcesupport.h"
+#include "include/tar.h"
+#include "include/config_wopl.h"
+#include "include/pathsupport.h"
 
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioMount("iso:", ***), fileXioUmount("iso:")
@@ -44,6 +48,7 @@ extern int size_icon_del_icn;
 struct game_list_t
 {
     base_game_info_t gameinfo;
+    char filename[128];
     struct game_list_t *next;
 };
 
@@ -63,11 +68,6 @@ int gPadMacroSettings;
 int gPadEmuSource;
 #endif
 
-int sbGetmcID(void)
-{
-    return mcID;
-}
-
 int sbGetFileSize(int fd)
 {
     int size = lseek(fd, 0, SEEK_END);
@@ -75,7 +75,12 @@ int sbGetFileSize(int fd)
     return size;
 }
 
-static int checkMC()
+int sbGetmcID(void)
+{
+    return mcID;
+}
+
+int sbCheckMC(void)
 {
     int mc0_is_ps2card, mc1_is_ps2card;
     int mc0_has_folder, mc1_has_folder;
@@ -95,15 +100,19 @@ static int checkMC()
             mc1_is_ps2card = 1;
         }
 
+        char mc0_dir[64];
+        snprintf(mc0_dir, sizeof(mc0_dir), "mc0:%s/", WOPL_CONFIG_NAME);
         mc0_has_folder = 0;
-        DIR *mc0_opl_dir = opendir("mc0:wOPL/");
+        DIR *mc0_opl_dir = opendir(mc0_dir);
         if (mc0_opl_dir != NULL) {
             closedir(mc0_opl_dir);
             mc0_has_folder = 1;
         }
 
+        char mc1_dir[64];
+        snprintf(mc1_dir, sizeof(mc1_dir), "mc1:%s/", WOPL_CONFIG_NAME);
         mc1_has_folder = 0;
-        DIR *mc1_opl_dir = opendir("mc1:wOPL/");
+        DIR *mc1_opl_dir = opendir(mc1_dir);
         if (mc1_opl_dir != NULL) {
             closedir(mc1_opl_dir);
             mc1_has_folder = 1;
@@ -132,62 +141,135 @@ static int checkMC()
     return mcID;
 }
 
-void sbCheckMCFolder(void)
+static int is_mc_config_path(const char *dir, int *slot)
 {
-    char path[32];
+    if (!dir || strncmp(dir, "mc", 2) != 0)
+        return 0;
+
+    if (dir[2] != '0' && dir[2] != '1')
+        return 0;
+
+    if (dir[3] != ':')
+        return 0;
+
+    if (slot)
+        *slot = dir[2] - '0';
+
+    return 1;
+}
+
+static int mc_slot_is_usable(int slot)
+{
+    char path[8];
+    DIR *root;
+
+    snprintf(path, sizeof(path), "mc%d:/", slot);
+
+    root = opendir(path);
+    if (root == NULL)
+        return 0;
+
+    closedir(root);
+    return 1;
+}
+
+static int normalise_mc_config_dir(char *out, int out_size, const char *dir)
+{
+    int len;
+
+    if (!out || out_size <= 0 || !dir)
+        return 0;
+
+    if (snprintf(out, out_size, "%s", dir) >= out_size)
+        return 0;
+
+    len = strlen(out);
+    if (len <= 0)
+        return 0;
+
+    if (out[len - 1] != '/') {
+        if (len + 1 >= out_size)
+            return 0;
+
+        out[len++] = '/';
+        out[len] = '\0';
+    }
+
+    return 1;
+}
+
+static int ensure_dir_exists(const char *dir)
+{
+    DIR *ldir;
+
+    ldir = opendir(dir);
+    if (ldir != NULL) {
+        closedir(ldir);
+        return 1;
+    }
+
+    if (mkdir(dir, 0777) == 0)
+        return 1;
+
+    ldir = opendir(dir);
+    if (ldir != NULL) {
+        closedir(ldir);
+        return 1;
+    }
+
+    return 0;
+}
+
+static void write_file_if_missing(const char *path, const void *data, int size)
+{
     int fd;
 
-    if (checkMC() < 0) {
+    fd = open(path, O_RDONLY);
+    if (fd >= 0) {
+        close(fd);
         return;
     }
 
-    snprintf(path, sizeof(path), "mc%d:wOPL/", mcID & 1);
-    mkdir(path, 0777);
-
-    snprintf(path, sizeof(path), "mc%d:wOPL/list.icn", mcID & 1);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_icn, size_icon_icn);
-            close(fd);
-        }
-    } else
-        close(fd);
-
-    snprintf(path, sizeof(path), "mc%d:wOPL/copy.icn", mcID & 1);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_cpy_icn, size_icon_cpy_icn);
-            close(fd);
-        }
-    } else
-        close(fd);
-
-    snprintf(path, sizeof(path), "mc%d:wOPL/del.icn", mcID & 1);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_del_icn, size_icon_del_icn);
-            close(fd);
-        }
-    } else
-        close(fd);
-
-    snprintf(path, sizeof(path), "mc%d:wOPL/icon.sys", mcID & 1);
-    fd = open(path, O_RDONLY);
-    if (fd < 0) {
-        fd = sbOpenFile(path, O_WRONLY | O_CREAT | O_TRUNC);
-        if (fd >= 0) {
-            write(fd, &icon_sys, size_icon_sys);
-            close(fd);
-        }
-    } else {
+    fd = sbOpenFile((char *)path, O_WRONLY | O_CREAT | O_TRUNC);
+    if (fd >= 0) {
+        write(fd, data, size);
         close(fd);
     }
+}
+
+int sbEnsureMCConfigFolder(const char *dir)
+{
+    char folder[128];
+    char path[128];
+    int slot;
+
+    if (!is_mc_config_path(dir, &slot))
+        return 0;
+
+    if (!mc_slot_is_usable(slot))
+        return 0;
+
+    if (!normalise_mc_config_dir(folder, sizeof(folder), dir))
+        return 0;
+
+    if (!ensure_dir_exists(folder))
+        return 0;
+
+    mcID = '0' + slot;
+
+    snprintf(path, sizeof(path), "%slist.icn", folder);
+    write_file_if_missing(path, &icon_icn, size_icon_icn);
+
+    snprintf(path, sizeof(path), "%scopy.icn", folder);
+    write_file_if_missing(path, &icon_cpy_icn, size_icon_cpy_icn);
+
+    snprintf(path, sizeof(path), "%sdel.icn", folder);
+    write_file_if_missing(path, &icon_del_icn, size_icon_del_icn);
+
+    snprintf(path, sizeof(path), "%sicon.sys", folder);
+    write_file_if_missing(path, &icon_sys, size_icon_sys);
+
+    return 1;
 }
 
 static int checkFile(char *path, int mode)
@@ -199,7 +281,7 @@ static int checkFile(char *path, int mode)
         if (path[2] == 0x3F) {
 
             // Use default detected card
-            if (checkMC() >= 0)
+            if (sbCheckMC() >= 0)
                 path[2] = mcID;
             else
                 return 0;
@@ -224,7 +306,6 @@ static int checkFile(char *path, int mode)
     }
     return 1;
 }
-
 
 int sbIsSameSize(const char *prefix, int prevSize)
 {
@@ -519,6 +600,11 @@ void sbCloseFileBuffer(file_buffer_t *fileBuffer)
     free(fileBuffer);
 }
 
+void sbMMCESendGameId(const char *gameId)
+{
+    mmceSendGameId(gameId);
+}
+
 static int GetStartupExecName(const char *path, char *filename, int maxlength)
 {
     char ps2disc_boot[CNF_PATH_LEN_MAX] = "";
@@ -724,6 +810,41 @@ static int queryISOGameListCache(const struct game_cache_list *cache, base_game_
     return ENOENT;
 }
 
+static void applyISOSizes(char *path, struct game_list_t *glist)
+{
+    iox_dirent_t dirent;
+
+    int fd = fileXioDopen(path);
+    if (fd < 0)
+        return;
+
+    while (fileXioDread(fd, &dirent) > 0) {
+        if (dirent.name[0] == '\0')
+            continue;
+
+        u32 sizeMB = (((u64)dirent.stat.hisize << 32) | dirent.stat.size) >> 20;
+        struct game_list_t *g = glist;
+        while (g) {
+            if (g->gameinfo.format == GAME_FORMAT_USBLD) {
+                const char *fname = dirent.name + 12;
+
+                if (!strncmp(fname, g->gameinfo.startup, strlen(g->gameinfo.startup))) {
+                    g->gameinfo.sizeMB += sizeMB;
+                    break;
+                }
+            } else {
+                if (strcmp(g->filename, dirent.name) == 0) {
+                    g->gameinfo.sizeMB = sizeMB;
+                    break;
+                }
+            }
+            g = g->next;
+        }
+    }
+
+    fileXioDclose(fd);
+}
+
 static int scanForISO(char *path, char type, struct game_list_t **glist)
 {
     int count = 0;
@@ -756,6 +877,8 @@ static int scanForISO(char *path, char type, struct game_list_t **glist)
             next->next = *glist;
             *glist = next;
             base_game_info_t *game = &next->gameinfo;
+            strncpy(next->filename, dirent->d_name, sizeof(next->filename) - 1);
+            next->filename[sizeof(next->filename) - 1] = '\0';
             memset(game, 0, sizeof(base_game_info_t));
 
             if (format == GAME_FORMAT_OLD_ISO) {
@@ -807,6 +930,8 @@ static int scanForISO(char *path, char type, struct game_list_t **glist)
         updateISOGameList(path, NULL, *glist, count);
     }
 
+    applyISOSizes(path, *glist);
+
     return count;
 }
 
@@ -825,16 +950,19 @@ int sbReadList(base_game_info_t **list, const char *prefix, int *fsize, int *gam
     struct game_list_t *dlist_head = NULL;
 
     // count iso games in "cd" directory
+    guiSetBootStatusIfActive("Scanning CD images...");
     snprintf(path, sizeof(path), "%sCD", prefix);
     count = scanForISO(path, SCECdPS2CD, &dlist_head);
 
     // count iso games in "dvd" directory
+    guiSetBootStatusIfActive("Scanning DVD images...");
     snprintf(path, sizeof(path), "%sDVD", prefix);
     if ((result = scanForISO(path, SCECdPS2DVD, &dlist_head)) >= 0) {
         count = count < 0 ? result : count + result;
     }
 
     // count and process games in ul.cfg
+    guiSetBootStatusIfActive("Checking USBExtreme games...");
     snprintf(path, sizeof(path), "%sul.cfg", prefix);
     fd = sbOpenFile(path, O_RDONLY);
     if (fd >= 0) {
@@ -867,23 +995,6 @@ int sbReadList(base_game_info_t **list, const char *prefix, int *fsize, int *gam
                     g->media = GameEntry.media;
                     g->format = GAME_FORMAT_USBLD;
                     g->sizeMB = 0;
-
-                    /* TODO: size calculation is very slow
-                    implmented some caching, or do not touch at all */
-
-                    // calculate total size for individual game
-                    /*int ulfd = 1;
-                    u8 part;
-                    unsigned int name_checksum = USBA_crc32(g->name);
-
-                    for (part = 0; part < g->parts && ulfd >= 0; part++) {
-                        snprintf(path, sizeof(path), "%sul.%08X.%s.%02x", prefix, name_checksum, g->startup, part);
-                        ulfd = openFile(path, O_RDONLY);
-                        if (ulfd >= 0) {
-                            g->sizeMB += (getFileSize(ulfd) >> 20);
-                            close(ulfd);
-                        }
-                    }*/
                 }
             }
         }
@@ -991,16 +1102,15 @@ int sbProbeISO9660(const char *path, base_game_info_t *game, u32 layer1_offset)
 
 static const struct cdvdman_settings_common cdvdman_settings_common_sample = CDVDMAN_SETTINGS_DEFAULT_COMMON;
 
-int sbPrepare(base_game_info_t *game, config_set_t *configSet, int size_cdvdman, void **cdvdman_irx, int *patchindex)
+int sbPrepare(base_game_info_t *game, const per_game_cfg_t *pgcfg, int size_cdvdman, void **cdvdman_irx, int *patchindex)
 {
     int i;
     struct cdvdman_settings_common *settings;
 
-    int compatmask = 0;
-    configGetInt(configSet, CONFIG_ITEM_COMPAT, &compatmask);
+    int compatmask = pgcfg ? pgcfg->compat : 0;
 
     char gameid[5];
-    configGetDiscIDBinary(configSet, gameid);
+    dnas_to_binary(pgcfg ? pgcfg->dnas : NULL, gameid, sizeof(gameid));
 
     for (i = 0, settings = NULL; i < size_cdvdman; i += 4) {
         if (!memcmp((void *)((u8 *)cdvdman_irx + i), &cdvdman_settings_common_sample, sizeof(cdvdman_settings_common_sample))) {
@@ -1042,58 +1152,55 @@ int sbPrepare(base_game_info_t *game, config_set_t *configSet, int size_cdvdman,
     settings->fakemodule_flags = 0;
     settings->fakemodule_flags |= FAKE_MODULE_FLAG_CDVDFSV;
     settings->fakemodule_flags |= FAKE_MODULE_FLAG_CDVDSTM;
+
 #ifdef GSM
-    InitGSMConfig(configSet);
+    InitGSMConfig(pgcfg);
 #endif
 
 #ifdef CHEAT
-    InitCheatsConfig(configSet);
+    int cheat_enable = gGlobalGameCfg.cheat_enable;
+    int cheat_mode = gGlobalGameCfg.cheat_mode;
+    int cheat_image = gGlobalGameCfg.cheat_enable_image;
+
+    if (pgcfg && pgcfg->cheat_source == SETTINGS_PERGAME) {
+        cheat_enable = pgcfg->cheat_enable;
+        cheat_mode = pgcfg->cheat_mode;
+        cheat_image = pgcfg->cheat_enable_image;
+    }
+
+    InitCheatsConfig(cheat_enable, cheat_mode, cheat_image);
 #endif
 
-    config_set_t *configGame = configGetByType(CONFIG_GAME);
 
 #ifdef PADEMU
-    gPadEmuSource = 0;
-    gEnablePadEmu = 0;
-    gPadEmuSettings = 0;
-    gPadMacroSource = 0;
-    gPadMacroSettings = 0;
+    gEnablePadEmu = gGlobalGameCfg.pademu_enable;
+    gPadEmuSettings = gGlobalGameCfg.pademu_settings;
+    gPadMacroSettings = gGlobalGameCfg.padmacro_settings;
 
-    if (configGetInt(configSet, CONFIG_ITEM_PADEMUSOURCE, &gPadEmuSource)) {
-        configGetInt(configSet, CONFIG_ITEM_ENABLEPADEMU, &gEnablePadEmu);
-        configGetInt(configSet, CONFIG_ITEM_PADEMUSETTINGS, &gPadEmuSettings);
-    } else {
-        configGetInt(configGame, CONFIG_ITEM_ENABLEPADEMU, &gEnablePadEmu);
-        configGetInt(configGame, CONFIG_ITEM_PADEMUSETTINGS, &gPadEmuSettings);
+    if (pgcfg && pgcfg->pademu_source == SETTINGS_PERGAME) {
+        gEnablePadEmu = pgcfg->pademu_enable;
+        gPadEmuSettings = pgcfg->pademu_settings;
     }
 
-    if (configGetInt(configSet, CONFIG_ITEM_PADMACROSOURCE, &gPadMacroSource)) {
-        configGetInt(configSet, CONFIG_ITEM_PADMACROSETTINGS, &gPadMacroSettings);
-    } else {
-        configGetInt(configGame, CONFIG_ITEM_PADMACROSETTINGS, &gPadMacroSettings);
-    }
+    if (pgcfg && pgcfg->padmacro_source == SETTINGS_PERGAME)
+        gPadMacroSettings = pgcfg->padmacro_settings;
 
-    if (gEnablePadEmu) {
+    if (gEnablePadEmu)
         settings->fakemodule_flags |= FAKE_MODULE_FLAG_USBD;
-    }
 #endif
-    // sanitise the settings
-    gOSDLanguageSource = 0;
-    gOSDLanguageEnable = 0;
-    gOSDLanguageValue = 0;
-    gOSDTVAspectRatio = 0;
-    gOSDVideOutput = 0;
 
-    if (configGetInt(configSet, CONFIG_ITEM_OSD_SETTINGS_SOURCE, &gOSDLanguageSource)) {
-        configGetInt(configSet, CONFIG_ITEM_OSD_SETTINGS_ENABLE, &gOSDLanguageEnable);
-        configGetInt(configSet, CONFIG_ITEM_OSD_SETTINGS_LANGID, &gOSDLanguageValue);
-        configGetInt(configSet, CONFIG_ITEM_OSD_SETTINGS_TV_ASP, &gOSDTVAspectRatio);
-        configGetInt(configSet, CONFIG_ITEM_OSD_SETTINGS_VMODE, &gOSDVideOutput);
-    } else {
-        configGetInt(configGame, CONFIG_ITEM_OSD_SETTINGS_ENABLE, &gOSDLanguageEnable);
-        configGetInt(configGame, CONFIG_ITEM_OSD_SETTINGS_LANGID, &gOSDLanguageValue);
-        configGetInt(configGame, CONFIG_ITEM_OSD_SETTINGS_TV_ASP, &gOSDTVAspectRatio);
-        configGetInt(configGame, CONFIG_ITEM_OSD_SETTINGS_VMODE, &gOSDVideOutput);
+    gOSDLanguageSource = 0;
+    gOSDLanguageEnable = gGlobalGameCfg.osd_enable;
+    gOSDLanguageValue = gGlobalGameCfg.osd_langid;
+    gOSDTVAspectRatio = gGlobalGameCfg.osd_tv_aspect;
+    gOSDVideOutput = gGlobalGameCfg.osd_vmode;
+
+    if (pgcfg && pgcfg->osd_source == SETTINGS_PERGAME) {
+        gOSDLanguageSource = SETTINGS_PERGAME;
+        gOSDLanguageEnable = pgcfg->osd_enable;
+        gOSDLanguageValue = pgcfg->osd_langid;
+        gOSDTVAspectRatio = pgcfg->osd_tv_aspect;
+        gOSDVideOutput = pgcfg->osd_vmode;
     }
 
     *patchindex = i;
@@ -1197,58 +1304,77 @@ void sbRename(base_game_info_t **list, const char *prefix, const char *sep, int 
     }
 }
 
-config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const char *sep)
+void sbPopulateConfig(base_game_info_t *game, const char *prefix, const char *sep, game_info_t *gi, per_game_cfg_t *pgcfg)
 {
-    char path[256];
+    char info_path[256], cfg_path[256];
     struct stat st;
 
-    snprintf(path, sizeof(path), "%sCFG%s%s.cfg", prefix, sep, game->startup);
-    config_set_t *config = configAlloc(0, NULL, path);
-    configRead(config); // Does not matter if the config file could be loaded or not.
+    snprintf(info_path, sizeof(info_path), "%sCFG%s%s.info", prefix, sep, game->startup);
+    snprintf(cfg_path, sizeof(cfg_path), "%sCFG%s%s.cfg", prefix, sep, game->startup);
 
-    // Get game size if not already set
-    if (game->sizeMB == 0) {
-        char gamepath[256];
+    if (gi) {
+        wOPLGameInfoLoad(info_path, gi);
 
-        if (game->format == GAME_FORMAT_ISO) {
-            snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->name, game->extension);
+        // fallback if not set.. fill for display.. don't save
+        if (!gi->title[0]) {
+            strncpy(gi->title, game->name, sizeof(gi->title) - 1);
+            gi->title[sizeof(gi->title) - 1] = '\0';
+        }
 
-            if (stat(gamepath, &st) == 0)
-                game->sizeMB = st.st_size >> 20;
-        } else if (game->format == GAME_FORMAT_OLD_ISO) {
-            snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s.%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->startup, game->name, game->extension);
-
-            if (stat(gamepath, &st) == 0)
-                game->sizeMB = st.st_size >> 20;
-        } else if (game->format == GAME_FORMAT_USBLD) {
-            // Calculate total size for multi-part USBLD games
-            int part;
-            unsigned int name_checksum = USBA_crc32(game->name);
-
-            for (part = 0; part < game->parts; part++) {
-                snprintf(gamepath, sizeof(gamepath), "%sul.%08X.%s.%02x", prefix, name_checksum, game->startup, part);
-                if (stat(gamepath, &st) == 0)
-                    game->sizeMB += (st.st_size >> 20);
+        if (!gi->serial[0] && game->startup[0]) {
+            char *dst = gi->serial;
+            for (const char *s = game->startup; *s && (dst - gi->serial) < (int)sizeof(gi->serial) - 1; s++) {
+                if (*s == '_')
+                    *dst++ = '-';
+                else if (*s != '.')
+                    *dst++ = *s;
             }
+            *dst = '\0';
         }
     }
 
-    configSetStr(config, CONFIG_ITEM_NAME, game->name);
-    configSetInt(config, CONFIG_ITEM_SIZE, game->sizeMB);
+    if (pgcfg) {
+        wOPLPerGameLoad(cfg_path, pgcfg);
 
-    if (game->format != GAME_FORMAT_USBLD) {
-        if (!strcmp(game->extension, ".iso"))
-            configSetStr(config, CONFIG_ITEM_FORMAT, "ISO");
-        else if (!strcmp(game->extension, ".zso"))
-            configSetStr(config, CONFIG_ITEM_FORMAT, "ZSO");
-    } else if (game->format == GAME_FORMAT_USBLD)
-        configSetStr(config, CONFIG_ITEM_FORMAT, "UL");
+        // auto determine format/media/size if not set
+        if (!pgcfg->format[0]) {
+            if (game->format == GAME_FORMAT_USBLD)
+                strcpy(pgcfg->format, "UL");
+            else if (!strcasecmp(game->extension, ".zso"))
+                strcpy(pgcfg->format, "ZSO");
+            else
+                strcpy(pgcfg->format, "ISO");
+        }
 
-    configSetStr(config, CONFIG_ITEM_MEDIA, game->media == SCECdPS2CD ? "CD" : "DVD");
+        if (!pgcfg->media[0])
+            strcpy(pgcfg->media, game->media == SCECdPS2CD ? "CD" : "DVD");
 
-    configSetStr(config, CONFIG_ITEM_STARTUP, game->startup);
+        if (!pgcfg->size_mb) {
+            if (game->sizeMB > 0) {
+                pgcfg->size_mb = game->sizeMB;
+            } else {
+                char gamepath[256];
+                if (game->format == GAME_FORMAT_ISO) {
+                    snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->name, game->extension);
+                    if (stat(gamepath, &st) == 0)
+                        pgcfg->size_mb = st.st_size >> 20;
+                } else if (game->format == GAME_FORMAT_OLD_ISO) {
+                    snprintf(gamepath, sizeof(gamepath), "%s%s%s%s%s.%s%s", prefix, sep, game->media == SCECdPS2CD ? "CD" : "DVD", sep, game->startup, game->name, game->extension);
+                    if (stat(gamepath, &st) == 0)
+                        pgcfg->size_mb = st.st_size >> 20;
+                }
+            }
+        }
+    }
+}
 
-    return config;
+int sbSaveConfig(base_game_info_t *game, const char *prefix, const char *sep, const per_game_cfg_t *cfg)
+{
+    char path[256];
+
+    snprintf(path, sizeof(path), "%sCFG%s%s.cfg", prefix, sep, game->startup);
+
+    return wOPLPerGameSave(path, cfg);
 }
 
 static void sbCreateFoldersFromList(const char *path, const char **folders)
@@ -1264,7 +1390,7 @@ static void sbCreateFoldersFromList(const char *path, const char **folders)
 
 void sbCreateFolders(const char *path, int createDiscImgFolders)
 {
-    const char *basicFolders[] = {"CFG", "THM", "LNG", "ART", "VMC", "CHT", "APPS", NULL};
+    const char *basicFolders[] = {"CFG", "THM", "LNG", "ART", "VMC", "CHT", "APPS", "IMG", NULL};
     const char *discImgFolders[] = {"CD", "DVD", NULL};
 
     sbCreateFoldersFromList(path, basicFolders);
@@ -1280,6 +1406,29 @@ int sbLoadCheats(const char *path, const char *file)
     int cheatMode = 0;
 
     if (GetCheatsEnabled()) {
+        char filename[32];
+        snprintf(filename, sizeof(filename), "%s.cht", file);
+
+        TarEntryBase *entry = tarFind(TAR_KIND_CHT, filename);
+        if (entry) {
+            LOG("Loading Cheat File from TAR: %s\n", filename);
+
+            void *buf = tarGet(TAR_KIND_CHT, filename);
+            if (buf) {
+                cheatMode = load_cheats_buf((char *)buf, entry->rawSize);
+                free(buf);
+
+                if (cheatMode >= 0) {
+                    LOG("Cheats found in TAR\n");
+                    if ((gAutoLaunchGame == NULL) && (gAutoLaunchBDMGame == NULL) && (cheatMode == 1))
+                        guiManageCheats();
+                    return cheatMode;
+                }
+
+                LOG("Error: failed to parse cheats from TAR\n");
+            }
+        }
+
         snprintf(cheatfile, sizeof(cheatfile), "%sCHT/%s.cht", path, file);
         LOG("Loading Cheat File %s\n", cheatfile);
 
@@ -1294,4 +1443,260 @@ int sbLoadCheats(const char *path, const char *file)
 
     return cheatMode;
 }
+
+int sbLoadImage(const char *path, const char *file)
+{
+    char imgfile[64];
+    int result = 0;
+
+    if (GetImageEnabled()) {
+        snprintf(imgfile, sizeof(imgfile), "%sIMG/%s.img", path, file);
+        LOG("Load image file %s\n", imgfile);
+        if (!LoadImage(imgfile)) {
+            LOG("Image load success\n");
+        } else {
+            result = -1;
+        }
+    }
+    return result;
+}
 #endif
+
+static int sbTryNeutrinoPath(neutrino_path_t *path, const char *cwd)
+{
+    int i;
+    int length;
+    const char *elfNames[] = {
+        "neutrino.elf",
+        "neutrino.ELF",
+        "NEUTRINO.elf",
+        "NEUTRINO.ELF",
+    };
+
+    if (!path || !cwd || !cwd[0])
+        return 0;
+
+    snprintf(path->cwd, sizeof(path->cwd), "%s", cwd);
+
+    length = strlen(path->cwd);
+    if (length <= 0 || length >= sizeof(path->cwd) - 1)
+        return 0;
+
+    if (path->cwd[length - 1] != '/') {
+        path->cwd[length++] = '/';
+        path->cwd[length] = '\0';
+    }
+
+    for (i = 0; i < (int)(sizeof(elfNames) / sizeof(elfNames[0])); i++) {
+        snprintf(path->elf, sizeof(path->elf), "%s%s", path->cwd, elfNames[i]);
+        LOG("SUPPORTBASE: Checking Neutrino ELF '%s'\n", path->elf);
+
+        if (sbFileExists(path->elf)) {
+            LOG("SUPPORTBASE: Neutrino ELF found at '%s'\n", path->elf);
+            return 1;
+        }
+    }
+
+    path->elf[0] = '\0';
+    path->cwd[0] = '\0';
+
+    return 0;
+}
+
+/*
+ * HDD path must not use pfs0: because hddLaunchGame() deinitializes/unmounts it before launching Neutrino
+ * For +wOPL: hdd0:+wOPL/neutrino/neutrino.elf
+ * For __common: hdd0:__common/wOPL/neutrino/neutrino.elf
+ */
+int sbFindNeutrino(neutrino_path_t *path, const char *preferredPrefix)
+{
+    int i;
+    char cwd[256];
+    const char *mcPaths[] = {
+        "mc0:NEUTRINO",
+        "mc1:NEUTRINO",
+        "mc0:/NEUTRINO",
+        "mc1:/NEUTRINO",
+        "mc0:neutrino",
+        "mc1:neutrino",
+        "mc0:/neutrino",
+        "mc1:/neutrino",
+        "mc0:/APPS/neutrino",
+        "mc1:/APPS/neutrino",
+        "mc0:/APPS/NEUTRINO",
+        "mc1:/APPS/NEUTRINO",
+    };
+
+    if (!path)
+        return 0;
+
+    path->elf[0] = '\0';
+    path->cwd[0] = '\0';
+
+    if (preferredPrefix && preferredPrefix[0]) {
+        if (!strncmp(preferredPrefix, "hdd0:", 5)) {
+            if (preferredPrefix[5] != '+') {
+                snprintf(cwd, sizeof(cwd), "%s/%s/neutrino", preferredPrefix, WOPL_CONFIG_NAME);
+                if (sbTryNeutrinoPath(path, cwd))
+                    return 1;
+
+                snprintf(cwd, sizeof(cwd), "%s/%s/NEUTRINO", preferredPrefix, WOPL_CONFIG_NAME);
+                if (sbTryNeutrinoPath(path, cwd))
+                    return 1;
+            }
+
+            snprintf(cwd, sizeof(cwd), "%s/neutrino", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+
+            snprintf(cwd, sizeof(cwd), "%s/NEUTRINO", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+        } else {
+            snprintf(cwd, sizeof(cwd), "%sneutrino", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+
+            snprintf(cwd, sizeof(cwd), "%sNEUTRINO", preferredPrefix);
+            if (sbTryNeutrinoPath(path, cwd))
+                return 1;
+        }
+    }
+
+    for (i = 0; i < MAX_BDM_DEVICES; i++) {
+        snprintf(cwd, sizeof(cwd), "mass%d:/neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:/NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mass%d:NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+    }
+
+    for (i = 0; i < 2; i++) {
+        snprintf(cwd, sizeof(cwd), "mmce%d:/neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:neutrino", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:/NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+
+        snprintf(cwd, sizeof(cwd), "mmce%d:NEUTRINO", i);
+        if (sbTryNeutrinoPath(path, cwd))
+            return 1;
+    }
+
+    for (i = 0; i < (int)(sizeof(mcPaths) / sizeof(mcPaths[0])); i++) {
+        if (sbTryNeutrinoPath(path, mcPaths[i]))
+            return 1;
+    }
+
+    return 0;
+}
+
+void sbCreateNeutrinoVMCPath(char *path, int length, const char *prefix, const char *vmc)
+{
+    if (!path || length <= 0)
+        return;
+
+    path[0] = '\0';
+
+    if (!prefix || !prefix[0] || !vmc || !vmc[0])
+        return;
+
+    if (!strncmp(prefix, "hdd0:", 5)) {
+        if (prefix[5] != '+')
+            snprintf(path, length, "%s/%s/VMC/%s.bin", prefix, WOPL_CONFIG_NAME, vmc);
+        else
+            snprintf(path, length, "%s/VMC/%s.bin", prefix, vmc);
+    } else
+        snprintf(path, length, "%sVMC/%s.bin", prefix, vmc);
+}
+
+int sbGetPathModeAndDevice(const char *path, int *device)
+{
+    const char *blkdevnameend;
+    const char *prefixend;
+    int i, blkdevnamelen, prefixlen;
+    int dev;
+    item_list_t *listSupport;
+
+    if (device)
+        *device = -1;
+
+    if (!path || !path[0])
+        return -1;
+
+    if (!strncmp(path, "hdd0:", 5) || !strncmp(path, "pfs0:", 5))
+        return HDD_MODE;
+
+    if (pathParseDevicePrefix(path, "mass", &dev, NULL, 0)) {
+        if (dev < 0)
+            dev = 0;
+
+        if (dev >= MAX_BDM_DEVICES)
+            return -1;
+
+        if (device)
+            *device = dev;
+
+        return BDM_MODE + dev;
+    }
+
+    if (pathParseDevicePrefix(path, "mmce", &dev, NULL, 0)) {
+        if (dev < 0)
+            dev = 0;
+
+        if (device)
+            *device = dev;
+
+        return MMCE_MODE;
+    }
+
+    blkdevnameend = strchr(path, ':');
+    if (blkdevnameend == NULL)
+        return -1;
+
+    blkdevnamelen = (int)(blkdevnameend - path);
+
+    for (i = 0; i < MODE_COUNT; i++) {
+        listSupport = list_support[i].support;
+        if ((listSupport != NULL) && (listSupport->itemGetPrefix != NULL)) {
+            char *prefix = listSupport->itemGetPrefix(listSupport);
+            if (prefix != NULL) {
+                prefixend = strchr(prefix, ':');
+                if (prefixend != NULL) {
+                    prefixlen = (int)(prefixend - prefix);
+
+                    if (blkdevnamelen == prefixlen && strncmp(path, prefix, blkdevnamelen) == 0)
+                        return listSupport->mode;
+                }
+            }
+        }
+    }
+
+    return -1;
+}
+
+int sbGetPathMode(const char *path)
+{
+    return sbGetPathModeAndDevice(path, NULL);
+}
+
+int sbPathIsMC(const char *path)
+{
+    return path && (!strncmp(path, "mc0:", 4) || !strncmp(path, "mc1:", 4));
+}

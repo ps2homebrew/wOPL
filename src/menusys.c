@@ -18,6 +18,7 @@
 #include "include/sound.h"
 #include "include/system.h"
 #include "include/themes.h"
+#include "include/config_wopl.h"
 #include <assert.h>
 
 #include <kernel.h>
@@ -33,6 +34,7 @@ enum MENU_IDs {
     MENU_NET_CONFIG,
     MENU_START_NBD,
     MENU_ABOUT,
+    MENU_CFG_MIGRATION, // DELETE_WITH_MIGRATION
     MENU_SAVE_CHANGES,
     MENU_EXIT,
     MENU_POWER_OFF
@@ -61,7 +63,12 @@ static menu_list_t *selected_item;
 
 static int actionStatus;
 static int itemConfigId;
-static config_set_t *itemConfig;
+static item_list_t *itemConfigOwner;
+
+static game_info_t itemGameInfo;
+static per_game_cfg_t itemPgCfg;
+static render_ctx_t itemConfig;
+static render_ctx_t *itemConfigPtr;
 
 static u8 parentalLockCheckEnabled = 1;
 
@@ -89,8 +96,74 @@ int gAutoRefresh;
 
 extern unsigned char shouldAppsUpdate;
 
-
 #define MENU_GENERAL_UPDATE_DELAY 60
+
+// DELETE_WITH_MIGRATION v
+int menuGetDevicePaths(char paths[][64], char labels[][80], int maxCount)
+{
+    int count = 0;
+    int i, j;
+
+    for (i = 0; i < MODE_COUNT && count < maxCount; i++) {
+        item_list_t *support = list_support[i].support;
+        if (!support || !support->enabled || !support->itemGetPrefix)
+            continue;
+
+        char *prefix = support->itemGetPrefix(support);
+        if (!prefix || !prefix[0])
+            continue;
+
+        char norm[64];
+        strncpy(norm, prefix, 62);
+        norm[62] = '\0';
+        int len = strlen(norm);
+        if (len > 0 && norm[len - 1] != '/')
+            norm[len] = '/', norm[len + 1] = '\0';
+
+        int dup = 0;
+        for (j = 0; j < count; j++) {
+            if (!strcmp(paths[j], norm)) {
+                dup = 1;
+                break;
+            }
+        }
+        if (dup)
+            continue;
+
+        strncpy(paths[count], norm, 63);
+        paths[count][63] = '\0';
+
+        int textId = support->itemTextId ? support->itemTextId(support) : -1;
+        char devLabel[32];
+
+        if (textId == _STR_USB_GAMES)
+            snprintf(devLabel, sizeof(devLabel), "USB%d", support->mode + 1);
+        else if (textId == _STR_BDM_GAMES)
+            snprintf(devLabel, sizeof(devLabel), "BDM%d", support->mode + 1);
+        else if (textId == _STR_ILINK_GAMES)
+            snprintf(devLabel, sizeof(devLabel), "iLink%d", support->mode + 1);
+        else if (textId == _STR_MX4SIO_GAMES)
+            snprintf(devLabel, sizeof(devLabel), "MX4SIO%d", support->mode + 1);
+        else if (textId == _STR_HDD_GAMES && support->mode <= BDM_MODE4)
+            snprintf(devLabel, sizeof(devLabel), "BDM HDD%d", support->mode + 1);
+        else if (textId == _STR_HDD_GAMES)
+            snprintf(devLabel, sizeof(devLabel), "HDD");
+        else if (textId == _STR_NET_GAMES)
+            snprintf(devLabel, sizeof(devLabel), "Network");
+        else if (textId >= 0) {
+            strncpy(devLabel, _l(textId), sizeof(devLabel) - 1);
+            devLabel[sizeof(devLabel) - 1] = '\0';
+        } else
+            snprintf(devLabel, sizeof(devLabel), "Device%d", support->mode + 1);
+
+        snprintf(labels[count], 80, "%s (%s)", norm, devLabel);
+        labels[count][79] = '\0';
+        count++;
+    }
+
+    return count;
+}
+// DELETE_WITH_MIGRATION ^
 
 static void menuRenameGame(submenu_list_t **submenu)
 {
@@ -191,13 +264,54 @@ static void menuDeleteGame(submenu_list_t **submenu)
         guiMsgBox("NULL Support object. Please report", 0, NULL);
 }
 
+static item_list_t *menuGetCurrentConfigOwner(void)
+{
+    item_list_t *list = selected_item->item->userdata;
+
+    if (list->mode == FAV_MODE && selected_item->item->current && selected_item->item->current->item.owner)
+        return (item_list_t *)selected_item->item->current->item.owner;
+
+    return list;
+}
+
 static void _menuLoadConfig()
 {
+    item_list_t *list;
+    int id;
+    game_info_t gi;
+    per_game_cfg_t pg;
+
     WaitSema(menuSemaId);
-    if (!itemConfig) {
-        item_list_t *list = selected_item->item->userdata;
-        itemConfig = list->itemGetConfig(list, itemConfigId);
+    if (itemConfigPtr) {
+        actionStatus = 0;
+        SignalSema(menuSemaId);
+        return;
     }
+
+    list = itemConfigOwner ? itemConfigOwner : selected_item->item->userdata;
+    id = itemConfigId;
+    SignalSema(menuSemaId);
+
+    memset(&gi, 0, sizeof(gi));
+    memset(&pg, 0, sizeof(pg));
+
+    if (list->itemGetInfo)
+        list->itemGetInfo(list, id, &gi);
+
+    if (list->itemGetPgCfg)
+        list->itemGetPgCfg(list, id, &pg);
+
+    WaitSema(menuSemaId);
+    if (!itemConfigPtr && itemConfigId == id && itemConfigOwner == list) {
+        memcpy(&itemGameInfo, &gi, sizeof(itemGameInfo));
+        memcpy(&itemPgCfg, &pg, sizeof(itemPgCfg));
+
+        itemConfig.gi = &itemGameInfo;
+        itemConfig.pg = &itemPgCfg;
+        itemConfig.uid++;
+        itemConfigPtr = &itemConfig;
+    }
+
     actionStatus = 0;
     SignalSema(menuSemaId);
 }
@@ -207,8 +321,11 @@ static void _menuSaveConfig()
     int result;
 
     WaitSema(menuSemaId);
-    result = configWrite(itemConfig);
+    item_list_t *list = itemConfigOwner ? itemConfigOwner : menuGetCurrentConfigOwner();
+    result = list->itemSavePgCfg ? list->itemSavePgCfg(list, itemConfigId, &itemPgCfg) : 1;
     itemConfigId = -1; // to invalidate cache and force reload
+    itemConfigOwner = NULL;
+    itemConfigPtr = NULL;
     actionStatus = 0;
     SignalSema(menuSemaId);
 
@@ -219,37 +336,43 @@ static void _menuSaveConfig()
 static void _menuRequestConfig()
 {
     WaitSema(menuSemaId);
-    if (selected_item->item->current != NULL && itemConfigId != selected_item->item->current->item.id) {
-        if (itemConfig) {
-            configFree(itemConfig);
-            itemConfig = NULL;
-        }
-        item_list_t *list = selected_item->item->userdata;
-        if (itemConfigId == -1 || guiInactiveFrames >= list->delay) {
-            itemConfigId = selected_item->item->current->item.id;
+    if (selected_item->item->current != NULL) {
+        item_list_t *owner = menuGetCurrentConfigOwner();
+        int id = selected_item->item->current->item.id;
+
+        if (itemConfigId != id || itemConfigOwner != owner || actionStatus) {
+            if (itemConfigPtr)
+                itemConfigPtr = NULL;
+
+            itemConfigId = id;
+            itemConfigOwner = owner;
             ioPutRequest(IO_CUSTOM_SIMPLEACTION, &_menuLoadConfig);
-        }
-    } else if (itemConfig)
-        actionStatus = 0;
+        } else if (itemConfigPtr)
+            actionStatus = 0;
+    }
 
     SignalSema(menuSemaId);
 }
 
-config_set_t *menuLoadConfig()
+per_game_cfg_t *menuLoadConfig()
 {
     actionStatus = 1;
     itemConfigId = -1;
+    itemConfigOwner = NULL;
+    itemConfigPtr = NULL;
     guiHandleDeferedIO(&actionStatus, _l(_STR_LOADING_SETTINGS), IO_CUSTOM_SIMPLEACTION, &_menuRequestConfig);
-    return itemConfig;
+    return &itemPgCfg;
 }
 
 // we don't want a pop up when transitioning to or refreshing Game Menu gui.
-config_set_t *gameMenuLoadConfig(struct UIItem *ui)
+per_game_cfg_t *gameMenuLoadConfig(struct UIItem *ui)
 {
     actionStatus = 1;
     itemConfigId = -1;
+    itemConfigOwner = NULL;
+    itemConfigPtr = NULL;
     guiGameHandleDeferedIO(&actionStatus, ui, IO_CUSTOM_SIMPLEACTION, &_menuRequestConfig);
-    return itemConfig;
+    return &itemPgCfg;
 }
 
 void menuSaveConfig()
@@ -273,6 +396,7 @@ static void menuInitMainMenu(void)
     submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT, NULL);
+    submenuAppendItem(&mainMenu, -1, "Config Migration", MENU_CFG_MIGRATION, -1, NULL); // DELETE_WITH_MIGRATION
     submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_EXIT, _STR_EXIT, NULL);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_POWER_OFF, _STR_POWEROFF, NULL);
@@ -335,7 +459,11 @@ void menuInit()
     menu = NULL;
     selected_item = NULL;
     itemConfigId = -1;
-    itemConfig = NULL;
+    itemConfigOwner = NULL;
+    memset(&itemGameInfo, 0, sizeof(itemGameInfo));
+    memset(&itemPgCfg, 0, sizeof(itemPgCfg));
+    memset(&itemConfig, 0, sizeof(itemConfig));
+    itemConfigPtr = NULL;
     mainMenu = NULL;
     mainMenuCurrent = NULL;
     gameMenu = NULL;
@@ -373,11 +501,6 @@ void menuEnd()
     submenuDestroy(&mainMenu);
     submenuDestroy(&gameMenu);
     submenuDestroy(&appMenu);
-
-    if (itemConfig) {
-        configFree(itemConfig);
-        itemConfig = NULL;
-    }
 
     DeleteSema(menuSemaId);
     DeleteSema(menuListSemaId);
@@ -679,7 +802,6 @@ static void menuNextH()
     // If we found a valid menu transition to it.
     if (next != NULL) {
         selected_item = next;
-        itemConfigId = -1;
         sfxPlay(SFX_CURSOR);
     }
 }
@@ -692,7 +814,6 @@ static void menuPrevH()
 
     if (prev != NULL) {
         selected_item = prev;
-        itemConfigId = -1;
         sfxPlay(SFX_CURSOR);
     }
 }
@@ -702,7 +823,7 @@ static void menuFirstPage()
     submenu_list_t *cur = selected_item->item->current;
     if (cur) {
         if (cur->prev) {
-            sfxPlay(SFX_CURSOR);
+            sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
         }
 
         selected_item->item->current = selected_item->item->submenu;
@@ -715,7 +836,7 @@ static void menuLastPage()
     submenu_list_t *cur = selected_item->item->current;
     if (cur) {
         if (cur->next) {
-            sfxPlay(SFX_CURSOR);
+            sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
         }
         while (cur->next)
             cur = cur->next; // go to end
@@ -736,10 +857,9 @@ static void menuNextV()
 
     if (cur && cur->next) {
         selected_item->item->current = cur->next;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
-        isAnimating = 1;
-        animationDirection = 1;
+        thmTriggerCoverflowAnim(-1);
 
         // if the current item is beyond the page start, move the page start one page down
         cur = selected_item->item->pagestart;
@@ -752,6 +872,8 @@ static void menuNextV()
 
         selected_item->item->pagestart = selected_item->item->current;
     } else { // wrap to start
+        if (cur && (cur->next || cur->prev))
+            thmTriggerCoverflowAnim(-1);
         menuFirstPage();
     }
 }
@@ -762,10 +884,9 @@ static void menuPrevV()
 
     if (cur && cur->prev) {
         selected_item->item->current = cur->prev;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
-        isAnimating = 1;
-        animationDirection = -1;
+        thmTriggerCoverflowAnim(1);
 
         // if the current item is on the page start, move the page start one page up
         if (selected_item->item->pagestart == cur) {
@@ -774,6 +895,8 @@ static void menuPrevV()
                 selected_item->item->pagestart = selected_item->item->pagestart->prev;
         }
     } else { // wrap to end
+        if (cur && (cur->next || cur->prev))
+            thmTriggerCoverflowAnim(1);
         menuLastPage();
     }
 }
@@ -784,7 +907,7 @@ static void menuNextPage()
 
     if (cur && cur->next) {
         int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
         while (--itms && cur->next)
             cur = cur->next;
@@ -802,7 +925,7 @@ static void menuPrevPage()
 
     if (cur && cur->prev) {
         int itms = ((items_list_t *)gTheme->itemsList->extended)->displayedItems + 1;
-        sfxPlay(SFX_CURSOR);
+        sfxPlay(gTheme->coverflow ? SFX_COVERFLOW : SFX_CURSOR);
 
         while (--itms && cur->prev)
             cur = cur->prev;
@@ -862,7 +985,7 @@ void menuSetSelectedItem(menu_item_t *item)
 
 void menuRenderMenu()
 {
-    if (guiDrawBGMain() == 0)
+    if (guiDrawBGSettings() == 0)
         guiDrawBGPlasma();
 
     if (!mainMenu)
@@ -909,36 +1032,30 @@ int menuSetParentalLockCheckState(int enabled)
 
 int menuCheckParentalLock(void)
 {
-    const char *parentalLockPassword;
-    char password[CONFIG_KEY_VALUE_LEN];
+    char password[sizeof(gParentalLockPassword)];
     int result;
 
     result = 0; // Default to unlocked.
-    if (parentalLockCheckEnabled) {
-        config_set_t *configOPL = configGetByType(CONFIG_OPL);
+    if (parentalLockCheckEnabled && gParentalLockPassword[0] != '\0') {
+        password[0] = '\0';
 
         // Prompt for password, only if one was set.
-        if (configGetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, &parentalLockPassword) && (parentalLockPassword[0] != '\0')) {
-            password[0] = '\0';
-            if (diaShowKeyb(password, CONFIG_KEY_VALUE_LEN, 1, _l(_STR_PARENLOCK_ENTER_PASSWORD_TITLE))) {
-                if (strncmp(parentalLockPassword, password, CONFIG_KEY_VALUE_LEN) == 0) {
-                    result = 0;
-                    parentalLockCheckEnabled = 0; // Stop asking for the password.
-                } else if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) == 0) {
-                    guiMsgBox(_l(_STR_PARENLOCK_DISABLE_WARNING), 0, NULL);
-
-                    configRemoveKey(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD);
-                    configSave(CONFIG_OPL, 1);
-
-                    result = 0;
-                    parentalLockCheckEnabled = 0; // Stop asking for the password.
-                } else {
-                    guiMsgBox(_l(_STR_PARENLOCK_PASSWORD_INCORRECT), 0, NULL);
-                    result = EACCES;
-                }
-            } else // User aborted.
+        if (diaShowKeyb(password, sizeof(password), 1, _l(_STR_PARENLOCK_ENTER_PASSWORD_TITLE))) {
+            if (strncmp(gParentalLockPassword, password, sizeof(password)) == 0) {
+                result = 0;
+                parentalLockCheckEnabled = 0; // Stop asking for the password.
+            } else if (strncmp(PARENTAL_LOCK_MASTER_PASS, password, sizeof(password)) == 0) {
+                guiMsgBox(_l(_STR_PARENLOCK_DISABLE_WARNING), 0, NULL);
+                gParentalLockPassword[0] = '\0';
+                configSave(CONFIG_OPL, 0);
+                result = 0;
+                parentalLockCheckEnabled = 0; // Stop asking for the password.
+            } else {
+                guiMsgBox(_l(_STR_PARENLOCK_PASSWORD_INCORRECT), 0, NULL);
                 result = EACCES;
-        }
+            }
+        } else // User aborted.
+            result = EACCES;
     }
 
     return result;
@@ -1001,14 +1118,16 @@ void menuHandleInputMenu()
                 handleLwnbdSrv();
         } else if (id == MENU_ABOUT) {
             guiShowAbout();
+        } else if (id == MENU_CFG_MIGRATION) { // DELETE_WITH_MIGRATION
+            guiShowCfgMigration();             // DELETE_WITH_MIGRATION
         } else if (id == MENU_SAVE_CHANGES) {
             if (menuCheckParentalLock() == 0) {
-                guiGameSaveOSDLanguageGlobalConfig(configGetByType(CONFIG_GAME));
+                guiGameSaveOSDLanguageGlobalConfig();
 #ifdef PADEMU
-                guiGameSavePadEmuGlobalConfig(configGetByType(CONFIG_GAME));
-                guiGameSavePadMacroGlobalConfig(configGetByType(CONFIG_GAME));
+                guiGameSavePadEmuGlobalConfig();
+                guiGameSavePadMacroGlobalConfig();
 #endif
-                configSave(CONFIG_OPL | CONFIG_NETWORK | CONFIG_GAME, 1);
+                configSave(CONFIG_ALL, 1);
                 menuSetParentalLockCheckState(1); // Re-enable parental lock check.
             }
         } else if (id == MENU_EXIT) {
@@ -1032,19 +1151,24 @@ void menuHandleInputMenu()
     }
 }
 
-static void menuRenderElements(theme_element_t *elem)
+static void menuRenderElements(theme_element_t *elem, int requestConfig)
 {
-    // selected_item can't be NULL here as we only allow to switch to "Main" rendering when there is at least one device activated
-    _menuRequestConfig();
+    render_ctx_t *ctx;
+
+    if (requestConfig)
+        _menuRequestConfig();
 
     WaitSema(menuSemaId);
 
+    ctx = requestConfig ? itemConfigPtr : NULL;
+
     while (elem) {
         if (elem->drawElem)
-            elem->drawElem(selected_item, selected_item->item->current, itemConfig, elem);
+            elem->drawElem(selected_item, selected_item->item->current, ctx, elem);
 
         elem = elem->next;
     }
+
     SignalSema(menuSemaId);
 }
 
@@ -1053,13 +1177,13 @@ void menuRenderMain(void)
     item_list_t *list = selected_item->item->userdata;
 
     if (list->mode == APP_MODE) {
-        menuRenderElements(gTheme->appsMainElems.first);
+        menuRenderElements(gTheme->appsMainElems.first, 0);
         gTheme->itemsList = gTheme->appsItemsList;
     } else if (list->mode == FAV_MODE) {
-        menuRenderElements(gTheme->favsMainElems.first);
+        menuRenderElements(gTheme->favsMainElems.first, 0);
         gTheme->itemsList = gTheme->favsItemsList;
     } else {
-        menuRenderElements(gTheme->mainElems.first);
+        menuRenderElements(gTheme->mainElems.first, 0);
         gTheme->itemsList = gTheme->gamesItemsList;
     }
 }
@@ -1113,60 +1237,44 @@ void menuHandleInputMain()
 void menuRenderInfo(void)
 {
     item_list_t *list = selected_item->item->userdata;
+    item_list_t *source = list;
 
-    if (list->mode == APP_MODE) {
-        menuRenderElements(gTheme->appsInfoElems.first);
+    if (list->mode == FAV_MODE && selected_item->item->current && selected_item->item->current->item.owner)
+        source = (item_list_t *)selected_item->item->current->item.owner;
+
+    if (list->mode == APP_MODE)
         gTheme->itemsList = gTheme->appsItemsList;
-    } else if (list->mode == FAV_MODE) {
-        menuRenderElements(gTheme->favsInfoElems.first);
+    else if (list->mode == FAV_MODE)
         gTheme->itemsList = gTheme->favsItemsList;
-    } else {
-        menuRenderElements(gTheme->infoElems.first);
+    else
         gTheme->itemsList = gTheme->gamesItemsList;
-    }
+
+    if (source->mode == APP_MODE)
+        menuRenderElements(gTheme->appsInfoElems.first, 1);
+    else if (list->mode == FAV_MODE)
+        menuRenderElements(gTheme->favsInfoElems.first, 1);
+    else
+        menuRenderElements(gTheme->infoElems.first, 1);
 }
 
 void menuHandleInputInfo()
 {
-    int navPrev;
-    int navNext;
-
-    if (gTheme->coverflow == NULL) {
-        navPrev = KEY_UP;
-        navNext = KEY_DOWN;
-    } else {
-        navPrev = KEY_LEFT;
-        navNext = KEY_RIGHT;
-    }
-
     if (getKeyOn(KEY_CROSS)) {
         if (gSelectButton == KEY_CIRCLE)
             guiSwitchScreen(GUI_SCREEN_MAIN);
         else
             selected_item->item->execCross(selected_item->item);
-    } else if (getKey(navPrev)) {
-        menuPrevV();
-    } else if (getKey(navNext)) {
-        menuNextV();
     } else if (getKeyOn(KEY_CIRCLE)) {
         if (gSelectButton == KEY_CROSS)
             guiSwitchScreen(GUI_SCREEN_MAIN);
         else
             selected_item->item->execCircle(selected_item->item);
-    } else if (getKey(KEY_L1)) {
-        menuPrevPage();
-    } else if (getKey(KEY_R1)) {
-        menuNextPage();
-    } else if (getKeyOn(KEY_L2)) {
-        menuFirstPage();
-    } else if (getKeyOn(KEY_R2)) {
-        menuLastPage();
     }
 }
 
 void menuRenderGameMenu()
 {
-    if (guiDrawBGMain() == 0)
+    if (guiDrawBGSettings() == 0)
         guiDrawBGPlasma();
 
     if (!gameMenu)
@@ -1204,11 +1312,7 @@ void menuRenderGameMenu()
     int cp = 0; // current position
 
     // game title
-    fntRenderString(gTheme->fonts[0], 320, 20, ALIGN_CENTER, 0, 0, selected_item->item->current->item.text, gTheme->selTextColor);
-
-    // config source
-    char *cfgSource = gameConfigSource();
-    fntRenderString(gTheme->fonts[0], 320, 40, ALIGN_CENTER, 0, 0, cfgSource, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 320, 40, ALIGN_CENTER, 0, 0, selected_item->item->current->item.text, gTheme->selTextColor);
 
     // settings list
     for (it = gameMenu; it; it = it->next, cp++) {
@@ -1255,7 +1359,7 @@ void menuHandleInputGameMenu()
         sfxPlay(SFX_CONFIRM);
 
         if (menuID == GAME_COMPAT_SETTINGS) {
-            guiGameShowCompatConfig(selected_item->item->current->item.id, selected_item->item->userdata, itemConfig);
+            guiGameShowCompatConfig(selected_item->item->current->item.id, selected_item->item->userdata);
         }
 #ifdef CHEAT // TODO: Organize this
         else if (menuID == GAME_CHEAT_SETTINGS) {
@@ -1278,16 +1382,15 @@ void menuHandleInputGameMenu()
         } else if (menuID == GAME_OSD_LANGUAGE_SETTINGS) {
             guiGameShowOSDLanguageConfig(0);
         } else if (menuID == GAME_SAVE_CHANGES) {
-            if (guiGameSaveConfig(itemConfig, selected_item->item->userdata))
-                configSetInt(itemConfig, CONFIG_ITEM_CONFIGSOURCE, CONFIG_SOURCE_USER);
+            guiGameSaveConfig(&itemPgCfg, selected_item->item->userdata);
             menuSaveConfig();
             configSave(CONFIG_GAME, 0);
             guiMsgBox(_l(_STR_GAME_SETTINGS_SAVED), 0, NULL);
             guiGameLoadConfig(selected_item->item->userdata, gameMenuLoadConfig(NULL));
         } else if (menuID == GAME_TEST_CHANGES) {
-            guiGameTestSettings(selected_item->item->current->item.id, selected_item->item->userdata, itemConfig);
+            guiGameTestSettings(selected_item->item->current->item.id, selected_item->item->userdata, &itemPgCfg);
         } else if (menuID == GAME_REMOVE_CHANGES) {
-            if (guiGameShowRemoveSettings(itemConfig, configGetByType(CONFIG_GAME))) {
+            if (guiGameShowRemoveSettings(&itemPgCfg)) {
                 guiGameLoadConfig(selected_item->item->userdata, gameMenuLoadConfig(NULL));
             }
         } else if (menuID == GAME_RENAME_GAME) {
@@ -1306,7 +1409,7 @@ void menuHandleInputGameMenu()
 
 void menuRenderAppMenu()
 {
-    if (guiDrawBGMain() == 0)
+    if (guiDrawBGSettings() == 0)
         guiDrawBGPlasma();
 
     if (!appMenu)
@@ -1422,6 +1525,7 @@ void menuClearGameList(opl_io_module_t *mdl)
         mdl->menuItem.submenu = NULL;
         mdl->menuItem.current = NULL;
         mdl->menuItem.pagestart = NULL;
+        mdl->menuItem.last = NULL;
         mdl->menuItem.remindLast = 0;
 
         // unlock
@@ -1435,8 +1539,10 @@ static void updateMenuFromGameList(opl_io_module_t *mdl)
     menuClearGameList(mdl);
 
     const char *temp = NULL;
-    if (gRememberLastPlayed)
-        configGetStr(configGetByType(CONFIG_LAST), "last_played", &temp);
+    if (gRememberLastPlayed) {
+        wOPLLastLoad();
+        temp = wOPLLastGet();
+    }
 
     // refresh device icon and text (for bdm)
     mdl->menuItem.icon_id = mdl->support->itemIconId(mdl->support);

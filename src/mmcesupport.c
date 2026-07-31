@@ -8,6 +8,7 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#include "include/tar.h"
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
@@ -17,10 +18,10 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include "include/bdmsupport.h"
-#include "include/art_tar.h"
 #include <stdio.h>
 #include <unistd.h>
 #include "include/common.h"
+#include "include/config_wopl.h"
 #include <ps2sdkapi.h>
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h> // fileXioIoctl, fileXioDevctl
@@ -68,9 +69,20 @@ void mmceSetPrefix(void)
 
 void mmceLoadModules(void)
 {
+    static int mmceModulesLoaded = 0;
+
+    if (mmceModulesLoaded)
+        return;
+
     LOG("MMCESUPPORT LoadModules\n");
+
+    guiSetBootStatusIfActive("Loading MMCE modules...");
+
     LOG("[MMCEMAN]:\n");
+
     sysLoadModuleBuffer(&mmceman_irx, size_mmceman_irx, 0, NULL);
+
+    mmceModulesLoaded = 1;
 }
 
 void mmceInit(item_list_t *itemList)
@@ -82,7 +94,7 @@ void mmceInit(item_list_t *itemList)
     mmceGameCount = 0;
     mmceGames = NULL;
 
-    configGetInt(configGetByType(CONFIG_OPL), "usb_frames_delay", &mmceGameList.delay);
+    itemList->delay = gMMCEFramesDelay;
     mmceGameList.updateDelay = -1; // No automatic updates
 
     mmceLoadModules();
@@ -91,10 +103,56 @@ void mmceInit(item_list_t *itemList)
         sprintf(mmcePrefix, "mmce0:/");
     else if (gMMCESlot == 1)
         sprintf(mmcePrefix, "mmce1:/");
-    else if (gMMCESlot == 2)
+    else if (gMMCESlot == 2) {
+        guiSetBootStatusIfActive("Detecting MMCE slot...");
         mmceDetectSlot();
+    }
 
     mmceGameList.enabled = 1;
+}
+
+void mmceSendGameIdToDevice(int device, const char *gameId)
+{
+    char dev[16];
+
+    if (!gameId || !gameId[0])
+        return;
+
+    if (device != 0 && device != 1) {
+        if (!strncmp(mmcePrefix, "mmce1:", 6))
+            device = 1;
+        else
+            device = 0;
+    }
+
+    snprintf(dev, sizeof(dev), "mmce%d:/", device);
+
+    if (fileXioDevctl(dev, 0x1, NULL, 0, NULL, 0) < 0)
+        return;
+
+    // small delay to let config write before sending game id (remember last game)
+    usleep(200000); // 200 ms
+
+    // send game id to mmce
+    if (fileXioDevctl(dev, 0x8, (void *)gameId, (strlen(gameId) + 1), NULL, 0) < 0)
+        return;
+
+    // wait for busy bit clear 2 seconds 100ms poll
+    for (int i = 0; i < 20; i++) {
+        usleep(100000);
+
+        int status = fileXioDevctl(dev, 0x2, NULL, 0, NULL, 0);
+        if (status < 0)
+            break;
+
+        if ((status & 1) == 0)
+            return; // ready
+    }
+}
+
+void mmceSendGameId(const char *gameId)
+{
+    mmceSendGameIdToDevice(-1, gameId);
 }
 
 item_list_t *mmceGetObject(int initOnly)
@@ -108,7 +166,6 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 {
     static unsigned char ThemesLoaded = 0;
     static unsigned char LanguagesLoaded = 0;
-    static unsigned char ArtArchivedLoaded = 0;
 
     char path[256];
     int result = 0;
@@ -143,6 +200,11 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 
     // update Themes
     if (!ThemesLoaded) {
+        guiSetBootStatusIfActive("Loading MMCE themes...");
+
+        sprintf(path, "%sTHM/thm.tar", mmcePrefix);
+        tarLoadFile(TAR_KIND_THM, path);
+
         sprintf(path, "%sTHM", mmcePrefix);
         if (thmAddElements(path, "/", 1) > 0)
             ThemesLoaded = 1;
@@ -150,17 +212,14 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 
     // update Languages
     if (!LanguagesLoaded) {
+        guiSetBootStatusIfActive("Loading MMCE languages...");
+
         sprintf(path, "%sLNG", mmcePrefix);
         if (lngAddLanguages(path, "/", mmceGameList.mode) > 0)
             LanguagesLoaded = 1;
     }
 
-    if (!ArtArchivedLoaded) {
-        sprintf(path, "%sART/art.tar", mmcePrefix);
-        loadTarFile(path);
-        ArtArchivedLoaded = 1;
-    }
-
+    guiSetBootStatusIfActive("Checking MMCE folders...");
     sbCreateFolders(mmcePrefix, 1);
 
     return result;
@@ -168,6 +227,8 @@ static int mmceNeedsUpdate(item_list_t *itemList)
 
 static int mmceUpdateGameList(item_list_t *itemList)
 {
+    guiSetBootStatusIfActive("Scanning MMCE games...");
+
     sbReadList(&mmceGames, mmcePrefix, &mmceULSizePrev, &mmceGameCount);
     return mmceGameCount;
 }
@@ -209,7 +270,7 @@ static void mmceRenameGame(item_list_t *itemList, int id, char *newName)
     mmceULSizePrev = -2;
 }
 
-void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
+void mmceLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 {
     int i, index, compatmask = 0;
     int EnablePS2Logo = 0;
@@ -223,55 +284,85 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     u32 layer1_start, layer1_offset;
     unsigned short int layer1_part;
 
-    // No Autolaunch yet
-    if (gAutoLaunchBDMGame == NULL)
+    /* No Autolaunch yet
+    if (gAutoLaunchMMCEGame == NULL)
         game = &mmceGames[id];
     else
-        game = gAutoLaunchBDMGame;
+        game = gAutoLaunchMMCEGame;*/
+
+    game = &mmceGames[id];
+
+    int selectedCore = pgcfg->core_loader == CORE_LOADER_NEUTRINO ? CORE_LOADER_NEUTRINO : CORE_LOADER_WOPL;
+
+    neutrino_path_t neutrinoPath;
+    char neutrinoVmc0[256];
+    char neutrinoVmc1[256];
+
+    neutrinoPath.elf[0] = '\0';
+    neutrinoPath.cwd[0] = '\0';
+    neutrinoVmc0[0] = '\0';
+    neutrinoVmc1[0] = '\0';
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        if (game->format == GAME_FORMAT_USBLD || !strcasecmp(game->extension, ".zso")) {
+            guiWarning("Neutrino does not support this file format, launching with <wOPL> core", 6);
+            selectedCore = CORE_LOADER_WOPL;
+        } else {
+            if (!sbFindNeutrino(&neutrinoPath, mmcePrefix)) {
+                guiWarning("Neutrino ELF not found, launching with <wOPL> core", 6);
+                selectedCore = CORE_LOADER_WOPL;
+            }
+        }
+    }
 
     void *irx = &mmce_cdvdman_irx;
     int irx_size = size_mmce_cdvdman_irx;
-    compatmask = sbPrepare(game, configSet, irx_size, irx, &index);
+    compatmask = sbPrepare(game, pgcfg, irx_size, irx, &index);
     settings = (struct cdvdman_settings_mmce *)((u8 *)irx + index);
     if (settings == NULL)
         return;
 
-    char vmc_name[32];
-    char vmc_path[256];
-    int vmc_size_mb;
-    int vmc_id, size_mcemu_irx = 0;
-    int vmc_fd;
-    mmce_vmc_infos_t mmce_vmc_infos;
-    vmc_superblock_t vmc_superblock;
+    int size_mcemu_irx = 0;
 
-    for (vmc_id = 0; vmc_id < 2; vmc_id++) {
-        memset(&mmce_vmc_infos, 0, sizeof(mmce_vmc_infos));
-        configGetVMC(configSet, vmc_name, sizeof(vmc_name), vmc_id);
-        if (vmc_name[0]) {
-            vmc_size_mb = sysCheckVMC(mmcePrefix, "/", vmc_name, 0, &vmc_superblock);
-            if (vmc_size_mb > 0) {
-                mmce_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
-                mmce_vmc_infos.flags |= 0x100;
-                mmce_vmc_infos.specs.page_size = vmc_superblock.page_size;
-                mmce_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
-                mmce_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
+    if (selectedCore == CORE_LOADER_WOPL) {
+        char vmc_name[32];
+        char vmc_path[256];
+        int vmc_size_mb;
+        int vmc_id;
+        int vmc_fd;
+        mmce_vmc_infos_t mmce_vmc_infos;
+        vmc_superblock_t vmc_superblock;
 
-                sprintf(vmc_path, "%sVMC/%s.bin", mmcePrefix, vmc_name);
+        for (vmc_id = 0; vmc_id < 2; vmc_id++) {
+            memset(&mmce_vmc_infos, 0, sizeof(mmce_vmc_infos));
+            strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
+            vmc_name[sizeof(vmc_name) - 1] = '\0';
+            if (vmc_name[0]) {
+                vmc_size_mb = sysCheckVMC(mmcePrefix, "/", vmc_name, 0, &vmc_superblock);
+                if (vmc_size_mb > 0) {
+                    mmce_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
+                    mmce_vmc_infos.flags |= 0x100;
+                    mmce_vmc_infos.specs.page_size = vmc_superblock.page_size;
+                    mmce_vmc_infos.specs.block_size = vmc_superblock.pages_per_block;
+                    mmce_vmc_infos.specs.card_size = vmc_superblock.pages_per_cluster * vmc_superblock.clusters_per_card;
 
-                vmc_fd = fileXioOpen(vmc_path, 0x3, 0666);
-                if (vmc_fd >= 0) {
-                    mmce_vmc_infos.fd = fileXioIoctl2(vmc_fd, 0x80, NULL, 0, NULL, 0);
-                    mmce_vmc_infos.active = 1;
+                    sprintf(vmc_path, "%sVMC/%s.bin", mmcePrefix, vmc_name);
+
+                    vmc_fd = fileXioOpen(vmc_path, 0x3, 0666);
+                    if (vmc_fd >= 0) {
+                        mmce_vmc_infos.fd = fileXioIoctl2(vmc_fd, 0x80, NULL, 0, NULL, 0);
+                        mmce_vmc_infos.active = 1;
+                    }
                 }
             }
-        }
 
-        for (i = 0; i < size_mmce_mcemu_irx; i++) {
-            if (((u32 *)&mmce_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
-                if (mmce_vmc_infos.active)
-                    size_mcemu_irx = size_mmce_mcemu_irx;
-                memcpy(&((u32 *)&mmce_mcemu_irx)[i], &mmce_vmc_infos, sizeof(mmce_vmc_infos_t));
-                break;
+            for (i = 0; i < size_mmce_mcemu_irx; i++) {
+                if (((u32 *)&mmce_mcemu_irx)[i] == (0xC0DEFAC0 + vmc_id)) {
+                    if (mmce_vmc_infos.active)
+                        size_mcemu_irx = size_mmce_mcemu_irx;
+                    memcpy(&((u32 *)&mmce_mcemu_irx)[i], &mmce_vmc_infos, sizeof(mmce_vmc_infos_t));
+                    break;
+                }
             }
         }
     }
@@ -321,16 +412,26 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
         } else
             LOG("Cheats error\n");
     }
+
+    if ((result = sbLoadImage(mmcePrefix, game->startup)) < 0) {
+        if (gAutoLaunchBDMGame == NULL) {
+            guiWarning(_l(_STR_ERR_IMAGE_LOAD_FAILED), 10);
+        } else {
+            LOG("Image error\n");
+        }
+    }
 #endif
 
-    if (gRememberLastPlayed) {
-        configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        configSave(CONFIG_LAST, 0);
+    if (gRememberLastPlayed)
+        wOPLLastSave(game->startup);
+
+    if (pgcfg->alt_startup[0]) {
+        strncpy(filename, pgcfg->alt_startup, sizeof(filename) - 1);
+        filename[sizeof(filename) - 1] = '\0';
+    } else {
+        strncpy(filename, game->startup, sizeof(filename) - 1);
+        filename[sizeof(filename) - 1] = '\0';
     }
-
-    if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
-        strcpy(filename, game->startup);
-
 
     // MMCEDRV settings
     if (gMMCESlot == 0)
@@ -356,49 +457,69 @@ void mmceLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
     LOG("name: %s\n", game->name);
     LOG("start: %s\n", game->startup);
 
-    // Set gameid and poll card until ready
-#ifdef __DEBUG
-    if (gMMCEEnableGameID) {
-#endif
-
-        // Send GameID to MMCE
-        fileXioDevctl(mmcePrefix, 0x8, game->startup, (strlen(game->startup) + 1), NULL, 0);
-
-        for (int i = 0; i < 15; i++) {
-            sleep(1);
-
-            // Poll MMCE status until busy bit is clear
-            if ((fileXioDevctl(mmcePrefix, 0x2, NULL, 0, NULL, 0) & 1) == 0) {
-                LOG("Set MMCE GameID to: %s\n", game->startup);
-                break;
-            }
-        }
-#ifdef __DEBUG
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sbCreateNeutrinoVMCPath(neutrinoVmc0, sizeof(neutrinoVmc0), mmcePrefix, pgcfg->vmc1);
+        sbCreateNeutrinoVMCPath(neutrinoVmc1, sizeof(neutrinoVmc1), mmcePrefix, pgcfg->vmc2);
     }
-#endif
 
     // mcReset();
     // mcInit(MC_TYPE_XMC);
 
-    if (gAutoLaunchBDMGame == NULL)
-        deinit(NO_EXCEPTION, MMCE_MODE); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
+    int gameDevice = -1;
+    int elfDevice = -1;
+    int elfMode = -1;
+
+    sbGetPathModeAndDevice(partname, &gameDevice);
+
+    if (selectedCore == CORE_LOADER_NEUTRINO)
+        elfMode = sbGetPathModeAndDevice(neutrinoPath.elf, &elfDevice);
+
+    if (!(selectedCore == CORE_LOADER_NEUTRINO && sbPathIsMC(neutrinoPath.elf)))
+        mmceSendGameIdToDevice(gameDevice, game->startup);
+
+    int deinitException = NO_EXCEPTION;
+    int deinitMode = MMCE_MODE;
+
+    if (selectedCore == CORE_LOADER_NEUTRINO && elfMode >= 0) {
+        deinitException = UNMOUNT_EXCEPTION;
+        deinitMode = elfMode;
+    }
+
+    deinit(deinitException, deinitMode); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
 
     /* No autolaunch yet
+    if (gAutoLaunchMMCEGame == NULL)
+        deinit(deinitException, deinitMode); // CAREFUL: deinit will call mmceCleanUp, so mmceGames/game will be freed
     else {
-        miniDeinit(configSet);
+        miniDeinit();
 
-        free(gAutoLaunchBDMGame);
-        gAutoLaunchBDMGame = NULL;
+        free(gAutoLaunchMMCEGame);
+        gAutoLaunchMMCEGame = NULL;
     }*/
+
+    if (selectedCore == CORE_LOADER_NEUTRINO) {
+        sysLaunchNeutrino("mmce", partname, compatmask, EnablePS2Logo, neutrinoPath.elf, neutrinoPath.cwd, neutrinoVmc0, neutrinoVmc1);
+        return;
+    }
 
     settings->common.zso_cache = 0;
 
     sysLaunchLoaderElf(filename, "MMCE_MODE", irx_size, irx, size_mcemu_irx, mmce_mcemu_irx, EnablePS2Logo, compatmask);
 }
 
-static config_set_t *mmceGetConfig(item_list_t *itemList, int id)
+static void mmceGetInfo(item_list_t *itemList, int id, game_info_t *gi)
 {
-    return sbPopulateConfig(&mmceGames[id], mmcePrefix, "/");
+    sbPopulateConfig(&mmceGames[id], mmcePrefix, "/", gi, NULL);
+}
+
+static void mmceGetPgCfg(item_list_t *itemList, int id, per_game_cfg_t *cfg)
+{
+    sbPopulateConfig(&mmceGames[id], mmcePrefix, "/", NULL, cfg);
+}
+
+static int mmceSavePgCfg(item_list_t *itemList, int id, const per_game_cfg_t *cfg)
+{
+    return sbSaveConfig(&mmceGames[id], mmcePrefix, "/", cfg);
 }
 
 static int mmceGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -409,7 +530,7 @@ static int mmceGetImage(item_list_t *itemList, char *folder, int isRelative, cha
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 0);
+    return texDiscoverLoad(resultTex, path, -1, RES_FILESYSTEM);
 }
 
 static int mmceGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -418,7 +539,7 @@ static int mmceGetArchivedImage(item_list_t *itemList, char *folder, char *value
 
     snprintf(path, sizeof(path), "%s_%s", value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 1);
+    return texDiscoverLoad(resultTex, path, -1, RES_TAR_ART);
 }
 
 static int mmceGetTextId(item_list_t *itemList)
@@ -430,7 +551,7 @@ static int mmceGetTextId(item_list_t *itemList)
 
 static int mmceGetIconId(item_list_t *itemList)
 {
-    int mode = CATEGORY_MMCE_ICON;
+    int mode = MMCE_ICON;
 
     return mode;
 }
@@ -474,7 +595,7 @@ static char *mmceGetPrefix(item_list_t *itemList)
 static item_list_t mmceGameList = {
     MMCE_MODE, 2, 0, 0, MENU_MIN_INACTIVE_FRAMES, MMCE_MODE_UPDATE_DELAY, NULL, NULL, &mmceGetTextId, &mmceGetPrefix, &mmceInit, &mmceNeedsUpdate,
     &mmceUpdateGameList, &mmceGetGameCount, &mmceGetGame, &mmceGetGameName, &mmceGetGameNameLength, &mmceGetGameStartup, &mmceDeleteGame, &mmceRenameGame,
-    &mmceLaunchGame, &mmceGetConfig, &mmceGetImage, &mmceGetArchivedImage, &mmceCleanUp, &mmceShutdown, &mmceCheckVMC, &mmceGetIconId};
+    &mmceLaunchGame, &mmceGetInfo, &mmceGetPgCfg, &mmceSavePgCfg, &mmceGetImage, &mmceGetArchivedImage, &mmceCleanUp, &mmceShutdown, &mmceCheckVMC, &mmceGetIconId};
 
 void mmceInitSemaphore()
 {

@@ -12,6 +12,8 @@
 
 #include "include/common.h"
 #include "include/sound.h"
+#include "include/config_wopl.h"
+#include "include/config_migration.h" // DELETE_WITH_MIGRATION
 #include <libpad.h>
 
 #ifdef PADEMU
@@ -20,6 +22,8 @@
 #endif
 
 extern unsigned int frameCounter;
+
+#define MC_DIR_CONFIG "mc?:" WOPL_CONFIG_NAME
 
 static void initMenuForListSupport(opl_io_module_t *mod)
 {
@@ -53,7 +57,6 @@ static void initMenuForListSupport(opl_io_module_t *mod)
     mc->menu.subMenu = &mod->subMenu;
     guiDeferUpdate(mc);
 }
-
 
 void initSupport(item_list_t *itemList, int mode, int force_reinit)
 {
@@ -96,6 +99,7 @@ void initSupport(item_list_t *itemList, int mode, int force_reinit)
 void initAllSupport(int force_reinit)
 {
     bdmEnumerateDevices();
+
     initSupport(ethGetObject(0), ETH_MODE, force_reinit || (gNetworkStartup >= ERROR_ETH_SMB_CONN));
     initSupport(hddGetObject(0), HDD_MODE, force_reinit);
     initSupport(appGetObject(0), APP_MODE, force_reinit);
@@ -121,7 +125,7 @@ static void setDefaults(void)
     gAutoLaunchDeviceData = NULL;
     gOPLPart[0] = '\0';
     gHDDPrefix = "pfs0:";
-    gBaseMCDir = "mc?:wOPL";
+    gBaseMCDir = MC_DIR_CONFIG;
 
     bdmCacheSize = 16;
     hddCacheSize = 8;
@@ -190,7 +194,7 @@ static void setDefaults(void)
     gHDDStartMode = START_MODE_DISABLED;
     gETHStartMode = START_MODE_DISABLED;
     gAPPStartMode = START_MODE_DISABLED;
-    gFAVStartMode = START_MODE_MANUAL;
+    gFAVStartMode = START_MODE_DISABLED;
     gMMCEStartMode = START_MODE_DISABLED;
 
     gMMCESlot = 2; // Default to first Auto slot
@@ -201,7 +205,7 @@ static void setDefaults(void)
     gMMCEAckWaitCycles = 5;
     gMMCEUseAlarms = 1;
 
-    gEnableUSB = 0;
+    gEnableUSB = 1;
     gEnableILK = 0;
     gEnableMX4SIO = 0;
     gEnableBdmHDD = 0;
@@ -212,6 +216,11 @@ static void setDefaults(void)
     gXOff = 0;
     gYOff = 0;
     gOverscan = 0;
+
+    gCoverflowCount = 3;
+    gCoverflowCenterScale = 30;
+    gCoverflowAnimSpeed = 200;
+    gCoverflowDimCovers = 0;
 
     setDefaultColors();
 
@@ -229,21 +238,29 @@ void init(void)
 
     padInit(0);
     int padStatus = 0;
-    configInit(NULL);
+    configInit(NULL); // DELETE_WITH_MIGRATION
 
     rmInit();
     lngInit();
     thmInit();
     guiInit();
+    guiShowBootStatus("Starting wOPL...");
+
+    guiShowBootStatus("Initializing I/O...");
     ioInit();
+
+    guiShowBootStatus("Loading menus...");
     menuInit();
 
+    guiShowBootStatus("Starting pads...");
     startPads();
 
     bdmInitSemaphore();
 
     // handler for deffered menu updates
     ioRegisterHandler(IO_MENU_UPDATE_DEFFERED, &menuDeferredUpdate);
+
+    guiShowBootStatus("Loading cache...");
     cacheInit();
 
     gSelectButton = (InitConsoleRegionData() == CONSOLE_REGION_JAPAN) ? KEY_CIRCLE : KEY_CROSS;
@@ -252,12 +269,13 @@ void init(void)
         padStatus = startPads();
     readPads();
     if (!getKeyPressed(KEY_START)) {
-        loadConfig(); // only try to restore config if emergency key is not being pressed
+        guiShowBootStatus("Loading settings...");
+        _loadConfig(); // only try to restore config if emergency key is not being pressed
     } else {
+        guiShowBootStatus("Skipping settings...");
         LOG("--- SKIPPING OPL CONFIG LOADING\n");
         configApply(-1, -1, 0);
     }
-
 
     // queue deffered init of sound effects, which will take place after the preceding initialization steps within the queue are complete.
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredAudioInit);
@@ -285,11 +303,12 @@ void deinit(int exception, int modeSelected)
     lngEnd();
     thmEnd();
     rmEnd();
-    configEnd();
+    configEnd(); // DELETE_WITH_MIGRATION
 }
 
 void deferredInit(void)
 {
+    guiSetBootStatusIfActive("Ready.");
 
     // inform GUI main init part is over
     struct gui_update_t *id = guiOpCreate(GUI_INIT_DONE);
@@ -306,6 +325,8 @@ void deferredAudioInit(void)
 {
     int ret;
 
+    guiSetBootStatusIfActive("Loading audio...");
+
     audioInit();
     ret = sfxInit(1);
     if (ret < 0)
@@ -320,10 +341,8 @@ void deferredAudioInit(void)
 
 void miniInit(int mode)
 {
-    int ret;
-
     setDefaults();
-    configInit(NULL);
+    configInit(NULL); // DELETE_WITH_MIGRATION
 
     ioInit();
     LOG_ENABLE();
@@ -343,43 +362,17 @@ void miniInit(int mode)
     }
 
     InitConsoleRegionData();
-
-    ret = configReadMulti(CONFIG_ALL);
-    if (CONFIG_ALL & CONFIG_OPL) {
-        if (!(ret & CONFIG_OPL)) {
-            if (mode == BDM_MODE)
-                ret = configCheckLoadConfigBDM(CONFIG_ALL);
-            else if (mode == HDD_MODE)
-                ret = configCheckLoadConfigHDD(CONFIG_ALL);
-        }
-
-        if (ret & CONFIG_OPL) {
-            config_set_t *configOPL = configGetByType(CONFIG_OPL);
-
-            configGetInt(configOPL, CONFIG_OPL_PS2LOGO, &gPS2Logo);
-            configGetStrCopy(configOPL, CONFIG_OPL_EXIT_PATH, gExitPath, sizeof(gExitPath));
-            configGetInt(configOPL, CONFIG_OPL_HDD_SPINDOWN, &gHDDSpindown);
-            if (mode == BDM_MODE) {
-                configGetStrCopy(configOPL, CONFIG_OPL_BDM_PREFIX, gBDMPrefix, sizeof(gBDMPrefix));
-                configGetInt(configOPL, CONFIG_OPL_BDM_CACHE, &bdmCacheSize);
-            } else if (mode == HDD_MODE) {
-                configGetInt(configOPL, CONFIG_OPL_HDD_CACHE, &hddCacheSize);
-            } else if (mode == MMCE_MODE) {
-                configGetStrCopy(configOPL, CONFIG_OPL_MMCE_PREFIX, gMMCEPrefix, sizeof(gMMCEPrefix));
-            }
-        }
-    }
+    wOPLLoad(NULL, NULL);
 }
 
-void miniDeinit(config_set_t *configSet)
+void miniDeinit()
 {
     ioBlockOps(1);
 #ifdef PADEMU
     ds34usb_reset();
     ds34bt_reset();
 #endif
-    configFree(configSet);
 
     ioEnd();
-    configEnd();
+    configEnd(); // DELETE_WITH_MIGRATION
 }

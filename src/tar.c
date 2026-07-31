@@ -1,0 +1,552 @@
+#include <ps2sdkapi.h>
+#include <stdio.h>
+#include <malloc.h>
+#include <fcntl.h>
+#include <string.h>
+
+#include "include/tar.h"
+
+typedef struct
+{
+    const char *prefix;
+    const char *mountRoot;
+} TarDevice;
+
+typedef struct
+{
+    const char *relPath;
+    const char *cacheName;
+    u32 entrySize;
+} TarKindInfo;
+
+static const TarDevice gDevices[] = {
+    {"mmce0:", "mmce0:/"},
+    {"mmce1:", "mmce1:/"},
+    {"usb0:", "usb0:/"},
+    {"usb1:", "usb1:/"},
+    {"hdd0:", "hdd0:/"},
+    {"hdd1:", "hdd1:/"},
+    {"ata0:", "ata0:/"},
+    {"ata1:", "ata1:/"},
+    {"pfs0:", "pfs0:/"},
+    {"smb0:", "smb0:/"},
+    {NULL, NULL}};
+
+static const TarKindInfo gTarInfo[TAR_KIND_MAX] = {
+    {"ART/art.tar", "art_cache.bin", sizeof(TarEntryArt)},
+    {"CFG/cfg.tar", "cfg_cache.bin", sizeof(TarEntryCfg)},
+    {"CHT/cht.tar", "cht_cache.bin", sizeof(TarEntryCht)},
+    {"THM/thm.tar", "thm_cache.bin", sizeof(TarEntryThm)}};
+
+static void *s_index[TAR_KIND_MAX] = {NULL, NULL, NULL, NULL};
+static u32 s_count[TAR_KIND_MAX] = {0, 0, 0, 0};
+static u32 s_cap[TAR_KIND_MAX] = {0, 0, 0, 0};
+static const TarDevice *s_dev[TAR_KIND_MAX] = {NULL, NULL, NULL, NULL};
+static int s_inactive[TAR_KIND_MAX] = {0, 0, 0, 0};
+
+static const unsigned char s_zeroBlock[TAR_BLOCK_SIZE] __attribute__((aligned(64))) = {0};
+
+static u64 parseOctal(const char *s, int len)
+{
+    u64 val = 0;
+    for (int i = 0; i < len; i++) {
+        char c = s[i];
+        if (c < '0' || c > '7')
+            break;
+        val = (val << 3) + (u64)(c - '0');
+    }
+    return val;
+}
+
+static int isZeroBlock(const unsigned char header[TAR_BLOCK_SIZE])
+{
+    return memcmp(header, s_zeroBlock, TAR_BLOCK_SIZE) == 0;
+}
+
+static void tarCloseInternal(TarKind kind)
+{
+    if (s_index[kind]) {
+        free(s_index[kind]);
+        s_index[kind] = NULL;
+    }
+    s_count[kind] = 0;
+    s_cap[kind] = 0;
+    s_dev[kind] = NULL;
+}
+
+static int buildTarPath(const TarDevice *dev, TarKind kind, char *out, int outSize)
+{
+    int len = snprintf(out, outSize, "%s%s", dev->mountRoot, gTarInfo[kind].relPath);
+
+    return (len > 0 && len < outSize) ? 0 : -1;
+}
+
+static int tarReadCache(const char *cachePath, const char *tarPath, TarKind kind)
+{
+    int fd = open(cachePath, O_RDONLY);
+    if (fd < 0)
+        return -1;
+
+    struct stat stCache;
+    if (fstat(fd, &stCache) < 0) {
+        close(fd);
+        return -1;
+    }
+
+    int fileSize = stCache.st_size;
+    if (fileSize < (int)sizeof(TarCacheHeader)) {
+        close(fd);
+        return -1;
+    }
+
+    void *buf = memalign(64, fileSize);
+    if (!buf) {
+        close(fd);
+        return -1;
+    }
+
+    if (read(fd, buf, fileSize) != fileSize) {
+        free(buf);
+        close(fd);
+        return -1;
+    }
+    close(fd);
+
+    TarCacheHeader *hdr = (TarCacheHeader *)buf;
+
+    if (memcmp(hdr->magic, ARC_MAGIC, 4) != 0 || hdr->version != ARC_VERSION) {
+        free(buf);
+        return -1;
+    }
+
+    struct stat stTar;
+    if (stat(tarPath, &stTar) < 0 || (u64)stTar.st_size != hdr->tarSize) {
+        free(buf);
+        return -1;
+    }
+
+    u32 entrySize = gTarInfo[kind].entrySize;
+    int expected = sizeof(TarCacheHeader) + hdr->entryCount * entrySize;
+    if (fileSize < expected) {
+        free(buf);
+        return -1;
+    }
+
+    void *entries = malloc(hdr->entryCount * entrySize);
+    if (!entries) {
+        free(buf);
+        return -1;
+    }
+
+    memcpy(entries, (unsigned char *)buf + sizeof(TarCacheHeader), hdr->entryCount * entrySize);
+
+    s_index[kind] = entries;
+    s_count[kind] = hdr->entryCount;
+    s_cap[kind] = hdr->entryCount;
+
+    free(buf);
+    return 0;
+}
+
+static int tarWriteCache(const char *cachePath, const char *tarPath, TarKind kind)
+{
+    struct stat stTar;
+    if (stat(tarPath, &stTar) < 0)
+        return -1;
+
+    TarCacheHeader hdr;
+    memcpy(hdr.magic, ARC_MAGIC, 4);
+    hdr.version = ARC_VERSION;
+    hdr.tarSize = stTar.st_size;
+    hdr.entryCount = s_count[kind];
+
+    int fd = open(cachePath, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+    if (fd < 0)
+        return -1;
+
+    if (write(fd, &hdr, sizeof(hdr)) != (int)sizeof(hdr)) {
+        close(fd);
+        return -1;
+    }
+
+    u32 entrySize = gTarInfo[kind].entrySize;
+    u32 totalSize = entrySize * s_count[kind];
+    if (totalSize > 0) {
+        if (write(fd, s_index[kind], totalSize) != (int)totalSize) {
+            close(fd);
+            return -1;
+        }
+    }
+
+    close(fd);
+    return 0;
+}
+
+static int tarParseFile(TarKind kind, const char *path)
+{
+    struct stat st;
+    if (stat(path, &st) < 0)
+        return -1;
+
+    char dirPath[256];
+    strncpy(dirPath, path, sizeof(dirPath));
+    dirPath[sizeof(dirPath) - 1] = '\0';
+
+    for (int i = strlen(dirPath) - 1; i >= 0; i--)
+        if (dirPath[i] == '/') {
+            dirPath[i + 1] = '\0';
+            break;
+        }
+
+    char fullCachePath[256];
+    snprintf(fullCachePath, sizeof(fullCachePath), "%s%s", dirPath, gTarInfo[kind].cacheName);
+
+    if (tarReadCache(fullCachePath, path, kind) == 0)
+        return 0;
+
+    int fd = open(path, O_RDONLY);
+    if (fd < 0)
+        return -1;
+
+    free(s_index[kind]);
+    s_index[kind] = NULL;
+    s_count[kind] = 0;
+    s_cap[kind] = 0;
+
+    u32 entrySize = gTarInfo[kind].entrySize;
+    if (entrySize <= sizeof(TarEntryBase) + 1)
+        goto fail;
+
+    u32 nameMax = entrySize - sizeof(TarEntryBase) - 1;
+
+    while (1) {
+        unsigned char header[TAR_BLOCK_SIZE] __attribute__((aligned(64)));
+        int r = read(fd, header, TAR_BLOCK_SIZE);
+        if (r == 0)
+            break;
+        if (r < 0 || r != TAR_BLOCK_SIZE)
+            goto fail;
+
+        if (isZeroBlock(header))
+            break;
+
+        char typeflag = (char)header[156];
+        u64 rawSize = parseOctal((char *)header + 124, 12);
+        if (rawSize > MAX_FILE_SIZE)
+            rawSize = MAX_FILE_SIZE;
+
+        u64 paddedSize = ((rawSize + 511) / 512) * 512;
+
+        if (typeflag != '\0' && typeflag != '0') {
+            // Skip directory or non‑file entry
+            if (lseek64(fd, paddedSize, SEEK_CUR) == (u64)-1)
+                goto fail;
+            continue;
+        }
+
+        u64 dataOffset = lseek64(fd, 0, SEEK_CUR);
+        if (dataOffset == (u64)-1)
+            goto fail;
+
+        if (s_count[kind] >= s_cap[kind]) {
+            u32 newCap = s_cap[kind] ? (s_cap[kind] + 64) : 64;
+            void *newIndex = realloc(s_index[kind], entrySize * newCap);
+            if (!newIndex)
+                goto fail;
+            s_index[kind] = newIndex;
+            s_cap[kind] = newCap;
+        }
+
+        char *entry = (char *)s_index[kind] + entrySize * s_count[kind];
+        TarEntryBase *base = (TarEntryBase *)entry;
+        base->offset = dataOffset;
+        base->rawSize = rawSize;
+        base->paddedSize = paddedSize;
+
+        char nameBuf[256];
+        memset(nameBuf, 0, sizeof(nameBuf));
+
+        memcpy(nameBuf, header, 100);
+        nameBuf[100] = '\0';
+
+        for (int i = 99; i >= 0; i--) {
+            if (nameBuf[i] == '\0' || nameBuf[i] == ' ')
+                nameBuf[i] = '\0';
+            else
+                break;
+        }
+
+        char prefix[156];
+        memcpy(prefix, header + 345, 155);
+        prefix[155] = '\0';
+
+        for (int i = 154; i >= 0; i--) {
+            if (prefix[i] == '\0' || prefix[i] == ' ')
+                prefix[i] = '\0';
+            else
+                break;
+        }
+
+        if (prefix[0] != '\0') {
+            char full[256];
+            snprintf(full, sizeof(full), "%s/%s", prefix, nameBuf);
+            strncpy(nameBuf, full, sizeof(nameBuf) - 1);
+            nameBuf[sizeof(nameBuf) - 1] = '\0';
+        }
+
+        for (int i = (int)strlen(nameBuf) - 1; i >= 0; i--) {
+            if (nameBuf[i] == '\0' || nameBuf[i] == ' ')
+                nameBuf[i] = '\0';
+            else
+                break;
+        }
+
+        char *fname = entry + sizeof(TarEntryBase);
+        strncpy(fname, nameBuf, nameMax);
+        fname[nameMax - 1] = '\0';
+
+        s_count[kind]++;
+
+        if (lseek64(fd, paddedSize, SEEK_CUR) == (u64)-1)
+            goto fail;
+    }
+
+    close(fd);
+    tarWriteCache(fullCachePath, path, kind);
+    return 0;
+
+fail:
+    close(fd);
+    free(s_index[kind]);
+    s_index[kind] = NULL;
+    s_count[kind] = 0;
+    s_cap[kind] = 0;
+    return -1;
+}
+
+static const TarDevice *detectDevice(const char *path)
+{
+    for (int i = 0; gDevices[i].prefix; i++) {
+        const char *prefix = gDevices[i].prefix;
+        int len = strlen(prefix);
+
+        if (!strncasecmp(path, prefix, len))
+            return &gDevices[i];
+    }
+    return NULL;
+}
+
+int tarLoadFile(TarKind kind, const char *path)
+{
+    const TarDevice *dev = detectDevice(path);
+
+    int r = tarParseFile(kind, path);
+    if (r == 0)
+        s_dev[kind] = dev;
+
+    return r;
+}
+
+int tarLoadFromAnyDevice(TarKind kind)
+{
+    if (s_inactive[kind])
+        return -1;
+
+    if (s_index[kind] && s_dev[kind]) {
+        char tarPath[256];
+        if (buildTarPath(s_dev[kind], kind, tarPath, sizeof(tarPath)) == 0) {
+            int fd = open(tarPath, O_RDONLY);
+            if (fd >= 0) {
+                close(fd);
+                return 0;
+            }
+        }
+        tarCloseInternal(kind);
+    }
+
+    int found = 0;
+
+    for (int i = 0; gDevices[i].prefix; i++) {
+        const TarDevice *dev = &gDevices[i];
+
+        char tarPath[256];
+        if (buildTarPath(dev, kind, tarPath, sizeof(tarPath)) < 0)
+            continue;
+
+        int fd = open(tarPath, O_RDONLY);
+        if (fd < 0)
+            continue;
+        close(fd);
+
+        s_dev[kind] = dev;
+        if (tarParseFile(kind, tarPath) == 0) {
+            found = 1;
+            break;
+        }
+
+        tarCloseInternal(kind);
+    }
+
+    if (!found)
+        s_inactive[kind] = 1;
+
+    return found ? 0 : -1;
+}
+
+int tarClose(TarKind kind)
+{
+    tarCloseInternal(kind);
+    s_inactive[kind] = 0;
+    return 0;
+}
+
+TarEntryBase *tarFind(TarKind kind, const char *filename)
+{
+    if (s_inactive[kind])
+        return NULL;
+
+    if (!s_index[kind] || s_count[kind] == 0)
+        if (tarLoadFromAnyDevice(kind) < 0)
+            return NULL;
+
+    u32 entrySize = gTarInfo[kind].entrySize;
+    char *base = (char *)s_index[kind];
+
+    for (u32 i = 0; i < s_count[kind]; i++) {
+        char *entry = base + entrySize * i;
+        char *fname = entry + sizeof(TarEntryBase);
+        if (strcasecmp(fname, filename) == 0)
+            return (TarEntryBase *)entry;
+    }
+
+    return NULL;
+}
+
+u32 tarRead(TarKind kind, const TarEntryBase *entry, void *dst, u32 dstSize)
+{
+    if (s_inactive[kind])
+        return 0;
+
+    if (!entry || dstSize < entry->rawSize)
+        return 0;
+
+    char tarPath[256];
+    if (buildTarPath(s_dev[kind], kind, tarPath, sizeof(tarPath)) < 0)
+        return 0;
+
+    int fd = open(tarPath, O_RDONLY);
+    if (fd < 0)
+        return 0;
+
+    if (lseek64(fd, entry->offset, SEEK_SET) != entry->offset) {
+        close(fd);
+        return 0;
+    }
+
+    u32 total = 0;
+    while (total < entry->rawSize) {
+        int r = read(fd, (unsigned char *)dst + total, entry->rawSize - total);
+        if (r < 0) {
+            close(fd);
+            return 0;
+        }
+        if (r == 0) {
+            close(fd);
+            return 0;
+        }
+        total += r;
+    }
+
+    close(fd);
+    return total;
+}
+
+void *tarGet(TarKind kind, const char *filename)
+{
+    if (s_inactive[kind])
+        return NULL;
+
+    TarEntryBase *entry = tarFind(kind, filename);
+    if (!entry)
+        return NULL;
+
+    void *buf = memalign(64, entry->rawSize);
+    if (!buf)
+        return NULL;
+
+    if (tarRead(kind, entry, buf, entry->rawSize) != entry->rawSize) {
+        free(buf);
+        return NULL;
+    }
+
+    return buf;
+}
+
+int tarEnsureLoaded(TarKind kind)
+{
+    if (s_inactive[kind])
+        return -1;
+
+    if (!s_index[kind] || s_count[kind] == 0)
+        return tarLoadFromAnyDevice(kind);
+    return 0;
+}
+
+void tarInvalidate(TarKind kind)
+{
+    tarCloseInternal(kind);
+    s_inactive[kind] = 0;
+}
+
+const char *tarGetDevicePrefix(TarKind kind)
+{
+    return s_dev[kind] ? s_dev[kind]->prefix : NULL;
+}
+
+char **tarGetThemeNames(int *count)
+{
+    *count = 0;
+
+    u32 entrySize = gTarInfo[TAR_KIND_THM].entrySize;
+    char *base = (char *)s_index[TAR_KIND_THM];
+
+    char **names = NULL;
+    int n = 0;
+
+    for (u32 i = 0; i < s_count[TAR_KIND_THM]; i++) {
+        char *entry = base + entrySize * i;
+        char *fname = entry + sizeof(TarEntryBase);
+
+        char *slash = strchr(fname, '/');
+        if (!slash)
+            continue;
+
+        int len = slash - fname;
+        if (len <= 0)
+            continue;
+
+        int exists = 0;
+        for (int j = 0; j < n; j++) {
+            if (strncmp(names[j], fname, len) == 0 && names[j][len] == '\0')
+                exists = 1;
+        }
+        if (exists)
+            continue;
+
+        char *name = malloc(len + 1);
+        memcpy(name, fname, len);
+        name[len] = '\0';
+
+        char **newNames = realloc(names, sizeof(char *) * (n + 1));
+        if (!newNames) {
+            free(name);
+            continue;
+        }
+        names = newNames;
+        names[n] = name;
+        n++;
+    }
+
+    *count = n;
+    return names;
+}

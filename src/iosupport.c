@@ -1,4 +1,3 @@
-
 #include "include/common.h"
 #include "include/ioman.h"
 #include "include/gui.h"
@@ -32,9 +31,9 @@ void itemExecSelect(struct menu_item *curMenu)
     if (support) {
         if (support->enabled) {
             if (curMenu->current) {
-                config_set_t *configSet = menuLoadConfig();
+                per_game_cfg_t *pgcfg = menuLoadConfig();
                 cacheCancelPendingImageLoads();
-                support->itemLaunch(support, curMenu->current->item.id, configSet);
+                support->itemLaunch(support, curMenu->current->item.id, pgcfg);
             }
         } else {
             // If we're trying to enable BDM support we need to enable it for all BDM menu slots.

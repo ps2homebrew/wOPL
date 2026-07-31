@@ -26,6 +26,7 @@ enum UI_ITEMS {
     UICFG_YOFF,
     UICFG_OVERSCAN,
     UICFG_NOTIFICATIONS,
+    UICFG_COVERFLOW_BUTTON,
 
     CFG_DEBUG,
     CFG_BDM_DEBUG,
@@ -118,6 +119,7 @@ enum UI_ITEMS {
     CHTCFG_CHEATCFG,
     CHTCFG_ENABLECHEAT,
     CHTCFG_CHEATMODE,
+    CHTCFG_ENABLEIMAGE,
 #endif
 #ifdef GSM
     GSMCFG_GSMSOURCE,
@@ -209,6 +211,23 @@ enum UI_ITEMS {
 #endif
 };
 
+enum COVERFLOW_CFG_IDs {
+    CFG_COVERFLOW_COUNT = 1,
+    CFG_COVERFLOW_SCALE,
+    CFG_COVERFLOW_ANIM,
+    CFG_COVERFLOW_DIM,
+};
+
+// DELETE_WITH_MIGRATION v
+enum CFG_MIGRATION_IDs {
+    CFG_MIG_INPUT = 1,
+    CFG_MIG_OUTPUT,
+    CFG_MIG_KEEP_ORIGINALS,
+    CFG_MIG_CONVERT,
+};
+extern struct UIItem diaCfgMigration[];
+// DELETE_WITH_MIGRATION ^
+
 #define COMPAT_NOEXIT       0x70000000
 #define COMPAT_LOADFROMDISC (COMPAT_LOADFROMDISC_ID | COMPAT_NOEXIT)
 
@@ -246,5 +265,7 @@ extern struct UIItem diaBlockDevicesConfig[];
 
 extern struct UIItem diaOSDConfig[];
 extern struct UIItem diaMMCEConfig[];
+
+extern struct UIItem diaCoverflowConfig[];
 
 #endif

@@ -135,15 +135,13 @@ void guiUpdateScrollSpeed(void);
 void guiUpdateScreenScale(void);
 
 void guiDrawBGPlasma();
-int guiDrawBGMain(void);
+int guiDrawBGSettings(void);
 int guiDrawIconAndText(int iconId, int textId, int font, int x, int y, u64 color);
 void guiDrawSubMenuHints(void);
 
 int guiAlignMenuHints(menu_hint_item_t *hint, int font, int width);
 int guiAlignSubMenuHints(int hintCount, int *textID, int *iconID, int font, int width, int align);
 
-void guiShowNetCompatUpdate(void);
-void guiShowNetCompatUpdateSingle(int id, item_list_t *support, config_set_t *configSet);
 void guiShowAbout();
 void guiShowConfig();
 void guiShowUIConfig();
@@ -151,8 +149,14 @@ void guiShowAudioConfig();
 void guiShowControllerConfig();
 void guiShowNetConfig();
 void guiShowParentalLockConfig();
+void guiShowCoverflowConfig(void);
 
 void guiCheckNotifications(int checkTheme, int checkLang);
+
+void guiShowCfgMigration(void); // DELETE_WITH_MIGRATION
+
+void guiSetBootStatusIfActive(const char *status);
+void guiShowBootStatus(const char *status);
 
 /** Renders the given string on screen for the given function until it's io finishes
  * @note The ptr pointer is watched for it's value. The IO is considered finished when the value becomes zero.
@@ -178,7 +182,7 @@ void guiWarning(const char *text, int count);
 
 int guiConfirmVideoMode(void);
 
-int guiGameShowRemoveSettings(config_set_t *configSet, config_set_t *configGame);
+int guiGameShowRemoveSettings(per_game_cfg_t *pgcfg);
 
 #ifdef CHEAT
 void guiManageCheats(void);

@@ -10,6 +10,7 @@
 #include "include/themes.h"
 #include "include/favsupport.h"
 #include "include/common.h"
+#include "include/config_wopl.h"
 #include <malloc.h>
 #include <stdio.h>
 
@@ -24,7 +25,7 @@ void menuClearGameList(opl_io_module_t *mdl);
 void favInit(item_list_t *itemList)
 {
     LOG("FAVSUPPORT Init\n");
-    configGetInt(configGetByType(CONFIG_OPL), "fav_frames_delay", &favItemList.delay);
+    favItemList.delay = gFAVFramesDelay;
     favItemList.enabled = 1;
     itemList->enabled = 1;
 }
@@ -42,7 +43,11 @@ static int favNeedsUpdate(item_list_t *itemList)
     FILE *file;
     int fileSize = 0;
 
-    snprintf(filename, sizeof(filename), "%sfavourites.bin", configGetDir());
+    const char *dir = wOPLGetDir();
+    if (!dir)
+        return 1;
+
+    snprintf(filename, sizeof(filename), "%sfavourites.bin", dir);
 
     file = fopen(filename, "rb");
     if (file == NULL)
@@ -62,6 +67,8 @@ static int favUpdateItemList(item_list_t *itemList)
     // Update list with updateFavouritesMenu() rather than updateMenuFromGameList() as id is randomly assigned based on i in count
     // we need to keep the id of the owner to use its corresponding functions
     // return a count of 0 so updateMenuFromGameList() doesn't attempt to update the list, we've done it already with loadFavourites()
+
+    guiSetBootStatusIfActive("Loading favourites...");
 
     loadFavourites();
     return 0;
@@ -121,23 +128,39 @@ static int favGetTextId(item_list_t *itemList)
 
 static int favGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_FAV_ICON;
+    return FAV_ICON;
 }
 
-static void favLaunchItem(item_list_t *itemList, int id, config_set_t *configSet)
+static void favLaunchItem(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 {
     opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
     item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
-
-    return favOwner->itemLaunch(favOwner, id, configSet);
+    favOwner->itemLaunch(favOwner, id, pgcfg);
 }
 
-static config_set_t *favGetConfig(item_list_t *itemList, int id)
+static void favGetInfo(item_list_t *itemList, int id, game_info_t *gi)
 {
     opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
     item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+    if (favOwner->itemGetInfo)
+        favOwner->itemGetInfo(favOwner, id, gi);
+}
 
-    return favOwner->itemGetConfig(favOwner, id);
+static void favGetPgCfg(item_list_t *itemList, int id, per_game_cfg_t *cfg)
+{
+    opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
+    item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+    if (favOwner->itemGetPgCfg)
+        favOwner->itemGetPgCfg(favOwner, id, cfg);
+}
+
+static int favSavePgCfg(item_list_t *itemList, int id, const per_game_cfg_t *cfg)
+{
+    opl_io_module_t *pOwner = (opl_io_module_t *)itemList->owner;
+    item_list_t *favOwner = (item_list_t *)pOwner->menuItem.current->item.owner;
+    if (favOwner->itemSavePgCfg)
+        return favOwner->itemSavePgCfg(favOwner, id, cfg);
+    return 0;
 }
 
 static int favGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -186,7 +209,7 @@ static void favShutdown(item_list_t *itemList)
 static item_list_t favItemList = {
     FAV_MODE, -1, 0, 0, MENU_MIN_INACTIVE_FRAMES, FAV_MODE_UPDATE_DELAY, NULL, NULL, &favGetTextId, NULL, &favInit, &favNeedsUpdate, &favUpdateItemList,
     &favGetItemCount, NULL, &favGetItemName, &favGetItemNameLength, &favGetItemStartup, &favDeleteItem, &favRenameItem, &favLaunchItem,
-    &favGetConfig, &favGetImage, &favGetArchivedImage, &favCleanUp, &favShutdown, NULL, &favGetIconId};
+    &favGetInfo, &favGetPgCfg, &favSavePgCfg, &favGetImage, &favGetArchivedImage, &favCleanUp, &favShutdown, NULL, &favGetIconId};
 
 unsigned char favGetFlags(item_list_t *itemList)
 {
@@ -210,7 +233,11 @@ void writeFavouritesFile(submenu_item_t *items, int size)
     int count = size / sizeof(submenu_item_t);
     int i;
 
-    snprintf(filename, sizeof(filename), "%sfavourites.bin", configGetDir());
+    const char *dir = wOPLGetDir();
+    if (!dir)
+        return;
+
+    snprintf(filename, sizeof(filename), "%sfavourites.bin", dir);
     file = fopen(filename, "wb");
     if (file != NULL) {
         for (i = 0; i < count; ++i) {
@@ -239,7 +266,11 @@ submenu_item_t *readFavouritesFile(int *out_size)
     submenu_item_t *items = NULL;
     int size, count = 0, i;
 
-    snprintf(filename, sizeof(filename), "%sfavourites.bin", configGetDir());
+    const char *dir = wOPLGetDir();
+    if (!dir)
+        return NULL;
+
+    snprintf(filename, sizeof(filename), "%sfavourites.bin", dir);
     file = fopen(filename, "rb");
     if (file != NULL) {
         fseek(file, 0, SEEK_END);
@@ -374,24 +405,33 @@ void loadFavourites(void)
 
 void addFavouriteItem(const submenu_item_t *item)
 {
-    int size;
+    int size, i;
     submenu_item_t *items = readFavouritesFile(&size);
 
     if (items != NULL) {
         // add the new item
+        int count = size / sizeof(submenu_item_t);
         int new_size = size + sizeof(submenu_item_t);
         submenu_item_t *new_items = memalign(64, new_size);
 
         if (new_items != NULL) {
             memcpy(new_items, items, size);
             memcpy((char *)new_items + size, item, sizeof(submenu_item_t));
-            new_items[size / sizeof(submenu_item_t)].text = strdup(item->text);
-            writeFavouritesFile(new_items, new_size);
+            new_items[count].text = strdup(item->text);
+
+            if (new_items[count].text != NULL) {
+                writeFavouritesFile(new_items, new_size);
+                free(new_items[count].text);
+            } else
+                LOG("Failed to allocate memory for new favourite text.\n");
+
             free(new_items);
-        } else {
-            free(items); // free old memory if allocation fails
+        } else
             LOG("Failed to allocate memory for new favourite.\n");
-        }
+
+        for (i = 0; i < count; ++i)
+            free(items[i].text);
+        free(items);
     } else {
         // if no existing items, create new list
         int new_size = sizeof(submenu_item_t);
@@ -400,7 +440,13 @@ void addFavouriteItem(const submenu_item_t *item)
         if (new_items != NULL) {
             memcpy(new_items, item, sizeof(submenu_item_t));
             new_items[0].text = strdup(item->text);
-            writeFavouritesFile(new_items, new_size);
+
+            if (new_items[0].text != NULL) {
+                writeFavouritesFile(new_items, new_size);
+                free(new_items[0].text);
+            } else
+                LOG("Failed to allocate memory for new favourite text.\n");
+
             free(new_items);
         } else
             LOG("Failed to allocate memory for new favourite.\n");

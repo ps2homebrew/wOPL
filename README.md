@@ -1,6 +1,7 @@
+
 # Double Unofficial-Open-PS2-Loader
 
-![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo_15.png)
+![logo](https://github.com/ps2homebrew/wOPL/blob/wOPL-base/gfx/logo_16.png)
 
 Copyright 2013, Ifcaro & jimmikaelkael<br/>
 Copyright 2024, KrahJohilto</br>
@@ -9,9 +10,10 @@ Copyright 2025-Present, Wolf3s and Ripto<br/>
 Licensed under Academic Free License version 3.0
 Review the LICENSE file for further details.
 
-[![CI](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-release)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/17d64924771d4052a7c457d6dbf99698)](https://app.codacy.com/gh/ps2homebree/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![CI](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml/badge.svg?branch=wOPL-base)](https://github.com/ps2homebrew/wOPL/actions/workflows/compilation.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/8ee1eccd035c464eb0a985486b3f71bd)](https://app.codacy.com/gh/ps2homebrew/wOPL/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![Discord](https://img.shields.io/discord/1275875800318476381?style=flat&logo=Discord)](https://tinyurl.com/PS2SPACE)
+[![Mega](https://img.shields.io/badge/Mega-%23D90007.svg?style=flat&logo=Mega&logoColor=white)](https://mega.nz/folder/bCplmQSZ#jbsgYTkqpsPiBQ23DDnSbw)
 [![Downloads](https://img.shields.io/github/downloads/ps2homebrew/wOPL/total?style=plastic&logo=playstation&logoColor=blue&label=%7C%20DOUBLE%20UNOFFICIAL%20OPEN%20PS2%20LOADER%20%7C%20TOTAL%20DOWNLOADS%3A&labelColor=%23faf9f6&color=blue)](https://github.com/ps2homebrew/wOPL/releases)
 
 ## Introduction
@@ -24,6 +26,7 @@ the PS2 and PS3 units. This version uses features that at the moment are not mer
 <p>
 
 v1.0
+
 * Removal of UDPBD since there are not much users using this.
 * Add a easter egg when booting on wOPL.
 * Code cleanups/fixes and compiler warning fixes.
@@ -36,6 +39,7 @@ v1.0
 * Disc cover enable.
 
 v1.1
+
 * Added USB option in BDM
 * Reworked the mmce option(Suggestion by Hardlevel)
 * Enabled sfx/boot sounds by standard
@@ -45,19 +49,59 @@ v1.1
 * Fix main background on models eg. 90000s
 * Modularized the art loading unifying art .tar
 * Enable by standard the favourites mode
-* Added a persistence while the game it´s being selected
+* Added a persistence while the game it´s being selected on favourites
 
-### Art Tar
-Your all cover arts should be stored using .tar format, stored on ART/art.tar 
+v1.2
+
+* Added Code Inject for games support(Credits: fniq5)
+* Enable by standard USB on BDM
+* Add a name to wOPL folders the actual version being used(Suggestion by Canal do Bis)
+* Add neutrino for MMCE
+* Readded info about the format of the game or app
+* Added back the old background configuration
+* Added a hint to hide R3 while is being selected
+* Added a lazy tar loader for ART/CFG/CHT thanks to mystyq
+* Coverflow improvements thanks to KrahJohlito
+* Support grayscale and grayscale+alpha images(DarthMotzkus)
+* App support to the favourites tab
+* Pademu fixes on frontend thanks to krahjohilito
+* BDM USB fixes
+* Fix send game id on mmce thanks to mystq
+* Add unimplmemented icons for pademu, gsm and cheats
+* Migrated from old internal config api to libconfig thanks to krahjohilito
+* Added splash boot notifications and version text thanks to krahjohilito
+* Updated neutrino path support to BDM, MMCE and HDD (APA) thanks to krahjohilito
+
+### ART/CFG/CHT .tar compact support
+
+You can now store your ART/CFG/CHT files using tar archive.
+All you need it´s to do it´s pack all the files into a `.tar` file name after the folder like this:
+
+`ART/art.tar`
+
+`CFG/cfg.tar`
+
+`CHT/cht.tar`
 
 ### wOPL Easter egg
+
 This easter egg will need to be activated using R1+R2+L1+L2+Start+Select
 
-### Theme renamed files
-This variant is incompatible with OPL themes as the structure follows up diffrently than traditional OPL
+### Modularized art
 
-# Modularized art 
 You can see game list with both normal art and art.tar
+
+### Code Inject
+
+Image Linker module allows patch files up to 4KiB in size to be linked as the game launches. IMG directory contains the GAMEID.img file the same as PS2RD CHT. This feature can be activated with "Enable Linker" under the game's "Cheat Settings."
+
+The binary format of img file can be discovered in ee_core/src/cheat_api.c LinkImage subroutine.
+
+### Neutrino´s new path support
+
+The folder name needs to be stored with name: `neutrino`(uppercased or lowercased) on the root of `USB` `MX4SIO` `HDD (ATA)` `iLink` `mmce` `HDD (APA)` with the usual setup of `config` and `modules` subfolders.<br>
+In game settings you will find an option `Loader Core` with the options of `<wOPL>` or `Neutrino`<br><br>
+Get [Neutrino](https://github.com/rickgaiser/neutrino/releases)
 
 </p>
 </details>
@@ -385,6 +429,17 @@ cmake --build build
 ```
 
 Useful CMake targets: `release`, `clean`, `rebuild`, `debug`, `iopcore_debug`, `ingame_debug`.
+
+</p>
+</details>
+
+<details>
+  <summary> <b> wOPL Archive </b> </summary>
+<p>
+
+Every wOPL build published through this repository is also uploaded to the [MEGA archive](https://mega.nz/folder/bCplmQSZ#jbsgYTkqpsPiBQ23DDnSbw).
+
+The archive contains historical beta builds and permanent releases. You can also access it by clicking the MEGA badge at the top of this README.
 
 </p>
 </details>

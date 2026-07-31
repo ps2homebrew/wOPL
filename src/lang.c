@@ -165,8 +165,8 @@ int lngAddLanguages(char *path, const char *separator, int mode)
     nLanguages += result;
     lngRebuildLangNames();
 
-    const char *temp;
-    if (configGetStr(configGetByType(CONFIG_OPL), "language_text", &temp)) {
+    const char *temp = wOPLGetLanguageName();
+    if (temp) {
         if (lngSetGuiValue(lngFindGuiID(temp)))
             moduleUpdateMenu(mode, 0, 1);
     }
@@ -200,13 +200,11 @@ int lngSetGuiValue(int langID)
 {
     if (langID != -1) {
         if (guiLangID != langID) {
-            bgmMute();
             if (langID != 0) {
                 language_t *currLang = &languages[langID - 1];
                 if (lngLoadFromFile(currLang->filePath, currLang->name)) {
                     guiLangID = langID;
                     thmSetGuiValue(thmGetGuiValue(), 1);
-                    bgmUnMute();
                     return 1;
                 }
             }
@@ -215,7 +213,6 @@ int lngSetGuiValue(int langID)
             // lang switched back to internalEnglish, reload default font
             fntLoadDefault(NULL);
             thmSetGuiValue(thmGetGuiValue(), 1);
-            bgmUnMute();
         }
     }
     return 0;

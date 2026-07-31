@@ -306,6 +306,36 @@ int fntLoadFile(char *path, int fontSize)
     return FNT_ERROR;
 }
 
+int fntLoadFromBuffer(void *buf, int bufSize, int fontSize)
+{
+    font_t *font;
+    int i = 1;
+
+    for (; i < FNT_MAX_COUNT; i++) {
+        font = &fonts[i];
+        if (!font->isValid) {
+            fntInitSlot(font);
+
+            font->dataPtr = buf;
+
+            int error = FT_New_Memory_Face(font_library, (FT_Byte *)buf, bufSize, 0, &font->face);
+            if (error) {
+                LOG("FNTSYS Freetype font loading failed with %x!\n", error);
+                fntDeleteSlot(font);
+                return FNT_ERROR;
+            }
+
+            font->isValid = 1;
+            font->fontSize = fontSize;
+            fntUpdateAspectRatio();
+
+            return i;
+        }
+    }
+
+    return FNT_ERROR;
+}
+
 int fntLoadDefault(char *path)
 {
     font_t newFont, oldFont;

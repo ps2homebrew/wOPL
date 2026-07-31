@@ -35,6 +35,9 @@ extern unsigned int size_cancel_adp;
 extern unsigned char confirm_adp[];
 extern unsigned int size_confirm_adp;
 
+extern unsigned char coverflow_adp[];
+extern unsigned int size_coverflow_adp;
+
 extern unsigned char cursor_adp[];
 extern unsigned int size_cursor_adp;
 
@@ -63,6 +66,7 @@ static struct sfxEffect sfx_files[SFX_COUNT] = {
     {"boot.adp"},
     {"cancel.adp"},
     {"confirm.adp"},
+    {"coverflow.adp"},
     {"cursor.adp"},
     {"message.adp"},
     {"transition.adp"},
@@ -143,6 +147,8 @@ static void sfxInitDefaults(void)
     sfx_files[SFX_CANCEL].size = size_cancel_adp;
     sfx_files[SFX_CONFIRM].buffer = confirm_adp;
     sfx_files[SFX_CONFIRM].size = size_confirm_adp;
+    sfx_files[SFX_COVERFLOW].buffer = coverflow_adp;
+    sfx_files[SFX_COVERFLOW].size = size_coverflow_adp;
     sfx_files[SFX_CURSOR].buffer = cursor_adp;
     sfx_files[SFX_CURSOR].size = size_cursor_adp;
     sfx_files[SFX_MESSAGE].buffer = message_adp;
@@ -527,19 +533,6 @@ int isBgmPlaying(void)
     int ret = (int)bgmIsPlaying;
 
     return ret;
-}
-
-// HACK: BGM stutters while perfroming certain tasks, mute during these operations and unmute once completed.
-void bgmMute(void)
-{
-    if (audio_initialized)
-        audsrv_set_volume(0);
-}
-
-void bgmUnMute(void)
-{
-    if (audio_initialized)
-        audsrv_set_volume(gBGMVolume);
 }
 
 /*--    General Audio    ------------------------------------------------------------------------------------------------------

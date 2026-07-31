@@ -60,7 +60,6 @@ extern const u64 gColBlack;
 extern const u64 gColDarker;
 extern const u64 gColFocus;
 extern const u64 gDefaultCol;
-extern const u64 gDefaultBGCol;
 extern const u64 gDefaultAlpha;
 
 enum rm_aratio {
@@ -100,15 +99,10 @@ void rmDrawQuad(rm_quad_t *q);
 void rmSetBackground(GSTEXTURE *txt);
 
 /** Queues a specified pixmap (tinted with colour) to be rendered on specified position */
-void rmDrawPixmap(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color);
+void rmDrawPixmap(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color, int reflection);
 
 void rmDrawOverlayPixmap(GSTEXTURE *overlay, int x, int y, short aligned, int w, int h, short scaled, u64 color,
-                         GSTEXTURE *inlay, int ulx, int uly, int urx, int ury, int blx, int bly, int brx, int bry);
-
-void rmDrawPixmapWithReflection(GSTEXTURE *txt, int x, int y, short aligned, int w, int h, short scaled, u64 color);
-
-void rmDrawOverlayPixmapWithReflection(GSTEXTURE *overlay, int x, int y, short aligned, int w, int h, short scaled, u64 color,
-                                       GSTEXTURE *inlay, int ulx, int uly, int urx, int ury, int blx, int bly, int brx, int bry);
+                         GSTEXTURE *inlay, int ulx, int uly, int urx, int ury, int blx, int bly, int brx, int bry, int reflection);
 
 /** Queues a opaque rectangle to be rendered */
 void rmDrawRect(int x, int y, int w, int h, u64 color);

@@ -1,4 +1,3 @@
-
 #include "include/common.h"
 #include "include/lang.h"
 #include "include/gui.h"
@@ -11,11 +10,12 @@
 #include "include/ioman.h"
 #include "include/system.h"
 #include "include/extern_irx.h"
+#include "include/tar.h"
 #ifdef CHEAT
 #include "include/cheatman.h"
 #endif
-#include "include/art_tar.h"
 #include "modules/iopcore/common/cdvd_config.h"
+#include "include/config_wopl.h"
 #include <stdio.h>
 #include <ps2smb.h>
 #include <ps2ips.h>
@@ -48,7 +48,6 @@ static int ethULSizePrev = -2;
 static time_t ethModifiedCDPrev;
 static time_t ethModifiedDVDPrev;
 static int ethGameCount = 0;
-static int ethEnableArchivedArt = 0;
 static unsigned char ethModulesLoaded = 0;
 static base_game_info_t *ethGames = NULL;
 
@@ -104,6 +103,10 @@ static void ethSMBConnect(void)
     smbOpenShare_in_t openshare;
     int result;
 
+    memset(&logon, 0, sizeof(logon));
+    memset(&echo, 0, sizeof(echo));
+    memset(&openshare, 0, sizeof(openshare));
+
     if (gETHPrefix[0] != '\0')
         sprintf(ethPrefix, "%s%s\\", ethBase, gETHPrefix);
     else
@@ -111,6 +114,8 @@ static void ethSMBConnect(void)
 
     // open tcp connection with the server / logon to SMB server
     if (gPCShareAddressIsNetBIOS) {
+        guiSetBootStatusIfActive("Resolving SMB server...");
+
         if (nbnsFindName(gPCShareNBAddress, share_ip_address) != 0) {
             gNetworkStartup = ERROR_ETH_SMB_CONN;
             return;
@@ -127,9 +132,11 @@ static void ethSMBConnect(void)
         smbGetPasswordHashes_in_t passwd;
         smbGetPasswordHashes_out_t passwdhashes;
 
+        memset(&passwd, 0, sizeof(passwd));
+
         // we'll try to generate hashed password first
-        strncpy(logon.User, gPCUserName, sizeof(logon.User));
-        strncpy(passwd.password, gPCPassword, sizeof(passwd.password));
+        strncpy(logon.User, gPCUserName, sizeof(logon.User) - 1);
+        strncpy(passwd.password, gPCPassword, sizeof(passwd.password) - 1);
 
         if (fileXioDevctl(ethBase, SMB_DEVCTL_GETPASSWORDHASHES, (void *)&passwd, sizeof(passwd), (void *)&passwdhashes, sizeof(passwdhashes)) == 0) {
             // hash generated okay, can use
@@ -139,16 +146,18 @@ static void ethSMBConnect(void)
             openshare.PasswordType = HASHED_PASSWORD;
         } else {
             // failed hashing, failback to plaintext
-            strncpy(logon.Password, gPCPassword, sizeof(logon.Password));
+            strncpy(logon.Password, gPCPassword, sizeof(logon.Password) - 1);
             logon.PasswordType = PLAINTEXT_PASSWORD;
-            strncpy(openshare.Password, gPCPassword, sizeof(openshare.Password));
+            strncpy(openshare.Password, gPCPassword, sizeof(openshare.Password) - 1);
             openshare.PasswordType = PLAINTEXT_PASSWORD;
         }
     } else {
-        strncpy(logon.User, gPCUserName, sizeof(logon.User));
+        strncpy(logon.User, gPCUserName, sizeof(logon.User) - 1);
         logon.PasswordType = NO_PASSWORD;
         openshare.PasswordType = NO_PASSWORD;
     }
+
+    guiSetBootStatusIfActive("Connecting to SMB server...");
 
     if ((result = fileXioDevctl(ethBase, SMB_DEVCTL_LOGON, (void *)&logon, sizeof(logon), NULL, 0)) >= 0) {
         // SMB server alive test
@@ -163,12 +172,16 @@ static void ethSMBConnect(void)
             pc_ip[3] = share_ip_address[3];
         }
 
+        guiSetBootStatusIfActive("Checking SMB connection...");
+
         if (fileXioDevctl(ethBase, SMB_DEVCTL_ECHO, (void *)&echo, sizeof(echo), NULL, 0) >= 0) {
             gNetworkStartup = ERROR_ETH_SMB_OPENSHARE;
 
             if (gPCShareName[0]) {
+                guiSetBootStatusIfActive("Opening SMB share...");
+
                 // connect to the share
-                strcpy(openshare.ShareName, gPCShareName);
+                strncpy(openshare.ShareName, gPCShareName, sizeof(openshare.ShareName) - 1);
 
                 if (fileXioDevctl(ethBase, SMB_DEVCTL_OPENSHARE, (void *)&openshare, sizeof(openshare), NULL, 0) >= 0) {
                     // everything is ok
@@ -246,12 +259,18 @@ static int ethInitApplyConfig(void)
 {
     LOG("ETHSUPPORT ApplyConfig\n");
 
+    guiSetBootStatusIfActive("Waiting for network link...");
+
     do {
         if (ethWaitValidNetIFLinkState() != 0) {
             gNetworkStartup = ERROR_ETH_LINK_FAIL;
             return ERROR_ETH_LINK_FAIL;
         }
+
+        guiSetBootStatusIfActive("Applying network settings...");
     } while (ethApplyNetIFConfig() != 0);
+
+    guiSetBootStatusIfActive("Checking network link...");
 
     // Before the network configuration is applied, wait for a valid link status.
     if (ethWaitValidNetIFLinkState() != 0) {
@@ -259,12 +278,17 @@ static int ethInitApplyConfig(void)
         return ERROR_ETH_LINK_FAIL;
     }
 
+    guiSetBootStatusIfActive("Configuring IP address...");
     ethApplyIPConfig();
 
     // Wait for DHCP to initialize, if DHCP is enabled.
-    if (ps2_ip_use_dhcp && (ethWaitValidDHCPState() != 0)) {
-        gNetworkStartup = ERROR_ETH_DHCP_FAIL;
-        return ERROR_ETH_DHCP_FAIL;
+    if (ps2_ip_use_dhcp) {
+        guiSetBootStatusIfActive("Waiting for DHCP...");
+
+        if (ethWaitValidDHCPState() != 0) {
+            gNetworkStartup = ERROR_ETH_DHCP_FAIL;
+            return ERROR_ETH_DHCP_FAIL;
+        }
     }
 
     return 0;
@@ -300,16 +324,23 @@ static void ethInitSMB(void)
     if (gNetworkStartup == 0) {
         // update Themes
         char path[256];
+
+        guiSetBootStatusIfActive("Loading network themes...");
+
+        sprintf(path, "%sTHM/thm.tar", ethPrefix);
+        tarLoadFile(TAR_KIND_THM, path);
+
         sprintf(path, "%sTHM", ethPrefix);
         thmAddElements(path, "\\", 1);
 
+        guiSetBootStatusIfActive("Loading network languages...");
         sprintf(path, "%sLNG", ethPrefix);
         lngAddLanguages(path, "\\", ethGameList.mode);
 
+        guiSetBootStatusIfActive("Checking network folders...");
         sbCreateFolders(ethPrefix, 1);
-    } else if (gPCShareName[0] || !(gNetworkStartup >= ERROR_ETH_SMB_OPENSHARE)) {
+    } else if (gPCShareName[0] || !(gNetworkStartup >= ERROR_ETH_SMB_OPENSHARE))
         ethDisplayErrorStatus();
-    }
 }
 
 static int ethLoadModules(void)
@@ -317,6 +348,7 @@ static int ethLoadModules(void)
     LOG("ETHSUPPORT LoadModules\n");
 
     if (!ethModulesLoaded) {
+        guiSetBootStatusIfActive("Loading network modules...");
         ethModulesLoaded = 1;
 
         sysInitDev9();
@@ -429,6 +461,7 @@ static void smbLoadModules(void)
     int ret;
 
     LOG("SMBSUPPORT LoadModules\n");
+    guiSetBootStatusIfActive("Loading SMB modules...");
 
     WaitSema(ethInitSemaID);
     ret = ethLoadModules();
@@ -470,7 +503,7 @@ static void ethInit(item_list_t *itemList)
         ethModifiedDVDPrev = 0;
         ethGameCount = 0;
         ethGames = NULL;
-        configGetInt(configGetByType(CONFIG_OPL), "eth_frames_delay", &ethGameList.delay);
+        itemList->delay = gETHFramesDelay;
         gNetworkStartup = ERROR_ETH_NOT_STARTED;
         ioPutRequest(IO_CUSTOM_SIMPLEACTION, &smbLoadModules);
         ethGameList.enabled = 1;
@@ -514,12 +547,6 @@ static int ethNeedsUpdate(item_list_t *itemList)
             result = 1;
         }
 
-        if (!ethEnableArchivedArt) {
-            sprintf(path, "%sART/art.tar", ethPrefix);
-            loadTarFile(path);
-            result = 1;
-        }
-
         if (!sbIsSameSize(ethPrefix, ethULSizePrev))
             result = 1;
     }
@@ -532,6 +559,8 @@ static int ethUpdateGameList(item_list_t *itemList)
     if (gPCShareName[0]) {
         if (gNetworkStartup != 0)
             return 0;
+
+        guiSetBootStatusIfActive("Scanning network games...");
 
         if ((sbReadList(&ethGames, ethPrefix, &ethULSizePrev, &ethGameCount)) < 0) {
             gNetworkStartup = ERROR_ETH_SMB_LISTGAMES;
@@ -547,6 +576,8 @@ static int ethUpdateGameList(item_list_t *itemList)
 
         getsharelist.EE_addr = (void *)&sharelist[0];
         getsharelist.maxent = 128;
+
+        guiSetBootStatusIfActive("Listing SMB shares...");
 
         count = fileXioDevctl(ethBase, SMB_DEVCTL_GETSHARELIST, (void *)&getsharelist, sizeof(getsharelist), NULL, 0);
         if (count > 0) {
@@ -613,7 +644,7 @@ static void ethRenameGame(item_list_t *itemList, int id, char *newName)
     ethULSizePrev = -2;
 }
 
-static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet)
+static void ethLaunchGame(item_list_t *itemList, int id, per_game_cfg_t *pgcfg)
 {
     int i, compatmask;
     int EnablePS2Logo = 0;
@@ -627,7 +658,8 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
     unsigned short int layer1_part;
 
     if (!gPCShareName[0]) {
-        memcpy(gPCShareName, game->name, sizeof(gPCShareName));
+        strncpy(gPCShareName, game->name, sizeof(gPCShareName) - 1);
+        gPCShareName[sizeof(gPCShareName) - 1] = '\0';
         ethULSizePrev = -2;
         ethGameCount = 0;
         ioPutRequest(IO_MENU_UPDATE_DEFFERED, &ethGameList.mode); // clear the share list
@@ -643,7 +675,8 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
 
     for (vmc_id = 0; vmc_id < 2; vmc_id++) {
         memset(&smb_vmc_infos, 0, sizeof(smb_vmc_infos_t));
-        configGetVMC(configSet, vmc_name, sizeof(vmc_name), vmc_id);
+        strncpy(vmc_name, vmc_id == 0 ? pgcfg->vmc1 : pgcfg->vmc2, sizeof(vmc_name) - 1);
+        vmc_name[sizeof(vmc_name) - 1] = '\0';
         if (vmc_name[0]) {
             if (sysCheckVMC(ethPrefix, "\\", vmc_name, 0, &vmc_superblock) > 0) {
                 smb_vmc_infos.flags = vmc_superblock.mc_flag & 0xFF;
@@ -675,12 +708,10 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
         }
     }
 
-    if (gRememberLastPlayed) {
-        configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
-        configSave(CONFIG_LAST, 0);
-    }
+    if (gRememberLastPlayed)
+        wOPLLastSave(game->startup);
 
-    compatmask = sbPrepare(game, configSet, size_smb_cdvdman_irx, smb_cdvdman_irx, &i);
+    compatmask = sbPrepare(game, pgcfg, size_smb_cdvdman_irx, smb_cdvdman_irx, &i);
 #ifdef CHEAT
     if ((result = sbLoadCheats(ethPrefix, game->startup)) < 0) {
         switch (result) {
@@ -690,6 +721,10 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
             default:
                 guiWarning(_l(_STR_ERR_CHEATS_LOAD_FAILED), 10);
         }
+    }
+
+    if ((result = sbLoadImage(ethPrefix, game->startup)) < 0) {
+        guiWarning(_l(_STR_ERR_IMAGE_LOAD_FAILED), 10);
     }
 #endif
     settings = (struct cdvdman_settings_smb *)((u8 *)(&smb_cdvdman_irx) + i);
@@ -706,12 +741,12 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
             settings->common.flags |= IOPCORE_SMB_FORMAT_USBLD;
     }
 
-    sprintf(settings->smb_ip, "%u.%u.%u.%u", pc_ip[0], pc_ip[1], pc_ip[2], pc_ip[3]);
+    snprintf(settings->smb_ip, sizeof(settings->smb_ip), "%u.%u.%u.%u", pc_ip[0], pc_ip[1], pc_ip[2], pc_ip[3]);
     settings->smb_port = gPCPort;
-    strcpy(settings->smb_share, gPCShareName);
-    strcpy(settings->smb_prefix, gETHPrefix);
-    strcpy(settings->smb_user, gPCUserName);
-    strcpy(settings->smb_password, gPCPassword);
+    snprintf(settings->smb_share, sizeof(settings->smb_share), "%s", gPCShareName);
+    snprintf(settings->smb_prefix, sizeof(settings->smb_prefix), "%s", gETHPrefix);
+    snprintf(settings->smb_user, sizeof(settings->smb_user), "%s", gPCUserName);
+    snprintf(settings->smb_password, sizeof(settings->smb_password), "%s", gPCPassword);
 
     // Initialize layer 1 information.
     sbCreatePath(game, partname, ethPrefix, "\\", 0);
@@ -746,8 +781,16 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
     }
     settings->common.layer1_start = layer1_start;
 
-    if (configGetStrCopy(configSet, CONFIG_ITEM_ALTSTARTUP, filename, sizeof(filename)) == 0)
-        strcpy(filename, game->startup);
+    if (pgcfg->alt_startup[0]) {
+        strncpy(filename, pgcfg->alt_startup, sizeof(filename) - 1);
+        filename[sizeof(filename) - 1] = '\0';
+    } else {
+        strncpy(filename, game->startup, sizeof(filename) - 1);
+        filename[sizeof(filename) - 1] = '\0';
+    }
+
+    sbMMCESendGameId(game->startup);
+
     deinit(NO_EXCEPTION, ETH_MODE); // CAREFUL: deinit will call ethCleanUp, so ethGames/game will be freed
 
     settings->common.fakemodule_flags |= FAKE_MODULE_FLAG_DEV9;
@@ -759,9 +802,19 @@ static void ethLaunchGame(item_list_t *itemList, int id, config_set_t *configSet
     sysLaunchLoaderElf(filename, "ETH_MODE", size_smb_cdvdman_irx, smb_cdvdman_irx, size_mcemu_irx, smb_mcemu_irx, EnablePS2Logo, compatmask);
 }
 
-static config_set_t *ethGetConfig(item_list_t *itemList, int id)
+static void ethGetInfo(item_list_t *itemList, int id, game_info_t *gi)
 {
-    return sbPopulateConfig(&ethGames[id], ethPrefix, "\\");
+    sbPopulateConfig(&ethGames[id], ethPrefix, "\\", gi, NULL);
+}
+
+static void ethGetPgCfg(item_list_t *itemList, int id, per_game_cfg_t *cfg)
+{
+    sbPopulateConfig(&ethGames[id], ethPrefix, "\\", NULL, cfg);
+}
+
+static int ethSavePgCfg(item_list_t *itemList, int id, const per_game_cfg_t *cfg)
+{
+    return sbSaveConfig(&ethGames[id], ethPrefix, "\\", cfg);
 }
 
 static int ethGetImage(item_list_t *itemList, char *folder, int isRelative, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -771,7 +824,7 @@ static int ethGetImage(item_list_t *itemList, char *folder, int isRelative, char
         snprintf(path, sizeof(path), "%s%s\\%s_%s", ethPrefix, folder, value, suffix);
     else
         snprintf(path, sizeof(path), "%s%s_%s", folder, value, suffix);
-    return texDiscoverLoad(resultTex, path, -1, 0);
+    return texDiscoverLoad(resultTex, path, -1, RES_FILESYSTEM);
 }
 
 static int ethGetArchivedImage(item_list_t *itemList, char *folder, char *value, char *suffix, GSTEXTURE *resultTex, short psm)
@@ -780,7 +833,7 @@ static int ethGetArchivedImage(item_list_t *itemList, char *folder, char *value,
 
     snprintf(path, sizeof(path), "%s_%s", value, suffix);
 
-    return texDiscoverLoad(resultTex, path, -1, 1);
+    return texDiscoverLoad(resultTex, path, -1, RES_TAR_ART);
 }
 
 static int ethGetTextId(item_list_t *itemList)
@@ -790,7 +843,7 @@ static int ethGetTextId(item_list_t *itemList)
 
 static int ethGetIconId(item_list_t *itemList)
 {
-    return CATEGORY_NET_SMB_ICON;
+    return ETH_ICON;
 }
 
 // This may be called, even if ethInit() was not.
@@ -843,7 +896,7 @@ static char *ethGetPrefix(item_list_t *itemList)
 static item_list_t ethGameList = {
     ETH_MODE, 1, 0, 0, MENU_MIN_INACTIVE_FRAMES, ETH_MODE_UPDATE_DELAY, NULL, NULL, &ethGetTextId, &ethGetPrefix, &ethInit, &ethNeedsUpdate,
     &ethUpdateGameList, &ethGetGameCount, &ethGetGame, &ethGetGameName, &ethGetGameNameLength, &ethGetGameStartup, &ethDeleteGame, &ethRenameGame,
-    &ethLaunchGame, &ethGetConfig, &ethGetImage, &ethGetArchivedImage, &ethCleanUp, &ethShutdown, &ethCheckVMC, &ethGetIconId};
+    &ethLaunchGame, &ethGetInfo, &ethGetPgCfg, &ethSavePgCfg, &ethGetImage, &ethGetArchivedImage, &ethCleanUp, &ethShutdown, &ethCheckVMC, &ethGetIconId};
 
 static int ethReadNetConfig(void)
 {

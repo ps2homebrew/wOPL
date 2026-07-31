@@ -1,6 +1,6 @@
 VERSION = 1
-SUBVERSION = 1
-EXTRAVERSION =
+SUBVERSION = 2
+EXTRAVERSION = beta
 
 # How to DEBUG?
 # Simply type "make <debug mode>" to build wOPL with the necessary debugging functionality.
@@ -83,9 +83,9 @@ ifneq ($(GIT_TAG),latest)
 endif
 endif
 
-FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config.o dialogs.o tetris.o \
+FRONTEND_OBJS = pad.o xparam.o fntsys.o renderman.o menusys.o OSDHistory.o system.o lang.o lang_internal.o config_wopl.o pathsupport.o config_migration.o dialogs.o tetris.o \
 		dia.o ioman.o texcache.o themes.o supportbase.o bdmsupport.o ethsupport.o hddsupport.o lwnbd.o iosupport.o initializer.o zso.o lz4.o \
-		appsupport.o mmcesupport.o favsupport.o gui.o guigame.o vmc_groups.o textures.o art_tar.o common.o main.o module.o atlas.o nbns.o sound.o ps2cnf.o
+		appsupport.o mmcesupport.o favsupport.o gui.o guigame.o vmc_groups.o textures.o tar.o common.o main.o module.o atlas.o nbns.o sound.o ps2cnf.o
 
 IOP_OBJS =	iomanx.o filexio.o ps2fs.o usbd.o bdmevent.o \
 		bdm.o bdmfs_fatfs.o usbmass_bd.o usbmass_bd_single.o iLinkman.o IEEE1394_bd.o mx4sio_bd.o \
@@ -101,25 +101,23 @@ EECORE_OBJS = ee_core.o ioprp.o util.o \
 		udnl.o imgdrv.o eesync.o \
 		bdm_cdvdman.o bdm_ata_cdvdman.o IOPRP_img.o smb_cdvdman.o \
 		hdd_cdvdman.o hdd_gamestar_cdvdman.o mmce_cdvdman.o hdd_hdpro_cdvdman.o cdvdfsv.o \
-		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o
+		ingame_smstcpip.o smap_ingame.o smbman.o smbinit.o neutrino_loader.o
 
-PNG_ASSETS = logo_01 logo_02 logo_03 logo_04 logo_05 logo_06 logo_07 logo_08 logo_09 logo_10 logo_11 logo_12 logo_13 logo_14 logo_15 \
-	logo_16 logo_17 logo_18 logo_19 logo_20 logo_21 loading_1 loading_2 loading_3 loading_4 loading_5 loading_6 loading_7 loading_8 \
-	category_empty_bdm category_usb category_ilink category_mx4sio category_hdd_bdm \
-	category_hdd_apa category_net_smb category_apps category_fav category_mmce mark_star button_symbol_cross button_symbol_triangle button_symbol_circle button_symbol_square button_select button_start button_dpad_left button_dpad_right \
-	bg_main bg_info cover_app cover_game disc screenshot badge_exec_elf badge_disc_hdl badge_disc_iso badge_disc_zso badge_disc_ul badge_exec_app badge_disc_cd badge_disc_dvd badge_vmode_43 badge_vmode_169 badge_vmode_169_ps2rd badge_vmode_169_hexiso \
-	dev_1 dev_2 dev_3 dev_4 dev_5 dev_6 dev_7 dev_8 rating_0 \
-	rating_1 rating_2 rating_3 rating_4 rating_5 badge_res_240p badge_res_240p_hexiso badge_res_480i badge_res_480p \
-	badge_res_480p_xt badge_res_480p_xc badge_res_480p_gsm badge_res_480p_ps2rd badge_res_480p_hexiso \
-	badge_res_576i badge_res_576p_gsm badge_res_720p_gsm \
-	badge_res_1080i badge_res_1080i_gsm badge_res_1080p_gsm badge_region_multi badge_region_ntsc badge_region_pal case apps_case \
-	plank discbox_list_games discbox_list_apps discbox_list_shadow \
-	bdm_index_1 bdm_index_2 bdm_index_3 bdm_index_4 bdm_index_5 button_stick_r3 button_dpad_up button_dpad_down
+PNG_ASSETS = load0 load1 load2 load3 load4 load5 load6 load7 usb usb_bd ilk_bd \
+	m4s_bd hdd_bd hdd eth app fav mmce fav_mark cross triangle circle square select start left right \
+	settings_bg info cover cover_app disc screen ELF HDL ISO ZSO UL APPS CD DVD Aspect_s Aspect_w Aspect_w1 \
+	Aspect_w2 Rating_0 Rating_1 Rating_2 Rating_3 Rating_4 Rating_5 \
+	Region_pal Region_ntsc pademu_on pademu_off gsm_off gsm_on cht_off cht_on \
+	logo_01 logo_02 logo_03 logo_04 logo_05 logo_06 logo_07 logo_08 logo_09 logo_10 \
+	logo_11 logo_12 logo_13 logo_14 logo_15 logo_16 logo_17 logo_18 logo_19 logo_20 logo_21 \
+	case apps_case \
+	plank lm_case lm_apps_case lm_case_shadow \
+	Index_0 Index_1 Index_2 Index_3 Index_4 R3 up down
 	# unused icons - l1 l2 l3 r1 r2
 
 GFX_OBJS = $(PNG_ASSETS:%=%_png.o) poeveticanew.o icon_sys.o icon_icn.o icon_cpy_icn.o icon_del_icn.o
 
-AUDIO_OBJS =	boot.o cancel.o confirm.o cursor.o message.o transition.o bd_connect.o bd_disconnect.o
+AUDIO_OBJS =	boot.o cancel.o confirm.o coverflow.o cursor.o message.o transition.o bd_connect.o bd_disconnect.o
 
 MISC_OBJS =	icon_sys_A.o icon_sys_J.o icon_sys_C.o theme_list.o theme_coverflow.o
 
@@ -142,7 +140,7 @@ PNG_ASSETS_DIR = gfx/
 MAPFILE = wopl.map
 EE_LDFLAGS += -Wl,-Map,$(MAPFILE)
 
-EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc -lkernel
+EE_LIBS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -L./lib -lgskit -ldmakit -lpoweroff -lfileXio -lpatches -lpng -lz -lconfig -lmc -lfreetype -lvux -lcdvd -lnetman -lps2ips -laudsrv -lvorbisfile -lvorbis -logg -lpadx -lelf-loader-nocolour -lc -lkernel -lbz2_static
 EE_INCS += -I$(PS2SDK)/ports/include -I$(PS2SDK)/ports/include/freetype2 -I$(GSKIT)/include -I$(GSKIT)/ee/dma/include -I$(GSKIT)/ee/gs/include -Imodules/iopcore/common -Imodules/network/common -Imodules/hdd/common -Iinclude
 BIN2C = $(PS2SDK)/bin/bin2c
 
@@ -236,7 +234,7 @@ else
   SMSTCPIP_INGAME_CFLAGS = INGAME_DRIVER=1
 endif
 
-EE_CFLAGS += -fsingle-precision-constant -DWOPL_VERSION=\"$(wOPL_VERSION)\"
+EE_CFLAGS += -fsingle-precision-constant -DWOPL_VERSION=\"$(wOPL_VERSION)\" -DWOPL_CONFIG_STRING=\"wOPL_$(VERSION)_$(SUBVERSION)\"
 
 # There are a few places where the config key/value are truncated, so disable these warnings
 EE_CFLAGS += -Wno-format-truncation -Wno-stringop-truncation
@@ -297,6 +295,8 @@ clean:	download_lwNBD
 	rm -fr $(MAPFILE) $(EE_BIN) $(EE_BIN_PACKED) $(EE_BIN_STRIPPED) $(EE_VPKD).* $(EE_OBJS_DIR) $(EE_ASM_DIR)
 	echo "-EE core"
 	$(MAKE) -C ee_core clean
+	echo "-NEUTRINO LOADER"
+	$(MAKE) -C neutrino_loader clean
 	echo "-IOP core"
 	echo " -imgdrv"
 	$(MAKE) -C modules/iopcore/imgdrv clean
@@ -421,6 +421,12 @@ ee_core/ee_core.elf: ee_core
 
 $(EE_ASM_DIR)ee_core.c: ee_core/ee_core.elf | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ eecore_elf
+
+neutrino_loader/loader.elf: neutrino_loader/loader.c neutrino_loader/linkfile
+	$(MAKE) -C neutrino_loader
+
+$(EE_ASM_DIR)neutrino_loader.c: neutrino_loader/loader.elf | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ neutrino_loader_elf
 
 $(EE_ASM_DIR)udnl.c: $(UDNL_OUT) | $(EE_ASM_DIR)
 	$(BIN2C) $(UDNL_OUT) $@ udnl_irx
@@ -790,6 +796,9 @@ $(EE_ASM_DIR)cancel.c: audio/cancel.adp | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_adp
 
 $(EE_ASM_DIR)confirm.c: audio/confirm.adp | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ $(*F)_adp
+
+$(EE_ASM_DIR)coverflow.c: audio/coverflow.adp | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ $(*F)_adp
 
 $(EE_ASM_DIR)cursor.c: audio/cursor.adp | $(EE_ASM_DIR)

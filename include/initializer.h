@@ -10,7 +10,7 @@ void deinitAllSupport(int exception, int modeSelected);
 void deinit(int exception, int modeSelected);
 
 // Shutdown minimal services initiated for auto loading.
-void miniDeinit(config_set_t *configSet);
+void miniDeinit();
 
 void init(void);
 

@@ -1,6 +1,8 @@
 #ifndef INCLUDE_LWNBDSUPPORT_H_
 #define INCLUDE_LWNBDSUPPORT_H_
 
+#include <stdint.h>
+
 #define LWNBD_SID 0x2A39;
 
 enum LWNBD_SERVER_CMD {
