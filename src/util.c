@@ -101,6 +101,20 @@ int GetSystemRegion(void)
     return ConsoleRegion;
 }
 
+void logfile(char *text)
+{
+    int fd = open("mass:/wopl_log.txt", O_APPEND | O_CREAT | O_WRONLY);
+    write(fd, text, strlen(text));
+    close(fd);
+}
+
+void logbuffer(char *path, void *buf, size_t size)
+{
+    int fd = open(path, O_CREAT | O_TRUNC | O_WRONLY);
+    write(fd, buf, size);
+    close(fd);
+}
+
 int CheckPS2Logo(int fd, u32 lba)
 {
     u8 logo[12 * 2048] ALIGNED(64);
