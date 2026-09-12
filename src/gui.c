@@ -1155,7 +1155,13 @@ static void guiHandleOp(struct gui_update_t *item)
                 item->menu.menu->submenu = result;
                 item->menu.menu->current = result;
                 item->menu.menu->pagestart = result;
-            } else if (item->submenu.selected) { // remember last played game feature
+            }
+
+            // Deliberately not an "else if": when the last played game is the
+            // first entry of the unsorted list, the branch above consumes it
+            // and remindLast is never set, so GUI_OP_SORT would move the
+            // cursor back to the top of the sorted list.
+            if (item->submenu.selected) { // remember last played game feature
                 item->menu.menu->current = result;
                 item->menu.menu->pagestart = result;
                 item->menu.menu->remindLast = 1;
